@@ -15,8 +15,10 @@ RUN ./node_modules/.bin/nest build
 
 EXPOSE 3003
 
-# En dev local : db push synchronise le schéma directement. En prod VPS : surcharger CMD avec migrate deploy.
-CMD sh -c "./node_modules/.bin/prisma db push --accept-data-loss && node dist/main"
+RUN chmod +x ./entrypoint.sh
+
+CMD ["./entrypoint.sh"]
+
 
 
 
