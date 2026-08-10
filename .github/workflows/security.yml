@@ -52,7 +52,8 @@ jobs:
           DATABASE_URL: "postgresql://kpsy_user:kpsy_password@localhost:5432/kpsy_multisector_db?schema=public"
         run: |
           cd backend
-          npx prisma db push --skip-generate
+          npx prisma migrate deploy
+
 
       - name: 6. Apply PostgreSQL Row Level Security (RLS)
         env:
