@@ -1,0 +1,360 @@
+// Prisma Schema — KPSyDesk Business Suite (Multi-Tenant & Multi-Secteur UEMOA)
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SectorType {
+  QUINCAILLERIE
+  MULTISERVICES_IT
+  TAILLEUR
+}
+
+enum BillingStatus {
+  TRIAL_7D
+  ACTIVE
+  SUSPENDED
+  EXPIRED
+}
+
+model Tenant {
+  id                 String        @id @default(uuid())
+  code               String        @unique // ex: QNC-0001, ITS-0001, TLR-0001
+  name               String
+  sectorType         SectorType
+  country            String        @default("SN") // SN, CI, ML
+  billingStatus      BillingStatus @default(TRIAL_7D)
+  trialEndsAt        DateTime?
+  subscriptionEndsAt DateTime?
+  isDemo             Boolean       @default(false)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  users              User[]
+  roles              Role[]
+  stockItems         StockItem[]
+  repairTickets      RepairTicket[]
+  clientMeasurements ClientMeasurement[]
+  paymentProofs      PaymentProof[]
+  quotes             Quote[]
+  invoices           Invoice[]
+  stockMovements     StockMovement[]
+  tailleurOrders     TailleurOrder[]
+
+  @@map("tenants")
+}
+
+
+model PaymentProof {
+  id             String   @id @default(uuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  provider       String   // WAVE, ORANGE_MONEY, BANK_TRANSFER
+  transactionRef String
+  amount         Float
+  durationMonths Int      @default(1) // 1, 6, 12 mois
+  status         String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  submittedAt    DateTime @default(now())
+  processedAt    DateTime?
+
+  @@index([tenantId])
+  @@map("payment_proofs")
+}
+
+
+model User {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  username     String   @unique // format: {CODE_TENANT}-{SEQUENCE}
+  fullName     String
+  email        String
+  phone        String
+  passwordHash String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  userRoles    UserRole[]
+
+  @@index([tenantId])
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  tenantId    String?  // null pour les rôles système comme SUPER_ADMIN
+  tenant      Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String   // SUPER_ADMIN, ADMIN_TENANT, EMPLOYEE
+  description String?
+  createdAt   DateTime @default(now())
+
+  userRoles        UserRole[]
+  rolePermissions  RolePermission[]
+
+  @@index([tenantId])
+  @@map("roles")
+}
+
+model Permission {
+  id          String     @id @default(uuid())
+  code        String     @unique // ex: stock:read, tickets:create, measurements:write
+  sectorType  SectorType? // null si permission générique/transverse
+  description String
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model UserRole {
+  userId String
+  roleId String
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// -------------------------------------------------------------
+// MODULE QUINCAILLERIE
+// -------------------------------------------------------------
+model StockItem {
+  id             String   @id @default(uuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name           String
+  sku            String
+  unit           String   // sac, kg, piece, metre
+  purchasePrice  Float
+  sellingPrice   Float
+  quantity       Int      @default(0)
+  alertThreshold Int      @default(5)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  quoteLines     QuoteLine[]
+  invoiceLines   InvoiceLine[]
+  movements      StockMovement[]
+
+  @@index([tenantId])
+  @@map("stock_items")
+}
+
+enum MovementType {
+  IN
+  OUT
+  ADJUSTMENT
+}
+
+model StockMovement {
+  id          String       @id @default(uuid())
+  tenantId    String
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  stockItemId String
+  stockItem   StockItem    @relation(fields: [stockItemId], references: [id], onDelete: Cascade)
+  type        MovementType
+  quantity    Int
+  unitPrice   Float?
+  reason      String?
+  createdAt   DateTime     @default(now())
+
+  @@index([tenantId])
+  @@index([stockItemId])
+  @@map("stock_movements")
+}
+
+
+
+// -------------------------------------------------------------
+// MODULE MULTISERVICES IT
+// -------------------------------------------------------------
+model RepairTicket {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ticketNumber String
+  clientName   String
+  clientPhone  String
+  deviceModel  String
+  issueDesc    String
+  status       String   // RECEIVED, DIAGNOSIS, IN_REPAIR, READY, DELIVERED, CANCELLED
+  estimatedCost Float?
+  finalCost    Float?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([tenantId])
+  @@unique([tenantId, ticketNumber])
+  @@map("repair_tickets")
+}
+
+
+// -------------------------------------------------------------
+// MODULE DEVIS ET FACTURATION GENERIQUE (BILLING)
+// -------------------------------------------------------------
+enum BillingDocumentStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  PAID
+  CANCELLED
+}
+
+model Quote {
+  id          String                @id @default(uuid())
+  tenantId    String
+  tenant      Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  number      String
+  clientName  String
+  clientPhone String?
+  clientEmail String?
+  status      BillingDocumentStatus @default(DRAFT)
+  totalAmount Float                 @default(0)
+  validUntil  DateTime?
+  notes       String?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  lines       QuoteLine[]
+  invoice     Invoice?
+
+  @@index([tenantId])
+  @@unique([tenantId, number])
+  @@map("quotes")
+}
+
+model QuoteLine {
+  id          String     @id @default(uuid())
+  quoteId     String
+  quote       Quote      @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  stockItemId String?
+  stockItem   StockItem? @relation(fields: [stockItemId], references: [id], onDelete: SetNull)
+  description String
+  quantity    Float      @default(1)
+  unitPrice   Float      @default(0)
+  totalPrice  Float      @default(0)
+
+  @@map("quote_lines")
+}
+
+model Invoice {
+  id          String                @id @default(uuid())
+  tenantId    String
+  tenant      Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  number      String
+  quoteId     String?               @unique
+  quote       Quote?                @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  clientName  String
+  clientPhone String?
+  clientEmail String?
+  status      BillingDocumentStatus @default(DRAFT)
+  totalAmount Float                 @default(0)
+  paidAmount  Float                 @default(0)
+  dueDate     DateTime?
+  notes       String?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  lines       InvoiceLine[]
+
+  @@index([tenantId])
+  @@unique([tenantId, number])
+  @@map("invoices")
+}
+
+model InvoiceLine {
+  id          String     @id @default(uuid())
+  invoiceId   String
+  invoice     Invoice    @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  stockItemId String?
+  stockItem   StockItem? @relation(fields: [stockItemId], references: [id], onDelete: SetNull)
+  description String
+  quantity    Float      @default(1)
+  unitPrice   Float      @default(0)
+  totalPrice  Float      @default(0)
+
+  @@map("invoice_lines")
+}
+
+// -------------------------------------------------------------
+// MODULE TAILLEUR (COUTURE)
+// -------------------------------------------------------------
+model ClientMeasurement {
+  id           String          @id @default(uuid())
+  tenantId     String
+  tenant       Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  clientName   String
+  clientPhone  String
+  beneficiaryName String?         // ex: "Fils (Moussa)", "Fille (Awa)", "Épouse", etc.
+  garmentType  String          // Boubou, Costume, Robe, Taille Basse
+  measurements Json            // Champs flexibles: { tourPoitrine: 95, longueurManche: 62, ... }
+  notes        String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+
+  orders       TailleurOrder[]
+
+  @@index([tenantId])
+  @@map("client_measurements")
+}
+
+enum TailleurOrderStatus {
+  ORDERED
+  CUTTING
+  SEWING
+  FITTING
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+model TailleurOrder {
+  id              String              @id @default(uuid())
+  tenantId        String
+  tenant          Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orderNumber     String
+  clientName      String
+  clientPhone     String
+  garmentType     String
+  fabricDesc      String?
+  status          TailleurOrderStatus @default(ORDERED)
+  fittingDate     DateTime?
+  deliveryDate    DateTime?
+  totalPrice      Float               @default(0)
+  advancePaid     Float               @default(0)
+  measurementsId  String?
+  measurement     ClientMeasurement?  @relation(fields: [measurementsId], references: [id], onDelete: SetNull)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([tenantId])
+  @@unique([tenantId, orderNumber])
+  @@map("tailleur_orders")
+}
+
+
+

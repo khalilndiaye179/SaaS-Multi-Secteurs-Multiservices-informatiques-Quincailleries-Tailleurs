@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: kpsy_multisector_postgres
+    environment:
+      POSTGRES_USER: kpsy_user
+      POSTGRES_PASSWORD: kpsy_password
+      POSTGRES_DB: kpsy_multisector_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kpsy_user -d kpsy_multisector_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kpsy_multisector_backend
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: 3003
+      DATABASE_URL: "postgresql://kpsy_user:kpsy_password@postgres:5432/kpsy_multisector_db?schema=public"
+      JWT_SECRET: "kpsy_super_secret_jwt_key_2026_uemoa_multi_sector_app"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: kpsy_multisector_frontend
+    ports:
+      - "5175:80"
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  postgres_data:
+

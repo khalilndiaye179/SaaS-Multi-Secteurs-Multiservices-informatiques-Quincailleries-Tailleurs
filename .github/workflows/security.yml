@@ -1,0 +1,74 @@
+name: KPSyDesk Security Gate & Multi-Tenant CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  multi-tenant-security-gate:
+    name: Multi-Tenant Security Gate & Audit
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: kpsy_user
+          POSTGRES_PASSWORD: kpsy_password
+          POSTGRES_DB: kpsy_multisector_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: 1. Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: 2. Setup Node.js Environment
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: 3. Install Dependencies
+        run: |
+          cd backend
+          npm ci --legacy-peer-deps
+
+      - name: 4. Generate Prisma Client
+        run: |
+          cd backend
+          npx prisma generate
+
+      - name: 5. Apply Database Migrations & Seed
+        env:
+          DATABASE_URL: "postgresql://kpsy_user:kpsy_password@localhost:5432/kpsy_multisector_db?schema=public"
+        run: |
+          cd backend
+          npx prisma db push --skip-generate
+
+      - name: 6. Apply PostgreSQL Row Level Security (RLS)
+        env:
+          PGPASSWORD: kpsy_password
+        run: |
+          psql -h localhost -U kpsy_user -d kpsy_multisector_db -f backend/prisma/rls-policies.sql
+
+      - name: 7. Execute SECURITY GATE Tests (Cross-Tenant, BOLA, IDOR, RLS, Stress)
+        env:
+          DATABASE_URL: "postgresql://kpsy_user:kpsy_password@localhost:5432/kpsy_multisector_db?schema=public"
+          JWT_SECRET: "kpsy_super_secret_jwt_key_2026_uemoa_multi_sector_app"
+        run: |
+          cd backend
+          npm run test:security
+
+      - name: 8. Verify Application Build
+        run: |
+          cd backend
+          npm run build
