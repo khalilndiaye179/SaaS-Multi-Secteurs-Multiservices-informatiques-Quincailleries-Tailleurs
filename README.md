@@ -1,4 +1,5 @@
-# 🛡️ SaaS Multi-Secteurs UEMOA — Documentation de Production & Sauvegarde
+# 🛡️ KPSyDesk Suite - Door Waar — SaaS Multi-Secteurs UEMOA — Documentation de Production & Sauvegarde
+
 
 Application SaaS multi-tenants complète développée pour les marchés UEMOA (Sénégal, Côte d'Ivoire, Mali) couvrant 3 secteurs clés :
 1. 🔩 **Quincaillerie & Matériaux de Construction**

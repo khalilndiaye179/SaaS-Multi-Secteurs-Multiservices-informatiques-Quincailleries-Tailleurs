@@ -128,13 +128,14 @@ export const Sidebar: React.FC<Props> = ({
             style={{
               fontFamily: "'Sora', sans-serif",
               fontWeight: 800,
-              fontSize: '1rem',
+              fontSize: '0.92rem',
               color: 'white',
               letterSpacing: '-0.02em',
             }}
           >
-            KPSyDesk
+            KPSyDesk Suite - Door Waar
           </div>
+
           <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 600 }}>
             {sector.replace('_', ' ')}
           </div>

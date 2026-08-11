@@ -1,6 +1,7 @@
 # MULTI-TENANT SECURITY COMPLIANCE REPORT
 
-**Projet :** KPSyDesk Business Suite Multi-Secteurs & Multi-Tenants  
+**Projet :** KPSyDesk Suite - Door Waar Multi-Secteurs & Multi-Tenants  
+
 **Date :** 10 Août 2026  
 **Auditeur & Architecte Sécurité :** Software & Security Senior Architect  
 **Statut Global de Conformité :** **Multi-Tenant Isolation: VERIFIED**

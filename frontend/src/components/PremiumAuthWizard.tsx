@@ -80,35 +80,65 @@ const IconTailleur = () => (
   </svg>
 );
 
-// ─── Secteur Configs ───
+// ─── Secteur Configs Enrichies avec Contenu Commercial ───
 const SECTORS = [
   {
     type: SectorType.QUINCAILLERIE,
     title: 'Quincaillerie',
-    description: 'Optimisez vos stocks, ventes et devis en toute simplicité.',
+    shortDesc: 'Gérez votre stock, vos ventes et vos devis avec précision.',
+    features: [
+      'Produits & catalogue',
+      'Stocks & mouvements',
+      'Alertes de stock',
+      'Ventes & clients',
+      'Devis & factures',
+      'Achats & fournisseurs',
+    ],
+    valueText: 'Réduisez les ruptures de stock et pilotez votre activité avec une meilleure visibilité.',
     borderColor: '#C8922A',
-    shadowColor: 'rgba(200, 146, 42, 0.3)',
+    shadowColor: 'rgba(200, 146, 42, 0.25)',
+    accentBg: '#FFFDF9',
     icon: <IconQuincaillerie />,
   },
   {
     type: SectorType.MULTISERVICES_IT,
     title: 'Multiservices Informatiques',
-    description: 'Gérez vos réparations, vos ventes de matériel et vos prestations de services.',
+    shortDesc: 'Centralisez vos réparations, ventes de matériel et prestations informatiques.',
+    features: [
+      'Clients',
+      'Réparations',
+      'Interventions',
+      'Matériel informatique',
+      'Prestations',
+      'Devis & factures',
+    ],
+    valueText: 'Suivez chaque client, chaque équipement et chaque intervention depuis un espace unique.',
     borderColor: '#2A7A6F',
-    shadowColor: 'rgba(42, 122, 111, 0.3)',
+    shadowColor: 'rgba(42, 122, 111, 0.25)',
+    accentBg: '#F7FCFC',
     icon: <IconMultiservicesIT />,
   },
   {
     type: SectorType.TAILLEUR,
     title: 'Tailleur',
-    description: 'Planifiez vos rendez-vous, enregistrez les mesures de vos clients et suivez vos créations.',
+    shortDesc: 'Organisez votre atelier et suivez chaque commande de la prise de mesures à la livraison.',
+    features: [
+      'Clients',
+      'Mesures',
+      'Rendez-vous',
+      'Commandes',
+      'Projets de couture',
+      'Livraisons',
+    ],
+    valueText: 'Respectez vos délais, organisez votre atelier et fidélisez votre clientèle.',
     borderColor: '#C47A6A',
-    shadowColor: 'rgba(196, 122, 106, 0.3)',
+    shadowColor: 'rgba(196, 122, 106, 0.25)',
+    accentBg: '#FFFBFB',
     icon: <IconTailleur />,
   },
 ];
 
-// ─── Composant Carte Secteur ───
+// ─── Composant Carte Secteur Optimisé UX/UI ───
 interface SectorCardProps {
   sector: typeof SECTORS[0];
   isSelected: boolean;
@@ -126,74 +156,107 @@ const SectorCardComponent: React.FC<SectorCardProps> = ({ sector, isSelected, on
       onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onSelect())}
       className={`sector-card card-inner-pattern${isSelected ? ' selected' : ''}`}
       style={{
-        background: 'white',
-        borderRadius: '16px',
-        border: `2px solid ${sector.borderColor}`,
+        background: isSelected ? sector.accentBg : 'white',
+        borderRadius: '18px',
+        border: isSelected ? `2.5px solid ${sector.borderColor}` : `1.5px solid ${sector.borderColor}40`,
         boxShadow: isSelected
-          ? `0 16px 40px ${sector.shadowColor}, 0 4px 12px rgba(0,0,0,0.08)`
-          : `0 4px 16px rgba(0,0,0,0.06)`,
-        padding: '40px 28px 36px',
+          ? `0 16px 36px ${sector.shadowColor}, 0 4px 14px rgba(0,0,0,0.06)`
+          : `0 4px 16px rgba(0,0,0,0.04)`,
+        padding: '28px 24px 24px',
         cursor: 'pointer',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        textAlign: 'center',
-        gap: '20px',
-        minHeight: '340px',
-        justifyContent: 'center',
+        textAlign: 'left',
+        gap: '16px',
         position: 'relative',
         overflow: 'hidden',
         userSelect: 'none',
+        transition: 'transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease',
       }}
     >
-      {/* Badge sélectionné */}
+      {/* Badge Sélectionné Clair & Professionnel */}
       {isSelected && (
         <div style={{
           position: 'absolute',
           top: 14,
           right: 14,
-          width: 22,
-          height: 22,
-          borderRadius: '50%',
+          padding: '4px 10px',
+          borderRadius: '20px',
           background: sector.borderColor,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
+          gap: '4px',
           color: 'white',
-          fontSize: 12,
-          fontWeight: 700,
-        }}>✓</div>
+          fontSize: '0.72rem',
+          fontWeight: 800,
+          boxShadow: `0 2px 8px ${sector.shadowColor}`,
+        }}>
+          <span>✓</span> Secteur choisi
+        </div>
       )}
 
-      {/* Icône */}
-      <div>{sector.icon}</div>
-
-      {/* Textes */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* En-tête de la Carte (Icône + Titre) */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 10 }}>
+        <div>{sector.icon}</div>
         <h3 style={{
           fontFamily: "'Sora', sans-serif",
           fontWeight: 800,
-          fontSize: '1.15rem',
+          fontSize: '1.2rem',
           color: '#1A1A1A',
-          lineHeight: 1.2,
+          lineHeight: 1.25,
         }}>
           {sector.title}
         </h3>
         <p style={{
           fontFamily: "'Plus Jakarta Sans', sans-serif",
           fontWeight: 500,
-          fontSize: '0.85rem',
-          color: '#5A5A5A',
-          lineHeight: 1.6,
-          maxWidth: '220px',
+          fontSize: '0.84rem',
+          color: '#555555',
+          lineHeight: 1.5,
           margin: '0 auto',
         }}>
-          {sector.description}
+          {sector.shortDesc}
         </p>
+      </div>
+
+      {/* Ligne de séparation fine */}
+      <div style={{ width: '100%', height: '1px', background: `${sector.borderColor}25`, margin: '2px 0' }} />
+
+      {/* Liste des 6 Fonctionnalités Principales */}
+      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '7px' }}>
+        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#777777', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>
+          Fonctionnalités clés :
+        </span>
+        {sector.features.map((feat, idx) => (
+          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.83rem', color: '#2D3748', fontWeight: 600 }}>
+            <span style={{ color: sector.borderColor, fontWeight: 800, fontSize: '0.9rem' }}>✓</span>
+            <span>{feat}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Phrase de valeur ajoutée SaaS */}
+      <div style={{
+        marginTop: 'auto',
+        width: '100%',
+        padding: '10px 12px',
+        borderRadius: '10px',
+        background: isSelected ? 'white' : '#F9FAFB',
+        border: `1px solid ${sector.borderColor}30`,
+        fontSize: '0.78rem',
+        color: '#4A5568',
+        lineHeight: 1.45,
+        fontWeight: 500,
+        fontStyle: 'italic',
+        textAlign: 'center',
+      }}>
+        « {sector.valueText} »
       </div>
     </div>
   );
 };
+
 
 // ─── Composant Bouton Principal ───
 const RegisterButton: React.FC<{ isDisabled: boolean; onClick: () => void }> = ({ isDisabled, onClick }) => (
@@ -247,6 +310,7 @@ export const PremiumAuthWizard: React.FC = () => {
     identifier: '',
   });
   const [loginLoading, setLoginLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginSuccess, setLoginSuccess] = useState<string | null>(null);
 
@@ -270,7 +334,7 @@ export const PremiumAuthWizard: React.FC = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        setLoginError(data?.message || 'Identifiants incorrects. Vérifiez votre code ou email.');
+        setLoginError(data?.message || 'Adresse e-mail, code tenant ou mot de passe incorrect.');
         return;
       }
 
@@ -303,13 +367,13 @@ export const PremiumAuthWizard: React.FC = () => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '28px 20px',
+        padding: '24px 20px',
       }}
     >
       {/* ─── Header ─── */}
       <header style={{
         width: '100%',
-        maxWidth: '1100px',
+        maxWidth: '1180px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -328,9 +392,10 @@ export const PremiumAuthWizard: React.FC = () => {
             fontFamily: "'Sora', sans-serif", fontWeight: 800,
             fontSize: '1rem', color: '#1A1A1A',
           }}>
-            KPSyDesk <span style={{ color: '#C8922A' }}>Suite</span>
+            KPSyDesk <span style={{ color: '#C8922A' }}>Suite - Door Waar</span>
           </span>
         </div>
+
 
         <div style={{ display: 'flex', gap: 8 }}>
           {['selection', 'login'].map((m) => (
@@ -338,13 +403,14 @@ export const PremiumAuthWizard: React.FC = () => {
               key={m}
               onClick={() => setMode(m as 'selection' | 'login')}
               style={{
-                padding: '6px 16px', borderRadius: 20,
-                background: mode === m ? '#1C4A34' : 'transparent',
-                color: mode === m ? 'white' : '#555',
-                border: mode === m ? 'none' : '1px solid #ccc',
+                padding: '7px 18px', borderRadius: 20,
+                background: mode === m ? '#1C4A34' : 'white',
+                color: mode === m ? 'white' : '#4A5568',
+                border: mode === m ? 'none' : '1px solid #CBD5E1',
                 fontFamily: "'Plus Jakarta Sans', sans-serif",
-                fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer',
+                fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer',
                 transition: 'all 200ms ease',
+                boxShadow: mode === m ? '0 2px 8px rgba(28,74,52,0.2)' : 'none',
               }}
             >
               {m === 'selection' ? 'Sélection Secteur' : 'Se Connecter'}
@@ -353,18 +419,18 @@ export const PremiumAuthWizard: React.FC = () => {
         </div>
       </header>
 
-      {/* ─── ÉCRAN DE SÉLECTION (100% Maquette) ─── */}
+      {/* ─── ÉCRAN DE SÉLECTION ─── */}
       {mode === 'selection' && (
         <main style={{
-          width: '100%', maxWidth: '1100px',
+          width: '100%', maxWidth: '1180px',
           display: 'flex', flexDirection: 'column',
-          alignItems: 'center', gap: 36, flex: 1,
-          justifyContent: 'center', paddingBottom: 20,
+          alignItems: 'center', gap: 32, flex: 1,
+          justifyContent: 'center', padding: '16px 0 24px',
         }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-            gap: 28,
+            gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))',
+            gap: 24,
             width: '100%',
           }}>
             {SECTORS.map((s) => (
@@ -380,6 +446,7 @@ export const PremiumAuthWizard: React.FC = () => {
         </main>
       )}
 
+
       {/* ─── FORMULAIRE INSCRIPTION ÉTAPE 2 ─── */}
       {mode === 'signup' && (
         <main style={{
@@ -389,14 +456,14 @@ export const PremiumAuthWizard: React.FC = () => {
           <div style={{
             background: 'white', borderRadius: 20,
             padding: '36px 32px', width: '100%',
-            boxShadow: '0 12px 40px rgba(0,0,0,0.1)',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.08)',
             border: '1px solid rgba(0,0,0,0.06)',
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
               <button onClick={() => setMode('selection')} style={{
                 background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: '0.8rem', color: '#777',
-                fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 500,
+                fontSize: '0.8rem', color: '#1C4A34',
+                fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700,
               }}>← Changer de secteur</button>
               <span style={{
                 background: '#F0F7F4', color: '#1C4A34',
@@ -411,7 +478,7 @@ export const PremiumAuthWizard: React.FC = () => {
               fontFamily: "'Sora', sans-serif", fontWeight: 800,
               fontSize: '1.4rem', color: '#1A1A1A', marginBottom: 6, textAlign: 'center',
             }}>Finaliser votre inscription</h2>
-            <p style={{ textAlign: 'center', color: '#888', fontSize: '0.78rem', marginBottom: 24 }}>
+            <p style={{ textAlign: 'center', color: '#666', fontSize: '0.8rem', marginBottom: 24 }}>
               Essai gratuit 7 jours — Zone UEMOA
             </p>
 
@@ -458,111 +525,272 @@ export const PremiumAuthWizard: React.FC = () => {
         </main>
       )}
 
-      {/* ─── ÉCRAN CONNEXION ─── */}
+      {/* ─── ÉCRAN CONNEXION B2B PREMIUM (Layout Double Zone Desktop) ─── */}
       {mode === 'login' && (
         <main style={{
-          width: '100%', maxWidth: 460, flex: 1,
+          width: '100%', maxWidth: '1080px', flex: 1,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '20px 0',
         }}>
           <div style={{
-            background: 'white', borderRadius: 20,
-            padding: '36px 32px', width: '100%',
-            boxShadow: '0 12px 40px rgba(0,0,0,0.1)',
-            border: '1px solid rgba(0,0,0,0.06)',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+            gap: 36,
+            width: '100%',
+            alignItems: 'center',
           }}>
-            <div style={{ textAlign: 'center', marginBottom: 28 }}>
-              <h2 style={{
-                fontFamily: "'Sora', sans-serif", fontWeight: 800,
-                fontSize: '1.4rem', color: '#1A1A1A', marginBottom: 6,
-              }}>Espace de Connexion</h2>
-              <p style={{ color: '#888', fontSize: '0.78rem' }}>Accédez à votre espace métier sécurisé</p>
+            {/* Zone Gauche : Présentation Commerciale KPSyDesk Suite */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 20,
+              padding: '12px 10px',
+            }}>
+              <div>
+                <span style={{
+                  background: '#E6F4EA', color: '#1C4A34',
+                  padding: '4px 14px', borderRadius: 20,
+                  fontSize: '0.74rem', fontWeight: 800,
+                  border: '1px solid #A7F3D0',
+                  letterSpacing: '0.03em', display: 'inline-block', marginBottom: 12,
+                }}>
+                  SaaS Multi-Secteurs B2B — Zone UEMOA
+                </span>
+                <h1 style={{
+                  fontFamily: "'Sora', sans-serif", fontWeight: 800,
+                  fontSize: '2rem', color: '#111827', lineHeight: 1.25,
+                  marginBottom: 10,
+                }}>
+                  Bienvenue sur <br />
+                  <span style={{ color: '#1C4A34' }}>KPSyDesk Suite</span> <span style={{ color: '#C8922A' }}>- Door Waar</span>
+                </h1>
+
+                <p style={{
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontSize: '0.92rem', color: '#4B5563', lineHeight: 1.6,
+                }}>
+                  La solution SaaS qui simplifie la gestion quotidienne de votre activité. Un espace professionnel unique pour piloter vos clients, vos ventes et vos opérations.
+                </p>
+              </div>
+
+              {/* Présentation discrète des 3 secteurs */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Solution métiers intégrée :
+                </span>
+                {[
+                  { title: '🔩 Quincaillerie', desc: 'Stocks, ventes, achats, fournisseurs et facturation.' },
+                  { title: '💻 Multiservices IT', desc: 'Réparations, équipements, interventions, prestations et clients.' },
+                  { title: '✂️ Tailleur & Confection', desc: 'Clients, mesures, rendez-vous, commandes et livraisons.' },
+                ].map((s, idx) => (
+                  <div key={idx} style={{
+                    background: 'white', padding: '10px 14px', borderRadius: 12,
+                    border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', gap: 2,
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+                  }}>
+                    <strong style={{ fontSize: '0.82rem', color: '#1F2937' }}>{s.title}</strong>
+                    <span style={{ fontSize: '0.76rem', color: '#6B7280' }}>{s.desc}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Messages d'état */}
-            {loginError && (
-              <div style={{
-                background: '#FEF2F2', border: '1px solid #FCA5A5',
-                borderRadius: 10, padding: '10px 14px',
-                color: '#DC2626', fontSize: '0.78rem', fontWeight: 600,
-                marginBottom: 4,
-              }}>
-                ⚠️ {loginError}
+            {/* Zone Droite : Formulaire de Connexion Carte Premium */}
+            <div style={{
+              background: 'white', borderRadius: 20,
+              padding: '36px 32px', width: '100%',
+              boxShadow: '0 16px 40px rgba(0,0,0,0.07)',
+              border: '1px solid #E5E7EB',
+              position: 'relative',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                <button
+                  onClick={() => setMode('selection')}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    fontSize: '0.8rem', color: '#1C4A34',
+                    fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700,
+                    display: 'flex', alignItems: 'center', gap: 4,
+                  }}
+                >
+                  ← Changer de secteur
+                </button>
+                <span style={{ fontSize: '0.72rem', color: '#9CA3AF', fontWeight: 600 }}>Espace Sécurisé</span>
               </div>
-            )}
-            {loginSuccess && (
-              <div style={{
-                background: '#F0FDF4', border: '1px solid #86EFAC',
-                borderRadius: 10, padding: '10px 14px',
-                color: '#16A34A', fontSize: '0.78rem', fontWeight: 600,
-                marginBottom: 4,
-              }}>
-                ✅ {loginSuccess}
+
+              <div style={{ marginBottom: 20 }}>
+                <h2 style={{
+                  fontFamily: "'Sora', sans-serif", fontWeight: 800,
+                  fontSize: '1.35rem', color: '#111827', marginBottom: 4,
+                }}>
+                  Connectez-vous à votre espace
+                </h2>
+                <p style={{ color: '#6B7280', fontSize: '0.82rem' }}>
+                  Renseignez vos identifiants pour accéder au tableau de bord
+                </p>
               </div>
-            )}
-            <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {[
-                { label: 'Identifiant (Code Tenant ou Email)', key: 'identifier', placeholder: 'QNC-0001-01 ou gerant@entreprise.sn', type: 'text' },
-                { label: 'Mot de passe', key: 'password', placeholder: '••••••••', type: 'password' },
-              ].map(({ label, key, placeholder, type }) => (
-                <div key={key}>
-                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#444', marginBottom: 5 }}>{label}</label>
+
+              {/* Messages d'état stylisés */}
+
+              {loginError && (
+                <div style={{
+                  background: '#FEF2F2', border: '1px solid #FCA5A5',
+                  borderRadius: 10, padding: '10px 14px',
+                  color: '#DC2626', fontSize: '0.8rem', fontWeight: 600,
+                  marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8,
+                }}>
+                  <span>⚠️</span> {loginError}
+                </div>
+              )}
+              {loginSuccess && (
+                <div style={{
+                  background: '#F0FDF4', border: '1px solid #86EFAC',
+                  borderRadius: 10, padding: '10px 14px',
+                  color: '#16A34A', fontSize: '0.8rem', fontWeight: 600,
+                  marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8,
+                }}>
+                  <span>✅</span> {loginSuccess}
+                </div>
+              )}
+
+              <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {/* Champ Identifiant */}
+                <div>
+                  <label htmlFor="login-identifier" style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 6 }}>
+                    Identifiant (Code Tenant ou Email)
+                  </label>
                   <input
-                    type={type}
+                    id="login-identifier"
+                    type="text"
                     required
-                    placeholder={placeholder}
-                    value={formData[key as keyof typeof formData]}
-                    onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                    placeholder="ex: QNC-0001-01 ou gerant@entreprise.sn"
+                    value={formData.identifier}
+                    onChange={(e) => setFormData({ ...formData, identifier: e.target.value })}
                     style={{
-                      width: '100%', padding: '10px 14px', borderRadius: 10,
-                      border: '1.5px solid #E0E0E0', fontSize: '0.85rem',
-                      color: '#1A1A1A', outline: 'none',
+                      width: '100%', padding: '11px 14px', borderRadius: 10,
+                      border: '1.5px solid #D1D5DB', fontSize: '0.88rem',
+                      color: '#111827', outline: 'none',
                       fontFamily: "'Plus Jakarta Sans', sans-serif",
+                      transition: 'border-color 200ms ease, box-shadow 200ms ease',
                     }}
-                    onFocus={(e) => (e.target.style.borderColor = '#1C4A34')}
-                    onBlur={(e) => (e.target.style.borderColor = '#E0E0E0')}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#1C4A34';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(28, 74, 52, 0.12)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#D1D5DB';
+                      e.target.style.boxShadow = 'none';
+                    }}
                   />
                 </div>
-              ))}
 
-              <button
-                type="submit"
-                disabled={loginLoading}
-                style={{
-                  marginTop: 8, padding: '13px', borderRadius: 10,
-                  background: loginLoading ? '#6B7280' : '#1C4A34',
-                  color: 'white', border: 'none',
-                  fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: '0.9rem',
-                  cursor: loginLoading ? 'wait' : 'pointer',
-                  boxShadow: loginLoading ? 'none' : '0 4px 16px rgba(28,74,52,0.35)',
-                  transition: 'all 200ms ease',
-                  opacity: loginLoading ? 0.7 : 1,
-                }}
-              >
-                {loginLoading ? '⏳ Connexion en cours...' : 'Se Connecter →'}
-              </button>
-            </form>
+                {/* Champ Mot de Passe avec Bascule Afficher/Masquer */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <label htmlFor="login-password" style={{ fontSize: '0.78rem', fontWeight: 700, color: '#374151' }}>
+                      Mot de passe
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => alert('Veuillez contacter le Gérant de votre Tenant ou le Super Admin pour réinitialiser votre mot de passe.')}
+                      style={{ background: 'none', border: 'none', color: '#1C4A34', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Mot de passe oublié ?
+                    </button>
+                  </div>
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <input
+                      id="login-password"
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      placeholder="••••••••"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      style={{
+                        width: '100%', padding: '11px 40px 11px 14px', borderRadius: 10,
+                        border: '1.5px solid #D1D5DB', fontSize: '0.88rem',
+                        color: '#111827', outline: 'none',
+                        fontFamily: "'Plus Jakarta Sans', sans-serif",
+                        transition: 'border-color 200ms ease, box-shadow 200ms ease',
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#1C4A34';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(28, 74, 52, 0.12)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#D1D5DB';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                    />
+                    <button
+                      type="button"
+                      aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={{
+                        position: 'absolute', right: 12, background: 'none', border: 'none',
+                        cursor: 'pointer', fontSize: '1.1rem', color: '#6B7280', padding: 4,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
+                    >
+                      {showPassword ? '🙈' : '👁️'}
+                    </button>
+                  </div>
+                </div>
 
-            <p style={{ textAlign: 'center', marginTop: 16, fontSize: '0.78rem', color: '#888' }}>
-              Pas encore inscrit ?{' '}
-              <span
-                onClick={() => setMode('selection')}
-                style={{ color: '#1C4A34', fontWeight: 700, cursor: 'pointer' }}
-              >
-                Choisir mon secteur →
-              </span>
-            </p>
+                {/* Bouton Principal de Soumission */}
+                <button
+                  type="submit"
+                  disabled={loginLoading}
+                  style={{
+                    marginTop: 6, padding: '13px', borderRadius: 10,
+                    background: loginLoading ? '#9CA3AF' : '#1C4A34',
+                    color: 'white', border: 'none',
+                    fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: '0.92rem',
+                    cursor: loginLoading ? 'not-allowed' : 'pointer',
+                    boxShadow: loginLoading ? 'none' : '0 4px 18px rgba(28,74,52,0.3)',
+                    transition: 'all 200ms ease',
+                    opacity: loginLoading ? 0.7 : 1,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!loginLoading) e.currentTarget.style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!loginLoading) e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  {loginLoading ? 'Connexion en cours...' : 'Se connecter →'}
+                </button>
+              </form>
+
+              {/* Zone Créer un Compte */}
+              <div style={{
+                textAlign: 'center', marginTop: 20, paddingTop: 16,
+                borderTop: '1px solid #F3F4F6', fontSize: '0.8rem', color: '#6B7280',
+              }}>
+                Vous n'avez pas encore de compte ?{' '}
+                <span
+                  onClick={() => setMode('selection')}
+                  style={{ color: '#1C4A34', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                  Créer votre espace professionnel
+                </span>
+              </div>
+            </div>
           </div>
         </main>
       )}
 
       {/* ─── Footer ─── */}
       <footer style={{
-        textAlign: 'center', fontSize: '0.72rem',
-        color: '#8A8A8A', paddingTop: 20,
+        textAlign: 'center', fontSize: '0.74rem',
+        color: '#6B7280', paddingTop: 16,
         fontFamily: "'Plus Jakarta Sans', sans-serif",
       }}>
-        © 2026 KPSyDesk Business Suite — Solution Multi-Secteurs UEMOA
+        © 2026 KPSyDesk Suite - Door Waar — Solution Multi-Secteurs UEMOA
+
       </footer>
     </div>
   );
 };
+
+

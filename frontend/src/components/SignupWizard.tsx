@@ -88,7 +88,8 @@ export const SignupWizard: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-10">
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 mb-3">
-            ✨ KPSyDesk Business Suite — UEMOA
+            ✨ KPSyDesk Suite - Door Waar — UEMOA
+
           </span>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
             {step === 1 ? 'Choisissez votre secteur d’activité' : 'Créez le compte de votre entreprise'}

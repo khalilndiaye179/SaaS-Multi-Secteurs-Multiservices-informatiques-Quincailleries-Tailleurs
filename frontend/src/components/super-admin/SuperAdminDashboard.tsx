@@ -49,8 +49,9 @@ export const SuperAdminDashboard: React.FC = () => {
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-['Sora'] font-extrabold text-white">Super Admin Dashboard</h1>
               <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#D9A441]/20 text-[#D9A441] border border-[#D9A441]/30">
-                KPSyDesk Global
+                KPSyDesk Suite - Door Waar Global
               </span>
+
             </div>
             <p className="text-xs text-slate-400 mt-1">Supervision globale multi-tenant & validation des abonnements UEMOA</p>
           </div>

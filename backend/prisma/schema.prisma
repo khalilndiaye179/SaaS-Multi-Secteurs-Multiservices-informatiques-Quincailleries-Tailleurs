@@ -1,4 +1,5 @@
-// Prisma Schema — KPSyDesk Business Suite (Multi-Tenant & Multi-Secteur UEMOA)
+// Prisma Schema — KPSyDesk Suite - Door Waar (Multi-Tenant & Multi-Secteur UEMOA)
+
 
 generator client {
   provider      = "prisma-client-js"

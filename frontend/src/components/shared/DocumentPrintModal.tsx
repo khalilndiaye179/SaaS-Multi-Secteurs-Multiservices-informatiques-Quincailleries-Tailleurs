@@ -226,8 +226,9 @@ export const DocumentPrintModal: React.FC<DocumentPrintModalProps> = ({
           </div>
 
           <div style={{ marginTop: 24, textAlign: 'center', fontSize: '0.72rem', color: '#9CA3AF', borderTop: '1px solid #E5E7EB', paddingTop: 10 }}>
-            Document généré officiellement par KPSyDesk Business Suite — Merci de votre confiance.
+            Document généré officiellement par KPSyDesk Suite - Door Waar — Merci de votre confiance.
           </div>
+
           </div>
         </div>
 
