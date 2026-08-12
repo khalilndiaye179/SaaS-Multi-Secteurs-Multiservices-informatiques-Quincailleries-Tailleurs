@@ -23,6 +23,7 @@ enum BillingStatus {
   ACTIVE
   SUSPENDED
   EXPIRED
+  ARCHIVED
 }
 
 model Tenant {
@@ -31,10 +32,14 @@ model Tenant {
   name               String
   sectorType         SectorType
   country            String        @default("SN") // SN, CI, ML
+  phone              String?       // Téléphone entreprise / gérant
+  email              String?       // Email principal entreprise
   billingStatus      BillingStatus @default(TRIAL_7D)
   trialEndsAt        DateTime?
   subscriptionEndsAt DateTime?
   isDemo             Boolean       @default(false)
+  isPermanentDemo    Boolean       @default(false) // 🔒 Démo système permanent (Immunisé contre la purge)
+  deletedAt          DateTime?     // Soft delete timestamp
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
@@ -48,26 +53,176 @@ model Tenant {
   invoices           Invoice[]
   stockMovements     StockMovement[]
   tailleurOrders     TailleurOrder[]
+  saasQuotes         SaaSQuote[]
+  billingSequences   BillingSequence[]
+  purchaseOrders     PurchaseOrder[]
 
   @@map("tenants")
 }
 
 
+
 model PaymentProof {
-  id             String   @id @default(uuid())
-  tenantId       String
-  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  provider       String   // WAVE, ORANGE_MONEY, BANK_TRANSFER
-  transactionRef String
-  amount         Float
-  durationMonths Int      @default(1) // 1, 6, 12 mois
-  status         String   @default("PENDING") // PENDING, APPROVED, REJECTED
-  submittedAt    DateTime @default(now())
-  processedAt    DateTime?
+  id                  String   @id @default(uuid())
+  tenantId            String
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  provider            String   // WAVE, ORANGE_MONEY, BANK_TRANSFER
+  transactionRef      String
+  amount              Float
+  expectedAmount      Float?   // Montant officiel calculé lors de la soumission
+  appliedMonthlyPrice Float?   @default(6500) // Tarif de base appliqué
+  durationMonths      Int      @default(1) // 1, 6, 12 mois
+  status              String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  submittedAt         DateTime @default(now())
+  processedAt         DateTime?
 
   @@index([tenantId])
   @@map("payment_proofs")
 }
+
+model PricingConfig {
+  id                  String   @id @default(uuid())
+  baseMonthlyPrice    Float    @default(6500) // Tarif unique 6 500 XOF / mois
+  discount6Months     Float    @default(0.10) // 10% de réduction sur 6 mois
+  discount12Months    Float    @default(0.20) // 20% de réduction sur 12 mois
+  currency            String   @default("XOF")
+  isDefault           Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("pricing_configs")
+}
+
+// -------------------------------------------------------------
+// MODULES DE CONSOLE SUPER ADMIN (KPSyDesk Suite - Door Waar)
+// -------------------------------------------------------------
+
+// Global SaaS : Moteur d'Intégration de Paiement
+model PaymentProviderConfig {
+  id                  String   @id @default(uuid())
+  provider            String   @unique // WAVE, ORANGE_MONEY, BIZAO, STRIPE, PAYTECH
+  displayName         String
+  enabled             Boolean  @default(false)
+  environment         String   @default("TEST") // TEST, PRODUCTION
+  currency            String   @default("XOF")
+  publicKey           String?
+  encryptedSecret     String?  // Chiffré au niveau serveur (AES-256-GCM)
+  encryptedWebhookSecret String? // Chiffré au niveau serveur (AES-256-GCM)
+  callbackUrl         String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("payment_provider_configs")
+}
+
+// Global SaaS : Configuration Serveur SMS OTP
+model SmsProviderConfig {
+  id                  String   @id @default(uuid())
+  provider            String   @unique // ORANGE_SMS, TWILIO, INFOBIP, INTOUCH
+  displayName         String
+  enabled             Boolean  @default(false)
+  environment         String   @default("TEST")
+  senderId            String   @default("KPSyDesk")
+  apiUrl              String?
+  encryptedSecret     String?  // Chiffré au niveau serveur (AUCUNE clé en clair)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("sms_provider_configs")
+}
+
+// Tenant-Scoped & Global : Devis Commercial SaaS Super Admin
+model SaaSQuote {
+  id                  String   @id @default(uuid())
+  quoteNumber         String   @unique // ex: SQ-2026-0001
+  tenantId            String?  // Optionnel : NULL = Devis global/prospect, ID = Devis tenant
+  tenant              Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  clientName          String
+  clientEmail         String
+  clientPhone         String?
+  planName            String   @default("Tarif Pro UEMOA")
+  durationMonths      Int      @default(12)
+  subtotal            Decimal  @db.Decimal(12, 2)
+  discount            Decimal  @default(0) @db.Decimal(12, 2)
+  tax                 Decimal  @default(0) @db.Decimal(12, 2)
+  total               Decimal  @db.Decimal(12, 2)
+  currency            String   @default("XOF")
+  status              String   @default("DRAFT") // DRAFT, SENT, ACCEPTED, REJECTED, EXPIRED, CONVERTED
+  validUntil          DateTime
+  notes               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("saas_quotes")
+}
+
+// Global SaaS / Audit Immuable : Journal d'Audit Centralisé
+model AuditLog {
+  id                  String   @id @default(uuid())
+  actorUserId         String   // ID de l'utilisateur (Pas de FK dure pour préserver l'historique d'audit même si l'utilisateur est supprimé)
+  actorRole           String
+  action              String   // ex: TENANT_SUSPENDED, PAYMENT_APPROVED, ROLE_CHANGED, CONFIG_UPDATED
+  resourceType        String   // TENANT, PAYMENT_PROOF, PROVIDER_CONFIG, USER
+  resourceId          String
+  tenantId            String?  // Nullable pour les actions globales Super Admin
+  result              String   @default("SUCCESS") // SUCCESS, FAILURE, FORBIDDEN
+  metadata            Json?    // Changements apportés (diff anonymisé sans secrets)
+  ipAddress           String?
+  userAgent           String?
+  createdAt           DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([actorUserId])
+  @@index([resourceType, resourceId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// Global SaaS / Anonymisé : Analytics & Audiences Plateforme
+model PlatformAnalytics {
+  id                  String   @id @default(uuid())
+  eventType           String   // PAGE_VIEW, SESSION_START, LOGIN_ATTEMPT, FEATURE_USED
+  sessionId           String   // Anonymisé
+  route               String
+  deviceType          String?  // DESKTOP, MOBILE, TABLET
+  browser             String?
+  operatingSystem    String?
+  countryCode         String?  // ⚠️ Pas de valeur par défaut 'SN' : NULL si indéterminé
+  tenantId            String?  // Nullable
+  createdAt           DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([eventType])
+  @@index([sessionId])
+  @@index([tenantId])
+  @@map("platform_analytics")
+}
+
+// Global SaaS / Securite : Invitations d'Équipe Super Admin (Collaborateurs)
+model SuperAdminInvitation {
+  id           String   @id @default(uuid())
+  email        String
+  roleName     String   // SUPER_ADMIN, FINANCE, SUPPORT, AUDITOR
+  tokenHash    String   @unique // Stockage exclusif du Hash SHA-256 (Jamais de token brut en BDD)
+  invitedById  String
+  status       String   @default("INVITED") // INVITED, ACCEPTED, CANCELLED, EXPIRED
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@map("super_admin_invitations")
+}
+
+
+
+
+
 
 
 model User {
@@ -157,6 +312,7 @@ model StockItem {
   quoteLines     QuoteLine[]
   invoiceLines   InvoiceLine[]
   movements      StockMovement[]
+  purchaseOrders PurchaseOrder[]
 
   @@index([tenantId])
   @@map("stock_items")
@@ -224,6 +380,11 @@ enum BillingDocumentStatus {
   CANCELLED
 }
 
+enum BillingDocumentType {
+  QUOTE
+  INVOICE
+}
+
 model Quote {
   id          String                @id @default(uuid())
   tenantId    String
@@ -256,30 +417,31 @@ model QuoteLine {
   description String
   quantity    Float      @default(1)
   unitPrice   Float      @default(0)
+  vatRate     Float      @default(18)
   totalPrice  Float      @default(0)
 
   @@map("quote_lines")
 }
 
 model Invoice {
-  id          String                @id @default(uuid())
-  tenantId    String
-  tenant      Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  number      String
-  quoteId     String?               @unique
-  quote       Quote?                @relation(fields: [quoteId], references: [id], onDelete: SetNull)
-  clientName  String
-  clientPhone String?
-  clientEmail String?
-  status      BillingDocumentStatus @default(DRAFT)
-  totalAmount Float                 @default(0)
-  paidAmount  Float                 @default(0)
-  dueDate     DateTime?
-  notes       String?
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
+  id            String                @id @default(uuid())
+  tenantId      String
+  tenant        Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  number        String
+  sourceQuoteId String?               @unique
+  sourceQuote   Quote?                @relation(fields: [sourceQuoteId], references: [id], onDelete: SetNull)
+  clientName    String
+  clientPhone   String?
+  clientEmail   String?
+  status        BillingDocumentStatus @default(DRAFT)
+  totalAmount   Float                 @default(0)
+  paidAmount    Float                 @default(0)
+  dueDate       DateTime?
+  notes         String?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
 
-  lines       InvoiceLine[]
+  lines         InvoiceLine[]
 
   @@index([tenantId])
   @@unique([tenantId, number])
@@ -295,31 +457,49 @@ model InvoiceLine {
   description String
   quantity    Float      @default(1)
   unitPrice   Float      @default(0)
+  vatRate     Float      @default(18)
   totalPrice  Float      @default(0)
 
   @@map("invoice_lines")
+}
+
+model BillingSequence {
+  id           String              @id @default(uuid())
+  tenantId     String
+  tenant       Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  year         Int
+  type         BillingDocumentType
+  currentValue Int                 @default(0)
+
+  @@unique([tenantId, year, type])
+  @@map("billing_sequences")
 }
 
 // -------------------------------------------------------------
 // MODULE TAILLEUR (COUTURE)
 // -------------------------------------------------------------
 model ClientMeasurement {
-  id           String          @id @default(uuid())
-  tenantId     String
-  tenant       Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  clientName   String
-  clientPhone  String
-  beneficiaryName String?         // ex: "Fils (Moussa)", "Fille (Awa)", "Épouse", etc.
-  garmentType  String          // Boubou, Costume, Robe, Taille Basse
-  measurements Json            // Champs flexibles: { tourPoitrine: 95, longueurManche: 62, ... }
-  notes        String?
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  id                   String              @id @default(uuid())
+  tenantId             String
+  tenant               Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  clientName           String
+  clientPhone          String
+  beneficiaryName      String?             // ex: "Fils (Moussa)", "Fille (Awa)", "Épouse", etc.
+  garmentType          String              // Boubou, Costume, Robe, Taille Basse
+  measurements         Json                // Champs flexibles: { tourPoitrine: 95, longueurManche: 62, ... }
+  notes                String?
 
+  parentMeasurementId  String?
+  parentMeasurement    ClientMeasurement?  @relation("FamilyMembers", fields: [parentMeasurementId], references: [id], onDelete: Cascade)
+  members              ClientMeasurement[] @relation("FamilyMembers")
 
-  orders       TailleurOrder[]
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  orders               TailleurOrder[]
 
   @@index([tenantId])
+  @@index([parentMeasurementId])
   @@map("client_measurements")
 }
 
@@ -356,6 +536,35 @@ model TailleurOrder {
   @@unique([tenantId, orderNumber])
   @@map("tailleur_orders")
 }
+
+enum PurchaseOrderStatus {
+  PENDING
+  RECEIVED
+  CANCELLED
+}
+
+model PurchaseOrder {
+  id              String              @id @default(uuid())
+  tenantId        String
+  tenant          Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  supplierName    String
+  itemDescription String
+  stockItemId     String?
+  stockItem       StockItem?          @relation(fields: [stockItemId], references: [id], onDelete: SetNull)
+  qtyOrdered      Int
+  totalCostXOF    Float
+  status          PurchaseOrderStatus @default(PENDING)
+  notes           String?
+  orderDate       DateTime            @default(now())
+  receivedDate    DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("purchase_orders")
+}
+
 
 
 
