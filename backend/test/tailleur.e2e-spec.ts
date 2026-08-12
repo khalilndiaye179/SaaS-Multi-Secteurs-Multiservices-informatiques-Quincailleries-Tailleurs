@@ -1,12 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, BadRequestException, NotFoundException } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { TenantContextService } from '../src/core/tenant/tenant-context.service';
+import { TailleurMeasurementService } from '../src/modules/tailleur/tailleur-measurement.service';
 
 describe('Module Tailleur / Couture Complété (Étape D3 Test Suite)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let measurementService: TailleurMeasurementService;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -17,6 +19,7 @@ describe('Module Tailleur / Couture Complété (Étape D3 Test Suite)', () => {
     await app.init();
 
     prisma = app.get<PrismaService>(PrismaService);
+    measurementService = app.get<TailleurMeasurementService>(TailleurMeasurementService);
   });
 
   afterAll(async () => {
@@ -117,4 +120,109 @@ describe('Module Tailleur / Couture Complété (Étape D3 Test Suite)', () => {
       expect(totalPendingBalance).toBe(60000);   // Reliquat 60 000 XOF pour la commande 1
     });
   });
+
+  it('3. RATTACHEMENT FAMILIAL & ISOLATION RECHERCHE : Exclure membres de findAll et retourner via findMembers', async () => {
+    const tenant = await prisma.withoutTenantScope(async (c) =>
+      c.tenant.create({ data: { code: getRandomCode('TLR3'), name: 'Atelier Couture Familial', sectorType: 'TAILLEUR', billingStatus: 'ACTIVE' } }),
+    );
+    createdTenantIds.push(tenant.id);
+
+    await TenantContextService.runWithTenantContext(tenant.id, 'TAILLEUR', async () => {
+      // 1. Création Fiche Tuteur (Racine)
+      const tuteur = await measurementService.create({
+        clientName: 'Mamadou NDIAYE',
+        clientPhone: '770001122',
+        garmentType: 'Boubou 3 Pièces',
+        measurements: { tourPoitrine: 104, longueurBoubou: 150 },
+      });
+
+      // 2. Création Sous-Fiche Membre rattachée
+      const membreMoussa = await measurementService.create({
+        clientName: 'Mamadou NDIAYE',
+        clientPhone: '770001122',
+        beneficiaryName: 'Fils Moussa',
+        garmentType: 'Ensemble Enfant',
+        parentMeasurementId: tuteur.id,
+        measurements: { tourPoitrine: 75, longueurBoubou: 95 },
+      });
+
+      expect(tuteur.id).toBeDefined();
+      expect(membreMoussa.parentMeasurementId).toBe(tuteur.id);
+
+      // 3. Vérification : findAll() retourne uniquement la fiche Tuteur (exclut le membre)
+      const allRootSheets = await measurementService.findAll();
+      expect(allRootSheets.length).toBe(1);
+      expect(allRootSheets[0].id).toBe(tuteur.id);
+      expect(allRootSheets[0].clientName).toBe('Mamadou NDIAYE');
+
+      // 4. Vérification : findMembers(tuteur.id) retourne exactement le membre Fils Moussa
+      const familyMembers = await measurementService.findMembers(tuteur.id);
+      expect(familyMembers.length).toBe(1);
+      expect(familyMembers[0].id).toBe(membreMoussa.id);
+      expect(familyMembers[0].beneficiaryName).toBe('Fils Moussa');
+    });
+  });
+
+  it('4. REJET RATTACHEMENT MEMBRE-DE-MEMBRE : Rejeter la hiérarchie au-delà de 2 niveaux', async () => {
+    const tenant = await prisma.withoutTenantScope(async (c) =>
+      c.tenant.create({ data: { code: getRandomCode('TLR4'), name: 'Atelier Couture NiveauMax', sectorType: 'TAILLEUR', billingStatus: 'ACTIVE' } }),
+    );
+    createdTenantIds.push(tenant.id);
+
+    await TenantContextService.runWithTenantContext(tenant.id, 'TAILLEUR', async () => {
+      // 1. Tuteur Racine
+      const tuteur = await measurementService.create({
+        clientName: 'Mamadou NDIAYE',
+        clientPhone: '770001122',
+        garmentType: 'Boubou 3 Pièces',
+        measurements: {},
+      });
+
+      // 2. Membre valide (Niveau 2)
+      const membreMoussa = await measurementService.create({
+        clientName: 'Mamadou NDIAYE',
+        clientPhone: '770001122',
+        beneficiaryName: 'Fils Moussa',
+        garmentType: 'Ensemble Enfant',
+        parentMeasurementId: tuteur.id,
+        measurements: {},
+      });
+
+      // 3. Tentative de créer un membre de membre (Niveau 3) -> Doit être rejetée avec BadRequestException 400
+      await expect(
+        measurementService.create({
+          clientName: 'Mamadou NDIAYE',
+          clientPhone: '770001122',
+          beneficiaryName: 'Petit-Fils Aliou',
+          garmentType: 'Tunique',
+          parentMeasurementId: membreMoussa.id,
+          measurements: {},
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      // Vérification du nombre total de fiches en BDD : doit rester strictement à 2
+      const totalCount = await prisma.extended.clientMeasurement.count();
+      expect(totalCount).toBe(2);
+    });
+  });
+
+  it('5. REJET FICHE PARENT INTROUVABLE : Rejeter la création avec NotFoundException si parentInexistant', async () => {
+    const tenant = await prisma.withoutTenantScope(async (c) =>
+      c.tenant.create({ data: { code: getRandomCode('TLR5'), name: 'Atelier ParentInexistant', sectorType: 'TAILLEUR', billingStatus: 'ACTIVE' } }),
+    );
+    createdTenantIds.push(tenant.id);
+
+    await TenantContextService.runWithTenantContext(tenant.id, 'TAILLEUR', async () => {
+      await expect(
+        measurementService.create({
+          clientName: 'Client Inexistant',
+          clientPhone: '779998877',
+          garmentType: 'Robe',
+          parentMeasurementId: '00000000-0000-0000-0000-000000000000',
+          measurements: {},
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
 });
+
