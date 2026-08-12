@@ -427,15 +427,10 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
                     {m.members.map((mem) => (
                       <div
                         key={mem.id}
-                        onClick={() => {
-                          setCurrentParent(m);
-                          handleEdit(mem);
-                        }}
                         style={{
                           fontSize: '0.76rem',
                           color: '#6B21A8',
                           fontWeight: 700,
-                          cursor: 'pointer',
                           display: 'flex',
                           justify: 'space-between',
                           alignItems: 'center',
@@ -446,7 +441,38 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
                         }}
                       >
                         <span>👤 {mem.beneficiaryName || 'Membre'} ({mem.garmentType})</span>
-                        <span style={{ fontSize: '0.7rem', color: themeColor, fontWeight: 800 }}>👁️ Voir ➔</span>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <span
+                            onClick={() => {
+                              setCurrentParent(m);
+                              handleEdit(mem);
+                            }}
+                            style={{ fontSize: '0.7rem', color: themeColor, fontWeight: 800, cursor: 'pointer' }}
+                          >
+                            👁️ Voir ➔
+                          </span>
+                          {isAdmin && (
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                await handleDelete(mem);
+                              }}
+                              style={{
+                                fontSize: '0.68rem',
+                                color: '#DC2626',
+                                background: '#FEE2E2',
+                                border: 'none',
+                                padding: '2px 5px',
+                                borderRadius: 4,
+                                cursor: 'pointer',
+                                fontWeight: 700,
+                              }}
+                              title="Supprimer ce membre"
+                            >
+                              🗑️ Supprimer
+                            </button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -726,26 +752,51 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
                             <strong style={{ fontSize: '0.8rem', color: '#111827' }}>{mem.beneficiaryName || 'Membre sans nom'}</strong>
                             <div style={{ fontSize: '0.72rem', color: '#6B7280' }}>Modèle : {mem.garmentType}</div>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const rootParent = measurements.find((x) => x.id === editingId);
-                              if (rootParent) setCurrentParent(rootParent);
-                              handleEdit(mem);
-                            }}
-                            style={{
-                              fontSize: '0.72rem',
-                              fontWeight: 700,
-                              color: '#6B21A8',
-                              background: 'white',
-                              border: '1px solid #E9D5FF',
-                              padding: '3px 8px',
-                              borderRadius: 6,
-                              cursor: 'pointer',
-                            }}
-                          >
-                            👁️ Ouvrir Fiche
-                          </button>
+                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const rootParent = measurements.find((x) => x.id === editingId);
+                                if (rootParent) setCurrentParent(rootParent);
+                                handleEdit(mem);
+                              }}
+                              style={{
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                color: '#6B21A8',
+                                background: 'white',
+                                border: '1px solid #E9D5FF',
+                                padding: '3px 8px',
+                                borderRadius: 6,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              👁️ Ouvrir Fiche
+                            </button>
+                            {isAdmin && (
+                              <button
+                                type="button"
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  await handleDelete(mem);
+                                  if (editingId) fetchFamilyMembers(editingId);
+                                }}
+                                style={{
+                                  fontSize: '0.72rem',
+                                  fontWeight: 700,
+                                  color: '#DC2626',
+                                  background: '#FEE2E2',
+                                  border: 'none',
+                                  padding: '3px 8px',
+                                  borderRadius: 6,
+                                  cursor: 'pointer',
+                                }}
+                                title="Supprimer ce membre"
+                              >
+                                🗑️ Supprimer
+                              </button>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
