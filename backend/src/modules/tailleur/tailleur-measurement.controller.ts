@@ -50,6 +50,11 @@ export class TailleurMeasurementController {
     return this.measurementService.findAll();
   }
 
+  @Get(':id/members')
+  async findMembers(@Param('id') id: string) {
+    return this.measurementService.findMembers(id);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.measurementService.findOne(id);

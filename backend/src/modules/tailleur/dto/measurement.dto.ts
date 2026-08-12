@@ -27,6 +27,9 @@ export class CreateMeasurementDto {
   @IsNotEmpty()
   garmentType: string;
 
+  @IsOptional()
+  @IsString()
+  parentMeasurementId?: string;
 
   @IsObject()
   @IsNotEmpty()
@@ -48,7 +51,15 @@ export class UpdateMeasurementDto {
 
   @IsOptional()
   @IsString()
+  beneficiaryName?: string;
+
+  @IsOptional()
+  @IsString()
   garmentType?: string;
+
+  @IsOptional()
+  @IsString()
+  parentMeasurementId?: string;
 
   @IsOptional()
   @IsObject()

@@ -1,8 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateMeasurementDto, UpdateMeasurementDto, CreateTailleurOrderDto, UpdateTailleurOrderStatusDto } from './dto/measurement.dto';
-
-
 
 @Injectable()
 export class TailleurMeasurementService {
@@ -10,7 +8,23 @@ export class TailleurMeasurementService {
 
   async findAll() {
     return this.prisma.extended.clientMeasurement.findMany({
+      where: { parentMeasurementId: null },
       orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async findMembers(parentId: string) {
+    const parent = await this.prisma.extended.clientMeasurement.findFirst({
+      where: { id: parentId },
+    });
+
+    if (!parent) {
+      throw new NotFoundException('Fiche parent introuvable.');
+    }
+
+    return this.prisma.extended.clientMeasurement.findMany({
+      where: { parentMeasurementId: parentId },
+      orderBy: { createdAt: 'asc' },
     });
   }
 
@@ -26,12 +40,29 @@ export class TailleurMeasurementService {
   }
 
   async create(dto: CreateMeasurementDto) {
+    if (dto.parentMeasurementId) {
+      const parent = await this.prisma.extended.clientMeasurement.findFirst({
+        where: { id: dto.parentMeasurementId },
+      });
+
+      if (!parent) {
+        throw new NotFoundException('Fiche parent introuvable.');
+      }
+
+      if (parent.parentMeasurementId !== null) {
+        throw new BadRequestException(
+          'Impossible de rattacher un membre à une fiche qui est elle-même un membre. Seule une fiche tuteur (racine) peut avoir des membres rattachés.',
+        );
+      }
+    }
+
     return this.prisma.extended.clientMeasurement.create({
       data: {
         clientName: dto.clientName,
         clientPhone: dto.clientPhone,
         beneficiaryName: dto.beneficiaryName,
         garmentType: dto.garmentType,
+        parentMeasurementId: dto.parentMeasurementId || null,
         measurements: dto.measurements,
         notes: dto.notes,
       } as any,
