@@ -9,6 +9,7 @@ export class TailleurMeasurementService {
   async findAll() {
     return this.prisma.extended.clientMeasurement.findMany({
       where: { parentMeasurementId: null },
+      include: { members: true },
       orderBy: { createdAt: 'desc' },
     });
   }

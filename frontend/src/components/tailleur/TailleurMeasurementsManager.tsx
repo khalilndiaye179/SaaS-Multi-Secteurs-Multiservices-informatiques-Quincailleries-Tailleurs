@@ -417,41 +417,99 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
                 </div>
               )}
 
-              {/* Barre d'action Modifier / Supprimer */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 8, borderTop: '1px solid #F3F4F6' }}>
+              {/* Aperçu des membres de la famille s'il y en a */}
+              {m.members && m.members.length > 0 && (
+                <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '8px 10px' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 4 }}>
+                    👨‍👩‍👧‍👦 Membres Rattachés ({m.members.length}) :
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {m.members.map((mem) => (
+                      <div
+                        key={mem.id}
+                        onClick={() => {
+                          setCurrentParent(m);
+                          handleEdit(mem);
+                        }}
+                        style={{
+                          fontSize: '0.76rem',
+                          color: '#6B21A8',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          justify: 'space-between',
+                          alignItems: 'center',
+                          padding: '3px 6px',
+                          borderRadius: 4,
+                          background: 'white',
+                          border: '1px solid #F1F5F9',
+                        }}
+                      >
+                        <span>👤 {mem.beneficiaryName || 'Membre'} ({mem.garmentType})</span>
+                        <span style={{ fontSize: '0.7rem', color: themeColor, fontWeight: 800 }}>👁️ Voir ➔</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Barre d'action Visualisation Membres / Modifier / Supprimer */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, paddingTop: 8, borderTop: '1px solid #F3F4F6' }}>
                 <button
                   onClick={() => handleEdit(m)}
                   style={{
-                    padding: '5px 10px',
-                    borderRadius: 6,
-                    border: '1px solid #CBD5E1',
-                    background: 'white',
-                    color: '#1E293B',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
+                    padding: '6px 12px',
+                    borderRadius: 8,
+                    border: '1px solid #E9D5FF',
+                    background: '#F3E8FF',
+                    color: '#6B21A8',
+                    fontSize: '0.78rem',
+                    fontWeight: 800,
                     cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
                   }}
+                  title="Visualiser et gérer les membres rattachés"
                 >
-                  ✏️ Modifier / Membres
+                  👨‍👩‍👧‍👦 Membres ({m.members?.length || 0})
                 </button>
-                {isAdmin && (
+
+                <div style={{ display: 'flex', gap: 6 }}>
                   <button
-                    onClick={() => handleDelete(m)}
+                    onClick={() => handleEdit(m)}
                     style={{
                       padding: '5px 10px',
                       borderRadius: 6,
-                      border: 'none',
-                      background: '#FEE2E2',
-                      color: '#DC2626',
+                      border: '1px solid #CBD5E1',
+                      background: 'white',
+                      color: '#1E293B',
                       fontSize: '0.75rem',
                       fontWeight: 700,
                       cursor: 'pointer',
                     }}
-                    title="Suppression réservée à l'Administrateur"
                   >
-                    🗑️ Supprimer
+                    ✏️ Modifier
                   </button>
-                )}
+                  {isAdmin && (
+                    <button
+                      onClick={() => handleDelete(m)}
+                      style={{
+                        padding: '5px 10px',
+                        borderRadius: 6,
+                        border: 'none',
+                        background: '#FEE2E2',
+                        color: '#DC2626',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                      title="Suppression réservée à l'Administrateur"
+                    >
+                      🗑️ Supprimer
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
