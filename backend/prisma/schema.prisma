@@ -56,6 +56,8 @@ model Tenant {
   saasQuotes         SaaSQuote[]
   billingSequences   BillingSequence[]
   purchaseOrders     PurchaseOrder[]
+  tailleurCatalogItems TailleurCatalogItem[]
+  inventorySessions  InventorySession[]
 
   @@map("tenants")
 }
@@ -313,6 +315,7 @@ model StockItem {
   invoiceLines   InvoiceLine[]
   movements      StockMovement[]
   purchaseOrders PurchaseOrder[]
+  inventoryLines InventorySessionLine[]
 
   @@index([tenantId])
   @@map("stock_items")
@@ -341,6 +344,49 @@ model StockMovement {
   @@map("stock_movements")
 }
 
+enum InventorySessionStatus {
+  DRAFT
+  COMPLETED
+}
+
+model InventorySession {
+  id           String                  @id @default(uuid())
+  tenantId     String
+  tenant       Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  label        String
+  periodType   String
+  periodStart  DateTime?
+  periodEnd    DateTime?
+  status       InventorySessionStatus  @default(DRAFT)
+  adjusted     Boolean                 @default(false)
+  startedAt    DateTime                @default(now())
+  completedAt  DateTime?
+  lines        InventorySessionLine[]
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+
+  @@index([tenantId])
+  @@map("inventory_sessions")
+}
+
+model InventorySessionLine {
+  id                 String           @id @default(uuid())
+  inventorySessionId String
+  session            InventorySession @relation(fields: [inventorySessionId], references: [id], onDelete: Cascade)
+  stockItemId        String
+  stockItem          StockItem        @relation(fields: [stockItemId], references: [id], onDelete: Cascade)
+  unitCost           Float            // Prix d'achat capturé au moment de la création
+  systemQuantity     Int
+  countedQuantity    Int?             // Reste null tant que non compté
+  discrepancy        Int              @default(0)
+  notes              String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([inventorySessionId])
+  @@index([stockItemId])
+  @@map("inventory_session_lines")
+}
 
 
 // -------------------------------------------------------------
@@ -442,6 +488,7 @@ model Invoice {
   updatedAt     DateTime              @updatedAt
 
   lines         InvoiceLine[]
+  tailleurOrder TailleurOrder?
 
   @@index([tenantId])
   @@unique([tenantId, number])
@@ -527,14 +574,49 @@ model TailleurOrder {
   deliveryDate    DateTime?
   totalPrice      Float               @default(0)
   advancePaid     Float               @default(0)
+  invoiceId       String?             @unique
+  invoice         Invoice?            @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
   measurementsId  String?
   measurement     ClientMeasurement?  @relation(fields: [measurementsId], references: [id], onDelete: SetNull)
+  items           TailleurOrderItem[]
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
 
   @@index([tenantId])
   @@unique([tenantId, orderNumber])
   @@map("tailleur_orders")
+}
+
+model TailleurCatalogItem {
+  id                   String   @id @default(uuid())
+  tenantId             String
+  tenant               Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name                 String
+  category             String   @default("Traditionnel")
+  estimatedPrice       Float    @default(0)
+  delaysDays           Int      @default(5)
+  description          String?
+  fabricRecommendation String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([tenantId])
+  @@map("tailleur_catalog_items")
+}
+
+model TailleurOrderItem {
+  id          String        @id @default(uuid())
+  orderId     String
+  order       TailleurOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  garmentType String
+  unitPrice   Float         @default(0)
+  quantity    Int           @default(1)
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([orderId])
+  @@map("tailleur_order_items")
 }
 
 enum PurchaseOrderStatus {
