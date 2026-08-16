@@ -1,4 +1,5 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber, Min, IsEnum } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsString, IsNotEmpty, IsOptional, IsNumber, Min, IsEnum, ValidateNested, IsArray } from 'class-validator';
 
 export enum TicketStatusDto {
   RECEIVED = 'RECEIVED',
@@ -6,7 +7,19 @@ export enum TicketStatusDto {
   IN_REPAIR = 'IN_REPAIR',
   READY = 'READY',
   DELIVERED = 'DELIVERED',
+  IMPOSSIBLE = 'IMPOSSIBLE',
   CANCELLED = 'CANCELLED',
+  CONVERTED_TO_STOCK = 'CONVERTED_TO_STOCK',
+}
+
+export class RepairPartDto {
+  @IsString()
+  @IsNotEmpty()
+  stockItemId: string;
+
+  @IsNumber()
+  @Min(1)
+  quantity: number;
 }
 
 export class CreateTicketDto {
@@ -53,4 +66,28 @@ export class UpdateTicketStatusDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => RepairPartDto)
+  usedParts?: RepairPartDto[];
+}
+
+export class ConvertToStockDto {
+  @IsString()
+  @IsNotEmpty()
+  sku: string;
+
+  @IsNumber()
+  @Min(0)
+  purchasePrice: number;
+
+  @IsNumber()
+  @Min(0)
+  sellingPrice: number;
+
+  @IsString()
+  @IsNotEmpty()
+  unit: string;
 }

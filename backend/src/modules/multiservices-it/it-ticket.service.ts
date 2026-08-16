@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateTicketDto, UpdateTicketStatusDto } from './dto/ticket.dto';
+import { CreateTicketDto, UpdateTicketStatusDto, ConvertToStockDto } from './dto/ticket.dto';
 
 @Injectable()
 export class ITMultiservicesTicketService {
@@ -40,20 +40,61 @@ export class ITMultiservicesTicketService {
   async updateStatus(id: string, dto: UpdateTicketStatusDto) {
     const ticket = await this.prisma.extended.repairTicket.findFirst({
       where: { id },
+      include: { usedParts: true }
     });
 
     if (!ticket) {
       throw new NotFoundException('Ticket de réparation introuvable.');
     }
 
-    return this.prisma.extended.repairTicket.update({
-      where: { id },
-      data: {
-        status: dto.status,
-        estimatedCost: dto.estimatedCost !== undefined ? dto.estimatedCost : ticket.estimatedCost,
-        finalCost: dto.finalCost !== undefined ? dto.finalCost : ticket.finalCost,
-        notes: dto.notes !== undefined ? dto.notes : ticket.notes,
-      },
+    return this.prisma.extended.$transaction(async (tx) => {
+      if (dto.usedParts && dto.usedParts.length > 0 && ['READY', 'DELIVERED'].includes(dto.status)) {
+        if (ticket.usedParts.length > 0) {
+          throw new BadRequestException("Des pièces ont déjà été déduites pour ce ticket.");
+        }
+
+        for (const part of dto.usedParts) {
+          const stockItem = await tx.stockItem.findUnique({ where: { id: part.stockItemId }});
+          if (!stockItem) throw new NotFoundException(`Article de stock ${part.stockItemId} introuvable`);
+          if (stockItem.quantity < part.quantity) {
+            throw new BadRequestException(`Stock insuffisant pour ${stockItem.name} (Dispo: ${stockItem.quantity})`);
+          }
+
+          await tx.stockItem.update({
+            where: { id: part.stockItemId },
+            data: { quantity: { decrement: part.quantity } }
+          });
+
+          await tx.stockMovement.create({
+            data: {
+              tenantId: ticket.tenantId,
+              stockItemId: part.stockItemId,
+              type: 'OUT',
+              quantity: part.quantity,
+              unitPrice: stockItem.purchasePrice,
+              reason: `Réparation IT - Ticket ${ticket.ticketNumber}`,
+            }
+          });
+
+          await tx.repairTicketPart.create({
+            data: {
+              repairTicketId: ticket.id,
+              stockItemId: part.stockItemId,
+              quantity: part.quantity,
+            }
+          });
+        }
+      }
+
+      return tx.repairTicket.update({
+        where: { id },
+        data: {
+          status: dto.status,
+          estimatedCost: dto.estimatedCost !== undefined ? dto.estimatedCost : ticket.estimatedCost,
+          finalCost: dto.finalCost !== undefined ? dto.finalCost : ticket.finalCost,
+          notes: dto.notes !== undefined ? dto.notes : ticket.notes,
+        },
+      });
     });
   }
 
@@ -80,6 +121,55 @@ export class ITMultiservicesTicketService {
       readyForPickupCount,
       totalRevenueXOF,
     };
+  }
+  async convertToStock(id: string, dto: ConvertToStockDto) {
+    const ticket = await this.prisma.extended.repairTicket.findFirst({
+      where: { id },
+    });
+
+    if (!ticket) {
+      throw new NotFoundException('Ticket de réparation introuvable.');
+    }
+
+    if (ticket.status !== 'IMPOSSIBLE') {
+      throw new BadRequestException("Seul un ticket marqué IMPOSSIBLE peut être converti en stock.");
+    }
+
+    return this.prisma.extended.$transaction(async (tx) => {
+      const updatedTicket = await tx.repairTicket.update({
+        where: { id },
+        data: {
+          status: 'CONVERTED_TO_STOCK',
+          finalCost: dto.purchasePrice,
+        },
+      });
+
+      const stockItem = await tx.stockItem.create({
+        data: {
+          tenantId: ticket.tenantId,
+          name: `[Reconditionné] ${ticket.deviceModel}`,
+          sku: dto.sku,
+          purchasePrice: dto.purchasePrice,
+          sellingPrice: dto.sellingPrice,
+          quantity: 1,
+          alertThreshold: 0,
+          unit: dto.unit,
+        },
+      });
+
+      await tx.stockMovement.create({
+        data: {
+          tenantId: ticket.tenantId,
+          stockItemId: stockItem.id,
+          type: 'IN',
+          quantity: 1,
+          unitPrice: dto.purchasePrice,
+          reason: `Conversion depuis Réparation (Ticket: ${ticket.ticketNumber})`,
+        },
+      });
+
+      return { ticket: updatedTicket, stockItem };
+    });
   }
 }
 

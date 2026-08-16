@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Body, Param, UseGuards } from '@nestjs/common';
 import { ITMultiservicesTicketService } from './it-ticket.service';
-import { CreateTicketDto, UpdateTicketStatusDto } from './dto/ticket.dto';
+import { CreateTicketDto, UpdateTicketStatusDto, ConvertToStockDto } from './dto/ticket.dto';
 import { SectorPermissionGuard } from '../../core/guards/sector-permission.guard';
 import { RequireSector } from '../../core/tenant/sector.decorator';
 import { SectorType } from '../../core/types/tenant.types';
@@ -34,6 +34,11 @@ export class ITMultiservicesTicketController {
   @Get('stats/overview')
   async getStats() {
     return this.ticketService.getStats();
+  }
+
+  @Post(':id/convert-to-stock')
+  async convertToStock(@Param('id') id: string, @Body() dto: ConvertToStockDto) {
+    return this.ticketService.convertToStock(id, dto);
   }
 }
 
