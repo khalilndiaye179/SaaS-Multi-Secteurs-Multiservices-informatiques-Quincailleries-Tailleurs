@@ -6,9 +6,11 @@ export interface TenantContext {
   sectorType?: string;
   userId?: string;
   roles?: string[];
+  billingStatus?: string;
   isSuperAdmin?: boolean;
   isSystemContext?: boolean;
 }
+
 
 @Injectable()
 export class TenantContextService {

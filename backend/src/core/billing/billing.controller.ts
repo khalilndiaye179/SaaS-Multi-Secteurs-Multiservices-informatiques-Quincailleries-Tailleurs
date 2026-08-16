@@ -62,4 +62,31 @@ export class BillingController {
       });
     });
   }
+
+  @BillingExempt()
+  @Get('my-payment-proofs')
+  async getMyPaymentProofs() {
+    const tenantId = TenantContextService.getTenantId();
+    if (!tenantId) {
+      throw new BadRequestException('Contexte tenant introuvable.');
+    }
+
+    return this.prisma.withoutTenantScope(async (client) => {
+      return client.paymentProof.findMany({
+        where: { tenantId },
+        orderBy: { submittedAt: 'desc' },
+        select: {
+          id: true,
+          provider: true,
+          transactionRef: true,
+          amount: true,
+          durationMonths: true,
+          status: true,
+          submittedAt: true,
+          processedAt: true,
+        },
+      });
+    });
+  }
 }
+

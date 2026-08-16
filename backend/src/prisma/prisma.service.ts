@@ -2,7 +2,7 @@ import { Injectable, OnModuleInit, OnModuleDestroy, ForbiddenException } from '@
 import { PrismaClient } from '@prisma/client';
 import { TenantContextService } from '../core/tenant/tenant-context.service';
 
-const TENANT_SCOPED_MODELS = ['StockItem', 'RepairTicket', 'ClientMeasurement', 'User', 'Quote', 'Invoice', 'StockMovement', 'TailleurOrder'];
+const TENANT_SCOPED_MODELS = ['StockItem', 'RepairTicket', 'ClientMeasurement', 'User', 'Quote', 'Invoice', 'StockMovement', 'TailleurOrder', 'PurchaseOrder', 'InventorySession'];
 
 
 
@@ -12,9 +12,24 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   public extended: ReturnType<typeof this.createExtendedClient>;
 
   constructor() {
-    super();
+    const isTest = process.env.NODE_ENV === 'test';
+    const testUrl = process.env.TEST_DATABASE_URL || 'postgresql://kpsy_user:kpsy_password@postgres:5432/kpsy_multisector_test_db?schema=public';
+    const dbUrl = isTest ? testUrl : process.env.DATABASE_URL;
+
+    console.log('🔍 PRISMA: connexion a la base ' + (isTest ? 'TEST' : 'PRODUCTION/DEV'));
+
+    super({
+      datasources: {
+        db: {
+          url: dbUrl,
+        },
+      },
+    });
+
     this.extended = this.createExtendedClient();
   }
+
+
 
   async onModuleInit() {
     await this.$connect();

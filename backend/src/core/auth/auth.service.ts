@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
 import { SectorType, RoleType, BillingStatus, JwtPayload } from '../types/tenant.types';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class AuthService {
@@ -116,10 +116,15 @@ export class AuthService {
 
 
   async login(dto: LoginDto) {
+    const identifier = dto.identifier ? dto.identifier.trim() : '';
+
     const user = await this.prisma.withoutTenantScope(async (client) => {
       return client.user.findFirst({
         where: {
-          OR: [{ email: dto.identifier }, { username: dto.identifier }],
+          OR: [
+            { email: { equals: identifier, mode: 'insensitive' } },
+            { username: { equals: identifier, mode: 'insensitive' } },
+          ],
         },
         include: {
           tenant: true,
@@ -128,9 +133,12 @@ export class AuthService {
       });
     });
 
-
     if (!user || !(await bcrypt.compare(dto.password, user.passwordHash))) {
       throw new UnauthorizedException('Identifiants incorrects.');
+    }
+
+    if (user.tenant.billingStatus === ('ARCHIVED' as any)) {
+      throw new UnauthorizedException('Ce compte d\'entreprise a été archivé. Veuillez contacter l\'administration.');
     }
 
     const roles = user.userRoles.map((ur) => ur.role.name as RoleType);
@@ -141,6 +149,7 @@ export class AuthService {
       sectorType: user.tenant.sectorType as SectorType,
       roles,
       tenantCode: user.tenant.code,
+      billingStatus: user.tenant.billingStatus as BillingStatus,
     };
 
     const accessToken = this.jwtService.sign(payload);

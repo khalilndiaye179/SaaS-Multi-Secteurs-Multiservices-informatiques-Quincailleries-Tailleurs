@@ -25,6 +25,7 @@ export class TenantContextMiddleware implements NestMiddleware {
           sectorType: decoded.sectorType,
           userId: decoded.sub || decoded.userId,
           roles: decoded.roles || [],
+          billingStatus: decoded.billingStatus,
           isSuperAdmin,
           isSystemContext: false,
         };
@@ -32,6 +33,7 @@ export class TenantContextMiddleware implements NestMiddleware {
         // Token invalide ou expiré, le store reste vide
       }
     }
+
 
     TenantContextService.run(store, () => {
       next();

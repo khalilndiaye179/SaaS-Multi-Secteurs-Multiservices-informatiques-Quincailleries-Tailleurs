@@ -42,6 +42,21 @@ export class TenantGuard implements CanActivate {
       );
     }
 
+    // VÉRIFICATION DYNAMIQUE À CHAQUE REQUÊTE : Bloquer immédiatement si le tenant est ARCHIVED ou SUSPENDED
+    const tenantStatus = store.billingStatus;
+    if (tenantStatus === 'ARCHIVED') {
+      throw new ForbiddenException(
+        'SECURITY ERROR (SOFT DELETE): Ce compte d\'entreprise a été archivé par l\'administration. Accès immédiatement révoqué.',
+      );
+    }
+
+    if (tenantStatus === 'SUSPENDED') {
+      throw new ForbiddenException(
+        'SECURITY ERROR: Ce compte d\'entreprise est actuellement suspendu. Accès refusé.',
+      );
+    }
+
     return true;
   }
 }
+

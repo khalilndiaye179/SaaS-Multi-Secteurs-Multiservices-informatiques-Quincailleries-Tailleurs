@@ -23,6 +23,7 @@ export enum BillingStatus {
   ACTIVE = 'ACTIVE',
   SUSPENDED = 'SUSPENDED',
   EXPIRED = 'EXPIRED',
+  ARCHIVED = 'ARCHIVED',
 }
 
 export interface JwtPayload {
@@ -31,9 +32,11 @@ export interface JwtPayload {
   sectorType: SectorType;
   roles: RoleType[];
   tenantCode: string;
+  billingStatus?: BillingStatus;
   iat?: number;
   exp?: number;
 }
+
 
 export interface TenantContext {
   tenantId: string;
