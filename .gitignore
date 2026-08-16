@@ -144,3 +144,38 @@ vite.config.ts.timestamp-*
  
 # Fichiers parasites terminal Windows (bug ACL npm) 
 backup*.sql 
+
+# --- Ajouts audit du 2026-08-16 ---
+
+# Dumps SQL de sauvegarde (tous prefixes), sauf fichiers legitimes explicitement autorises
+*.sql
+!backend/prisma/migrations/**/*.sql
+!backend/prisma/rls-policies.sql
+
+# Dossiers de sauvegarde manuelle horodates
+_backup_*/
+
+# Fichiers parasites de commandes shell mal interpretees (Windows)
+/cd
+/cmd
+/dir
+/docker
+/nest
+/node
+/npm
+/set
+/where
+backend/cd
+backend/cmd
+backend/nest
+backend/node
+backend/npm
+backend/set
+backend/where
+0_init
+12.0.2
+[frontend
+inspect_backend.json
+docker-compose.yml.bak*
+
+\[frontend
