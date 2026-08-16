@@ -1,9 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { PricingCalculatorService } from '../billing/pricing-calculator.service';
+import { UpdateTenantDto } from './dto/update-tenant.dto';
 
 @Injectable()
 export class SuperAdminDashboardService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private pricingCalculator: PricingCalculatorService,
+  ) {}
+
+
 
   async getGlobalStats() {
     const totalTenants = await this.prisma.tenant.count();
@@ -50,6 +57,17 @@ export class SuperAdminDashboardService {
   async getAllTenants() {
     return this.prisma.tenant.findMany({
       include: {
+        users: {
+          take: 1,
+          orderBy: { createdAt: 'asc' },
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+            username: true,
+          },
+        },
         _count: {
           select: { users: true },
         },
@@ -70,11 +88,18 @@ export class SuperAdminDashboardService {
     const subscriptionEndsAt = new Date(now);
     subscriptionEndsAt.setMonth(subscriptionEndsAt.getMonth() + durationMonths);
 
+    const pricing = await this.pricingCalculator.calculatePrice(durationMonths);
+
     return this.prisma.$transaction(async (tx) => {
       if (proofId) {
         await tx.paymentProof.update({
           where: { id: proofId },
-          data: { status: 'APPROVED', processedAt: now },
+          data: {
+            status: 'APPROVED',
+            processedAt: now,
+            expectedAmount: pricing.finalAmount,
+            appliedMonthlyPrice: pricing.monthlyPrice,
+          },
         });
       }
 
@@ -88,6 +113,7 @@ export class SuperAdminDashboardService {
     });
   }
 
+
   async rejectPayment(proofId: string, reason?: string) {
     return this.prisma.paymentProof.update({
       where: { id: proofId },
@@ -98,36 +124,87 @@ export class SuperAdminDashboardService {
     });
   }
 
-  async purgeDemoTenants() {
-    // Liste blanche des codes tenants officiels à préserver
-    const preservedCodes = ['QNC-0001', 'ITS-0001', 'TLR-0001'];
-
-    // Récupérer les IDs des tenants non préservés
-    const tenantsToPurge = await this.prisma.tenant.findMany({
+  async getDemoTenantsToPurge() {
+    return this.prisma.tenant.findMany({
       where: {
-        code: { notIn: preservedCodes },
+        isDemo: true,
+        isPermanentDemo: false,
+        billingStatus: { not: 'ARCHIVED' },
+      },
+      select: { id: true, code: true, name: true, sectorType: true, createdAt: true },
+    });
+  }
+
+  async purgeDemoTenants() {
+    // 🔒 SÉCURITÉ 1 : Interdiction stricte en environnement de PRODUCTION
+    const nodeEnv = process.env.NODE_ENV || 'development';
+    if (nodeEnv.toLowerCase() === 'production') {
+      throw new ForbiddenException(
+        'SECURITY ERROR: La purge des tenants de démonstration est strictement interdite en environnement de PRODUCTION.',
+      );
+    }
+
+    // 🔒 SÉCURITÉ 2 : Filtre strict basé EXCLUSIVEMENT sur isDemo: true AND isPermanentDemo: false
+    const demoTenantsToPurge = await this.prisma.tenant.findMany({
+      where: {
+        isDemo: true,
+        isPermanentDemo: false,
+        billingStatus: { not: 'ARCHIVED' },
       },
       select: { id: true, code: true, name: true },
     });
 
-    const purgedIds = tenantsToPurge.map((t) => t.id);
+    const demoIds = demoTenantsToPurge.map((t) => t.id);
 
-    if (purgedIds.length === 0) {
-      return { message: 'Aucun tenant test à purger.', count: 0 };
+    if (demoIds.length === 0) {
+      return { message: 'Aucun tenant de démonstration actif à purger.', count: 0, purgedTenants: [] };
     }
 
-    // Purge en cascade des tenants non autorisés
-    await this.prisma.tenant.deleteMany({
+    // 🔒 SÉCURITÉ 3 : SOFT DELETE UNISYSTEME (Archivage logique, aucun DELETE physique)
+    await this.prisma.tenant.updateMany({
       where: {
-        id: { in: purgedIds },
+        id: { in: demoIds },
+      },
+      data: {
+        billingStatus: 'ARCHIVED',
+        deletedAt: new Date(),
       },
     });
 
     return {
-      message: `Purger effectuée avec succès : ${purgedIds.length} tenants tests supprimés définitivement.`,
-      count: purgedIds.length,
-      purgedTenants: tenantsToPurge,
+      message: `Purger effectuée avec succès : ${demoIds.length} tenants de démonstration archivés (Soft Delete).`,
+      count: demoIds.length,
+      purgedTenants: demoTenantsToPurge,
     };
+  }
+
+
+
+  async updateTenant(tenantId: string, data: UpdateTenantDto) {
+    return this.prisma.tenant.update({
+      where: { id: tenantId },
+      data: {
+        ...(data.name && { name: data.name }),
+        ...(data.phone && { phone: data.phone }),
+        ...(data.email && { email: data.email }),
+        ...(data.country && { country: data.country }),
+      },
+    });
+  }
+
+  async softDeleteTenant(tenantId: string) {
+    const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId }, select: { code: true } });
+    if (tenant?.code === 'KPSY-ADMIN') {
+      throw new ForbiddenException("Protection critique : Impossible d'archiver le compte Super Admin principal.");
+    }
+
+    return this.prisma.tenant.update({
+      where: { id: tenantId },
+      data: {
+        billingStatus: 'ARCHIVED',
+        deletedAt: new Date(),
+      },
+    });
   }
 
   async getAllPaymentProofs() {
@@ -137,6 +214,7 @@ export class SuperAdminDashboardService {
     });
   }
 }
+
 
 
 
