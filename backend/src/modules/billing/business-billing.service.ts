@@ -161,5 +161,114 @@ export class BusinessBillingService {
     if (!invoice) throw new NotFoundException('Facture introuvable.');
     return this.prisma.extended.invoice.delete({ where: { id } });
   }
+
+  async updateInvoiceStatus(id: string, status: string) {
+    const tenantId = TenantContextService.getTenantId();
+    if (!tenantId) throw new ForbiddenException('Contexte tenant manquant');
+
+    const invoice = await this.prisma.extended.invoice.findFirst({
+      where: { id },
+      include: { lines: true },
+    });
+
+    if (!invoice) throw new NotFoundException('Facture introuvable.');
+
+    if (status === 'PAID' && invoice.status !== 'PAID') {
+      return this.prisma.extended.$transaction(async (tx) => {
+        // 1. Mettre à jour le statut de la facture
+        const updatedInvoice = await tx.invoice.update({
+          where: { id },
+          data: { status },
+        });
+
+        // 2. Déduire le stock pour chaque ligne associée à un article
+        for (const line of invoice.lines) {
+          if (line.stockItemId) {
+            await tx.stockItem.update({
+              where: { id: line.stockItemId },
+              data: {
+                quantity: {
+                  decrement: line.quantity,
+                },
+              },
+            });
+
+            // 3. Tracer le mouvement
+            await tx.stockMovement.create({
+              data: {
+                stockItemId: line.stockItemId,
+                type: 'OUT',
+                quantity: line.quantity,
+                unitPrice: line.unitPrice,
+                reason: `Facture payée ${invoice.number}`,
+              } as any,
+            });
+          }
+        }
+
+        return updatedInvoice;
+      });
+    }
+
+    // Mise à jour classique (ex: CANCELLED)
+    return this.prisma.extended.invoice.update({
+      where: { id },
+      data: { status: status as any },
+    });
+  }
+
+  async registerPayment(id: string, amount: number) {
+    const tenantId = TenantContextService.getTenantId();
+    if (!tenantId) throw new ForbiddenException('Contexte tenant manquant');
+
+    const invoice = await this.prisma.extended.invoice.findFirst({
+      where: { id },
+      include: { lines: true },
+    });
+
+    if (!invoice) throw new NotFoundException('Facture introuvable.');
+
+    const newPaidAmount = (invoice.paidAmount || 0) + amount;
+    const isFullyPaid = newPaidAmount >= invoice.totalAmount;
+    const newStatus = isFullyPaid ? 'PAID' : 'PARTIALLY_PAID';
+
+    return this.prisma.extended.$transaction(async (tx) => {
+      const updatedInvoice = await tx.invoice.update({
+        where: { id },
+        data: {
+          paidAmount: newPaidAmount,
+          status: newStatus as any,
+        },
+      });
+
+      // Si la facture devient totalement payée pour la première fois, on déduit les stocks
+      if (isFullyPaid && invoice.status !== 'PAID') {
+        for (const line of invoice.lines) {
+          if (line.stockItemId) {
+            await tx.stockItem.update({
+              where: { id: line.stockItemId },
+              data: {
+                quantity: {
+                  decrement: line.quantity,
+                },
+              },
+            });
+
+            await tx.stockMovement.create({
+              data: {
+                stockItemId: line.stockItemId,
+                type: 'OUT',
+                quantity: line.quantity,
+                unitPrice: line.unitPrice,
+                reason: `Facture payée ${invoice.number}`,
+              } as any,
+            });
+          }
+        }
+      }
+
+      return updatedInvoice;
+    });
+  }
 }
 

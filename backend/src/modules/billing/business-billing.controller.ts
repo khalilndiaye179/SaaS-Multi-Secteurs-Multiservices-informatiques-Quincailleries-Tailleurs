@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Res, StreamableFile } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, UseGuards, Res, StreamableFile } from '@nestjs/common';
 import { Response } from 'express';
 import { BusinessBillingService } from './business-billing.service';
 import { CreateQuoteDto, CreateInvoiceDto } from './dto/billing-document.dto';
@@ -60,6 +60,16 @@ export class BusinessBillingController {
   @Get('invoices')
   async findAllInvoices() {
     return this.billingService.findAllInvoices();
+  }
+
+  @Patch('invoices/:id/status')
+  async updateInvoiceStatus(@Param('id') id: string, @Body() body: { status: string }) {
+    return this.billingService.updateInvoiceStatus(id, body.status);
+  }
+
+  @Patch('invoices/:id/payment')
+  async registerPayment(@Param('id') id: string, @Body() body: { amount: number }) {
+    return this.billingService.registerPayment(id, body.amount);
   }
 
   @Get('invoices/:id/pdf')

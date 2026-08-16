@@ -1,6 +1,7 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PricingCalculatorService } from '../billing/pricing-calculator.service';
+import { AuditLogService } from './audit-log.service';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 
 @Injectable()
@@ -8,9 +9,12 @@ export class SuperAdminDashboardService {
   constructor(
     private prisma: PrismaService,
     private pricingCalculator: PricingCalculatorService,
+    private auditLogService: AuditLogService,
   ) {}
 
-
+  async updatePricingConfig(data: any) {
+    return this.pricingCalculator.updatePricingConfig(data);
+  }
 
   async getGlobalStats() {
     const totalTenants = await this.prisma.tenant.count();
@@ -55,24 +59,25 @@ export class SuperAdminDashboardService {
   }
 
   async getAllTenants() {
-    return this.prisma.tenant.findMany({
-      include: {
-        users: {
-          take: 1,
-          orderBy: { createdAt: 'asc' },
-          select: {
-            id: true,
-            fullName: true,
-            email: true,
-            phone: true,
-            username: true,
+    return this.prisma.withoutTenantScope(async (client) => {
+      return client.tenant.findMany({
+        include: {
+          users: {
+            orderBy: { createdAt: 'asc' },
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              phone: true,
+              username: true,
+            },
+          },
+          _count: {
+            select: { users: true },
           },
         },
-        _count: {
-          select: { users: true },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: 'desc' },
+      });
     });
   }
 
@@ -205,6 +210,53 @@ export class SuperAdminDashboardService {
         deletedAt: new Date(),
       },
     });
+  }
+
+  async hardDeleteTenant(tenantId: string, confirmationCode: string) {
+    const tenant = await this.prisma.tenant.findUnique({ 
+      where: { id: tenantId }, 
+      select: { code: true, name: true, isPermanentDemo: true, isDemo: true, billingStatus: true } 
+    });
+
+    // 1. Tenant existe ?
+    if (!tenant) throw new NotFoundException("Tenant introuvable.");
+
+    // 2. Code de confirmation correspond ?
+    if (confirmationCode !== tenant.code) {
+      throw new BadRequestException("Le code de confirmation ne correspond pas au code du tenant.");
+    }
+    
+    // 3. KPSY-ADMIN ?
+    if (tenant.code === 'KPSY-ADMIN') {
+      throw new ForbiddenException("Protection critique : Impossible de purger le compte Super Admin principal.");
+    }
+    
+    // 4. isPermanentDemo ?
+    if (tenant.isPermanentDemo) {
+      throw new ForbiddenException("Protection : Ce tenant de démo est permanent et ne peut pas être purgé.");
+    }
+
+    // 5. isDemo + billingStatus (double critère)
+    if (!tenant.isDemo || tenant.billingStatus === 'ACTIVE') {
+      throw new ForbiddenException("Impossible de supprimer physiquement un tenant actif ou non-demo.");
+    }
+
+    // 6. Audit log
+    await this.auditLogService.record({
+      action: 'HARD_DELETE',
+      resourceType: 'TENANT',
+      resourceId: tenantId,
+      result: 'SUCCESS',
+      tenantId: tenantId,
+      metadata: { code: tenant.code, name: tenant.name, isDemo: tenant.isDemo, billingStatus: tenant.billingStatus }
+    });
+
+    // 7. Suppression
+    await this.prisma.tenant.delete({
+      where: { id: tenantId }
+    });
+
+    return { message: "Tenant purgé définitivement avec succès." };
   }
 
   async getAllPaymentProofs() {

@@ -32,6 +32,26 @@ export class PricingCalculatorService {
     return config;
   }
 
+  async updatePricingConfig(data: { baseMonthlyPrice: number, discount6Months: number, discount12Months: number, currency: string }) {
+    const existing = await (this.prisma as any).pricingConfig.findFirst({
+      where: { isDefault: true },
+    });
+
+    if (existing) {
+      return (this.prisma as any).pricingConfig.update({
+        where: { id: existing.id },
+        data,
+      });
+    } else {
+      return (this.prisma as any).pricingConfig.create({
+        data: {
+          ...data,
+          isDefault: true,
+        },
+      });
+    }
+  }
+
   async calculatePrice(durationMonths: number): Promise<PricingCalculationResult> {
     const config = await this.getPricingConfig();
     const baseMonthlyPrice = config.baseMonthlyPrice || 6500;

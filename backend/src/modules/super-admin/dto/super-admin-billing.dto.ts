@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsInt, Min, Max, IsEnum } from 'class-validator';
+import { IsOptional, IsString, IsInt, Min, Max, IsEnum, IsNumber } from 'class-validator';
 
 export class SuperAdminBillingFilterDto {
   @IsOptional()
@@ -39,4 +39,23 @@ export class SuperAdminBillingFilterDto {
   @IsOptional()
   @IsEnum(['asc', 'desc'])
   sortOrder?: 'asc' | 'desc';
+}
+
+export class UpdatePricingConfigDto {
+  @IsNumber()
+  @Min(0)
+  baseMonthlyPrice: number;
+
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  discount6Months: number;
+
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  discount12Months: number;
+
+  @IsString()
+  currency: string;
 }
