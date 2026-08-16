@@ -4,7 +4,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { SectorType } from '../types/tenant.types';
 import { SECTOR_KEY } from '../tenant/sector.decorator';
 import { TenantContextService } from '../tenant/tenant-context.service';
-
+import { IS_PUBLIC_KEY } from '../auth/public.decorator';
 
 @Injectable()
 export class SectorPermissionGuard implements CanActivate {
@@ -14,6 +14,14 @@ export class SectorPermissionGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) {
+      return true;
+    }
+
     const requiredSectors = this.reflector.getAllAndOverride<SectorType[]>(SECTOR_KEY, [
       context.getHandler(),
       context.getClass(),

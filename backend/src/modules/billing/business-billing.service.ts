@@ -1,30 +1,35 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateQuoteDto, CreateInvoiceDto } from './dto/billing-document.dto';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
+import { BillingDocumentType } from '@prisma/client';
+import { BillingSequenceService } from './billing-sequence.service';
 
 @Injectable()
 export class BusinessBillingService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private billingSequence: BillingSequenceService,
+  ) {}
 
   // ─── DEVIS ───
   async createQuote(dto: CreateQuoteDto) {
     const tenantId = TenantContextService.getTenantId();
-    if (!tenantId) throw new BadRequestException('Tenant context missing.');
+    if (!tenantId) throw new ForbiddenException('Contexte tenant manquant');
 
-    const year = new Date().getFullYear();
-    const count = await this.prisma.extended.quote.count();
-    const number = `DEV-${year}-${(count + 1).toString().padStart(4, '0')}`;
+    const number = await this.billingSequence.getNextSequenceNumber(tenantId, BillingDocumentType.QUOTE, 'DEV');
 
     let totalAmount = 0;
     const linesData = dto.lines.map((line) => {
-      const totalPrice = line.quantity * line.unitPrice;
+      const vatRate = dto.applyVat ? (line.vatRate ?? 18) : 0;
+      const totalPrice = Math.round(line.quantity * line.unitPrice * (1 + vatRate / 100));
       totalAmount += totalPrice;
       return {
         stockItemId: line.stockItemId || null,
         description: line.description,
         quantity: line.quantity,
         unitPrice: line.unitPrice,
+        vatRate,
         totalPrice,
       };
     });
@@ -54,6 +59,9 @@ export class BusinessBillingService {
   }
 
   async convertQuoteToInvoice(quoteId: string) {
+    const tenantId = TenantContextService.getTenantId();
+    if (!tenantId) throw new ForbiddenException('Contexte tenant manquant');
+
     const quote = await this.prisma.extended.quote.findFirst({
       where: { id: quoteId },
       include: { lines: true },
@@ -61,14 +69,12 @@ export class BusinessBillingService {
 
     if (!quote) throw new NotFoundException('Devis introuvable.');
 
-    const year = new Date().getFullYear();
-    const count = await this.prisma.extended.invoice.count();
-    const number = `FAC-${year}-${(count + 1).toString().padStart(4, '0')}`;
+    const number = await this.billingSequence.getNextSequenceNumber(tenantId, BillingDocumentType.INVOICE, 'FAC');
 
     const invoice = await this.prisma.extended.invoice.create({
       data: {
         number,
-        quoteId: quote.id,
+        sourceQuoteId: quote.id,
         clientName: quote.clientName,
         clientPhone: quote.clientPhone,
         clientEmail: quote.clientEmail,
@@ -81,6 +87,7 @@ export class BusinessBillingService {
             description: l.description,
             quantity: l.quantity,
             unitPrice: l.unitPrice,
+            vatRate: l.vatRate,
             totalPrice: l.totalPrice,
           })),
         },
@@ -98,19 +105,22 @@ export class BusinessBillingService {
 
   // ─── FACTURES ───
   async createInvoice(dto: CreateInvoiceDto) {
-    const year = new Date().getFullYear();
-    const count = await this.prisma.extended.invoice.count();
-    const number = `FAC-${year}-${(count + 1).toString().padStart(4, '0')}`;
+    const tenantId = TenantContextService.getTenantId();
+    if (!tenantId) throw new ForbiddenException('Contexte tenant manquant');
+
+    const number = await this.billingSequence.getNextSequenceNumber(tenantId, BillingDocumentType.INVOICE, 'FAC');
 
     let totalAmount = 0;
     const linesData = dto.lines.map((line) => {
-      const totalPrice = line.quantity * line.unitPrice;
+      const vatRate = dto.applyVat ? (line.vatRate ?? 18) : 0;
+      const totalPrice = Math.round(line.quantity * line.unitPrice * (1 + vatRate / 100));
       totalAmount += totalPrice;
       return {
         stockItemId: line.stockItemId || null,
         description: line.description,
         quantity: line.quantity,
         unitPrice: line.unitPrice,
+        vatRate,
         totalPrice,
       };
     });
@@ -118,7 +128,7 @@ export class BusinessBillingService {
     return this.prisma.extended.invoice.create({
       data: {
         number,
-        quoteId: dto.quoteId || null,
+        sourceQuoteId: dto.quoteId || null,
         clientName: dto.clientName,
         clientPhone: dto.clientPhone,
         clientEmail: dto.clientEmail,
@@ -135,7 +145,7 @@ export class BusinessBillingService {
 
   async findAllInvoices() {
     return this.prisma.extended.invoice.findMany({
-      include: { lines: true, quote: true },
+      include: { lines: true, sourceQuote: true },
       orderBy: { createdAt: 'desc' },
     });
   }

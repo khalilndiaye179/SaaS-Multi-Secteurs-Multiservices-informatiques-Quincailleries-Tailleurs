@@ -1,16 +1,31 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Res, StreamableFile } from '@nestjs/common';
+import { Response } from 'express';
 import { BusinessBillingService } from './business-billing.service';
 import { CreateQuoteDto, CreateInvoiceDto } from './dto/billing-document.dto';
 import { SectorPermissionGuard } from '../../core/guards/sector-permission.guard';
 import { RequireSector } from '../../core/tenant/sector.decorator';
 import { SectorType } from '../../core/types/tenant.types';
 
+import { PricingCalculatorService } from './pricing-calculator.service';
+import { PdfGeneratorService } from './pdf-generator.service';
+import { Public } from '../../core/auth/public.decorator';
+
 @Controller('business-billing')
 @UseGuards(SectorPermissionGuard)
 @RequireSector(SectorType.QUINCAILLERIE, SectorType.MULTISERVICES_IT, SectorType.TAILLEUR)
 export class BusinessBillingController {
 
-  constructor(private billingService: BusinessBillingService) {}
+  constructor(
+    private billingService: BusinessBillingService,
+    private pricingCalculator: PricingCalculatorService,
+    private pdfGenerator: PdfGeneratorService,
+  ) {}
+
+  @Public()
+  @Get('pricing-plans')
+  async getPricingPlans() {
+    return this.pricingCalculator.getAllPricingOptions();
+  }
 
   @Post('quotes')
   async createQuote(@Body() dto: CreateQuoteDto) {
@@ -20,6 +35,16 @@ export class BusinessBillingController {
   @Get('quotes')
   async findAllQuotes() {
     return this.billingService.findAllQuotes();
+  }
+
+  @Get('quotes/:id/pdf')
+  async downloadQuotePdf(@Param('id') id: string, @Res({ passthrough: true }) res: Response) {
+    const buffer = await this.pdfGenerator.generateQuotePdf(id);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename=devis-${id}.pdf`,
+    });
+    return new StreamableFile(buffer);
   }
 
   @Post('quotes/:id/convert')
@@ -35,6 +60,16 @@ export class BusinessBillingController {
   @Get('invoices')
   async findAllInvoices() {
     return this.billingService.findAllInvoices();
+  }
+
+  @Get('invoices/:id/pdf')
+  async downloadInvoicePdf(@Param('id') id: string, @Res({ passthrough: true }) res: Response) {
+    const buffer = await this.pdfGenerator.generateInvoicePdf(id);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename=facture-${id}.pdf`,
+    });
+    return new StreamableFile(buffer);
   }
 
   @Post('quotes/:id/delete')

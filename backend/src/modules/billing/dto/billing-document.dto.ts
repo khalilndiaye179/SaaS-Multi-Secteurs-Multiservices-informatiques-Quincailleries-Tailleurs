@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsArray, IsNumber, ValidateNested, IsEmail } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsArray, IsNumber, ValidateNested, IsEmail, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class QuoteLineDto {
@@ -15,6 +15,10 @@ export class QuoteLineDto {
 
   @IsNumber()
   unitPrice: number;
+
+  @IsOptional()
+  @IsNumber()
+  vatRate?: number;
 }
 
 export class CreateQuoteDto {
@@ -33,6 +37,10 @@ export class CreateQuoteDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  applyVat?: boolean;
 
   @IsArray()
   @ValidateNested({ each: true })
