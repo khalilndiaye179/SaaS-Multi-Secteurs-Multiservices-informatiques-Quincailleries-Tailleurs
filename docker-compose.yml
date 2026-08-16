@@ -10,6 +10,8 @@ services:
       - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d
+
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U kpsy_user -d kpsy_multisector_db"]
@@ -27,8 +29,12 @@ services:
       - "3003:3003"
     environment:
       PORT: 3003
+      NODE_ENV: development
       DATABASE_URL: "postgresql://kpsy_user:kpsy_password@postgres:5432/kpsy_multisector_db?schema=public"
       JWT_SECRET: "kpsy_super_secret_jwt_key_2026_uemoa_multi_sector_app"
+      ENCRYPTION_KEY: "a7f3c91d2e5b084f6a1e9d3c7b4f2a8e1d5c9f3a6b0e4d7c2a8f1b5e9d3c7a4"
+    volumes:
+      - ./backend/prisma/migrations:/app/prisma/migrations
     depends_on:
       postgres:
         condition: service_healthy
