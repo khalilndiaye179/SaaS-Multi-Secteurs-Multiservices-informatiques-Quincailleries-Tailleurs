@@ -128,7 +128,7 @@ export class TenantRbacService {
       where: { id: roleId, tenantId: this.tenantId }
     });
 
-    if (!existingRole) throw new NotFoundException('Role non trouvé dans ce tenant');
+    if (!existingRole) throw new NotFoundException('Rôle non trouvé dans ce tenant');
     if (existingRole.name === 'ADMIN_TENANT' || existingRole.name === 'EMPLOYEE') {
       throw new ForbiddenException('Les rôles systèmes ne peuvent pas être modifiés.');
     }
@@ -179,7 +179,7 @@ export class TenantRbacService {
       include: { _count: { select: { userRoles: true } } }
     });
 
-    if (!existingRole) throw new NotFoundException('Role non trouvé dans ce tenant');
+    if (!existingRole) throw new NotFoundException('Rôle non trouvé dans ce tenant');
     if (existingRole.name === 'ADMIN_TENANT' || existingRole.name === 'EMPLOYEE') {
       throw new ForbiddenException('Les rôles systèmes ne peuvent pas être supprimés.');
     }
