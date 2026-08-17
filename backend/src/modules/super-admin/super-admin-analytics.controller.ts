@@ -54,4 +54,14 @@ export class SuperAdminAnalyticsController {
   async getAudience(@Query() query: SuperAdminAnalyticsFilterDto) {
     return this.analyticsService.getAudienceAnalytics(query);
   }
+
+  @Get('timeseries/acquisition')
+  async getAcquisitionTimeSeries(@Query() query: SuperAdminAnalyticsFilterDto) {
+    return this.analyticsService.getAcquisitionTimeSeries(query);
+  }
+
+  @Get('timeseries/revenue')
+  async getRevenueTimeSeries(@Query() query: SuperAdminAnalyticsFilterDto) {
+    return this.analyticsService.getRevenueTimeSeries(query);
+  }
 }

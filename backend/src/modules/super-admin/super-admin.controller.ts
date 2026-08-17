@@ -47,8 +47,9 @@ export class SuperAdminDashboardController {
   async rejectPayment(
     @Param('id') proofId: string,
     @Body('reason') reason?: string,
+    @Body('tenantId') tenantId?: string,
   ) {
-    return this.superAdminService.rejectPayment(proofId, reason);
+    return this.superAdminService.rejectPayment(proofId, tenantId, reason);
   }
 
   @Put('tenants/:id')

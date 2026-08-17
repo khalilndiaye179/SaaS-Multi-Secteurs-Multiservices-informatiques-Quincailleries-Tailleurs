@@ -262,4 +262,104 @@ export class SuperAdminAnalyticsService {
       deviceBreakdown: devicesGroup.map((d) => ({ deviceType: d.deviceType || 'UNKNOWN', count: d._count.id })),
     };
   }
+
+  /**
+   * Acquisition Time Series (Nouveaux Tenants par mois/semaine)
+   */
+  async getAcquisitionTimeSeries(query: SuperAdminAnalyticsFilterDto) {
+    const store = TenantContextService.getStore();
+    if (!store?.isSuperAdmin) throw new ForbiddenException('Accès réservé au Super Admin.');
+
+    const { from, to } = this.parseDateBounds(query.dateFrom, query.dateTo);
+    const startDate = from || new Date(new Date().setFullYear(new Date().getFullYear() - 1));
+    const endDate = to || new Date();
+
+    // Récupérer tous les tenants créés dans la période
+    const tenants = await this.prisma.withoutTenantScope(async (c) =>
+      c.tenant.findMany({
+        where: { isDemo: false, createdAt: { gte: startDate, lte: endDate } },
+        select: { createdAt: true },
+        orderBy: { createdAt: 'asc' },
+      })
+    );
+
+    // Grouper par mois "YYYY-MM"
+    const grouped = tenants.reduce((acc, t) => {
+      const monthYear = `${t.createdAt.getFullYear()}-${String(t.createdAt.getMonth() + 1).padStart(2, '0')}`;
+      acc[monthYear] = (acc[monthYear] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return Object.keys(grouped).map(date => ({
+      date,
+      newTenants: grouped[date]
+    }));
+  }
+
+  /**
+   * Revenue Time Series (Approximation du MRR basé sur l'acquisition de tenants ACTIFS)
+   */
+  async getRevenueTimeSeries(query: SuperAdminAnalyticsFilterDto) {
+    const store = TenantContextService.getStore();
+    if (!store?.isSuperAdmin) throw new ForbiddenException('Accès réservé au Super Admin.');
+
+    const { from, to } = this.parseDateBounds(query.dateFrom, query.dateTo);
+    const startDate = from || new Date(new Date().setFullYear(new Date().getFullYear() - 1));
+    const endDate = to || new Date();
+
+    const [invoices, proofs] = await this.prisma.withoutTenantScope(async (c) =>
+      Promise.all([
+        c.invoice.findMany({
+          where: { tenant: { isDemo: false }, createdAt: { gte: startDate, lte: endDate } },
+          select: { createdAt: true, totalAmount: true }
+        }),
+        c.paymentProof.findMany({
+          where: { tenant: { isDemo: false }, status: 'APPROVED', processedAt: { gte: startDate, lte: endDate } },
+          select: { processedAt: true, submittedAt: true, amount: true }
+        })
+      ])
+    );
+
+    const grouped: Record<string, { billed: Prisma.Decimal; collected: Prisma.Decimal }> = {};
+
+    // 1. Group Invoices (Billed)
+    invoices.forEach((inv) => {
+      const monthYear = `${inv.createdAt.getFullYear()}-${String(inv.createdAt.getMonth() + 1).padStart(2, '0')}`;
+      if (!grouped[monthYear]) grouped[monthYear] = { billed: new Prisma.Decimal(0), collected: new Prisma.Decimal(0) };
+      grouped[monthYear].billed = grouped[monthYear].billed.add(new Prisma.Decimal(inv.totalAmount || 0));
+    });
+
+    // 2. Group PaymentProofs (Collected)
+    proofs.forEach((prf) => {
+      const dateObj = prf.processedAt || prf.submittedAt;
+      if (!dateObj) return;
+      const monthYear = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
+      if (!grouped[monthYear]) grouped[monthYear] = { billed: new Prisma.Decimal(0), collected: new Prisma.Decimal(0) };
+      grouped[monthYear].collected = grouped[monthYear].collected.add(new Prisma.Decimal(prf.amount || 0));
+    });
+
+    const sortedKeys = Object.keys(grouped).sort();
+    
+    let cumulativeBilled = new Prisma.Decimal(0);
+    let cumulativeCollected = new Prisma.Decimal(0);
+
+    const timeSeries = sortedKeys.map(date => {
+      cumulativeBilled = cumulativeBilled.add(grouped[date].billed);
+      cumulativeCollected = cumulativeCollected.add(grouped[date].collected);
+
+      return {
+        date,
+        billed: {
+          monthly: grouped[date].billed.toNumber(),
+          cumulative: cumulativeBilled.toNumber(),
+        },
+        collected: {
+          monthly: grouped[date].collected.toNumber(),
+          cumulative: cumulativeCollected.toNumber(),
+        }
+      };
+    });
+
+    return timeSeries;
+  }
 }

@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { PricingCalculatorService } from '../billing/pricing-calculator.service';
 import { AuditLogService } from './audit-log.service';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class SuperAdminDashboardService {
@@ -10,6 +11,7 @@ export class SuperAdminDashboardService {
     private prisma: PrismaService,
     private pricingCalculator: PricingCalculatorService,
     private auditLogService: AuditLogService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async updatePricingConfig(data: any) {
@@ -82,9 +84,11 @@ export class SuperAdminDashboardService {
   }
 
   async updateTenantBillingStatus(tenantId: string, status: 'ACTIVE' | 'SUSPENDED' | 'EXPIRED') {
-    return this.prisma.tenant.update({
-      where: { id: tenantId },
-      data: { billingStatus: status },
+    return this.prisma.withoutTenantScope(async (client) => {
+      return client.tenant.update({
+        where: { id: tenantId },
+        data: { billingStatus: status },
+      });
     });
   }
 
@@ -95,9 +99,9 @@ export class SuperAdminDashboardService {
 
     const pricing = await this.pricingCalculator.calculatePrice(durationMonths);
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.withoutTenantScope(async (client) => {
       if (proofId) {
-        await tx.paymentProof.update({
+        await client.paymentProof.update({
           where: { id: proofId },
           data: {
             status: 'APPROVED',
@@ -108,7 +112,7 @@ export class SuperAdminDashboardService {
         });
       }
 
-      return tx.tenant.update({
+      return client.tenant.update({
         where: { id: tenantId },
         data: {
           billingStatus: 'ACTIVE',
@@ -116,17 +120,53 @@ export class SuperAdminDashboardService {
         },
       });
     });
+
+    // 🔔 Notification tenant : paiement approuvé
+    try {
+      await this.notificationsService.create({
+        tenantId,
+        type: 'PAYMENT_APPROVED',
+        title: '✅ Paiement validé',
+        message: `Votre paiement a été validé. Abonnement actif jusqu'au ${subscriptionEndsAt.toLocaleDateString('fr-FR')}.`,
+        link: '/billing',
+      });
+    } catch (e) {
+      console.error('Erreur lors de la création de la notification (non-bloquant):', e);
+    }
+
+    return result;
   }
 
 
-  async rejectPayment(proofId: string, reason?: string) {
-    return this.prisma.paymentProof.update({
-      where: { id: proofId },
-      data: {
-        status: 'REJECTED',
-        processedAt: new Date(),
-      },
+  async rejectPayment(proofId: string, tenantId?: string, reason?: string) {
+    const result = await this.prisma.withoutTenantScope(async (client) => {
+      return client.paymentProof.update({
+        where: { id: proofId },
+        data: {
+          status: 'REJECTED',
+          processedAt: new Date(),
+        },
+      });
     });
+
+    // 🔔 Notification tenant : paiement rejeté
+    if (tenantId) {
+      try {
+        await this.notificationsService.create({
+          tenantId,
+          type: 'PAYMENT_REJECTED',
+          title: '❌ Paiement non validé',
+          message: reason
+            ? `Votre preuve de paiement a été rejetée : ${reason}`
+            : 'Votre preuve de paiement a été rejetée. Veuillez soumettre une nouvelle preuve.',
+          link: '/billing',
+        });
+      } catch (e) {
+        console.error('Erreur lors de la création de la notification PaymentProof (non-bloquant):', e);
+      }
+    }
+
+    return result;
   }
 
   async getDemoTenantsToPurge() {
@@ -260,9 +300,11 @@ export class SuperAdminDashboardService {
   }
 
   async getAllPaymentProofs() {
-    return this.prisma.paymentProof.findMany({
-      include: { tenant: true },
-      orderBy: { submittedAt: 'desc' },
+    return this.prisma.withoutTenantScope(async (client) => {
+      return client.paymentProof.findMany({
+        include: { tenant: true },
+        orderBy: { submittedAt: 'desc' },
+      });
     });
   }
 }
