@@ -91,6 +91,23 @@ model PricingConfig {
   @@map("pricing_configs")
 }
 
+model Notification {
+  id        String   @id @default(uuid())
+  tenantId  String?  // null = notification Super Admin globale
+  type      String   // PAYMENT_PENDING, PAYMENT_APPROVED, PAYMENT_REJECTED, SUBSCRIPTION_EXPIRING, NEW_TENANT, SUBSCRIPTION_EXPIRED
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  link      String?  // Route frontend optionnelle (ex: /billing)
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
 // -------------------------------------------------------------
 // MODULES DE CONSOLE SUPER ADMIN (KPSyDesk Suite - Door Waar)
 // -------------------------------------------------------------
