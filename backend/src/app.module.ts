@@ -25,6 +25,8 @@ import { SubscriptionExpirationCron } from './core/billing/subscription-expirati
 import { BusinessBillingModule } from './modules/billing/business-billing.module';
 import { AiAssistantModule } from './modules/ai-assistant/ai-assistant.module';
 import { PublicDocumentsModule } from './modules/public-documents/public-documents.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { TenantRbacModule } from './modules/tenant-rbac/tenant-rbac.module';
 
 @Module({
   imports: [
@@ -47,6 +49,8 @@ import { PublicDocumentsModule } from './modules/public-documents/public-documen
     BusinessBillingModule,
     AiAssistantModule,
     PublicDocumentsModule,
+    NotificationsModule,
+    TenantRbacModule,
   ],
 
 

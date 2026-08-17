@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { BillingController } from '../billing/billing.controller';
+import { NotificationsModule } from '../../modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -13,9 +14,11 @@ import { BillingController } from '../billing/billing.controller';
       secret: process.env.JWT_SECRET || 'kpsy_super_secret_jwt_key_2026_uemoa_multi_sector_app',
       signOptions: { expiresIn: '7d' },
     }),
+    NotificationsModule,
   ],
   controllers: [AuthController, BillingController],
   providers: [AuthService, JwtStrategy],
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}
+

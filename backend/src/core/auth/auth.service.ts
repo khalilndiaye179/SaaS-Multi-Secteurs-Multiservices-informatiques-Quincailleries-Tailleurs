@@ -49,6 +49,8 @@ export class AuthService {
           name: dto.companyName,
           sectorType: dto.sectorType,
           country: dto.country || 'SN',
+          phone: dto.phone,
+          email: dto.email,
           billingStatus: BillingStatus.TRIAL_7D,
           trialEndsAt,
         },
