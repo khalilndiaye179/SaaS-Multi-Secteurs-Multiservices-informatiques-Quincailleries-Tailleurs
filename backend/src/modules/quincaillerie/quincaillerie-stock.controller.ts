@@ -1,16 +1,16 @@
-import { Controller, Get, Post, Put, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { QuincaillerieStockService } from './quincaillerie-stock.service';
 import { CreateStockItemDto, UpdateStockItemDto, RecordMovementDto, DirectSaleDto } from './dto/stock.dto';
 import { SectorPermissionGuard } from '../../core/guards/sector-permission.guard';
 import { RequireSector } from '../../core/tenant/sector.decorator';
 import { SectorType } from '../../core/types/tenant.types';
+import { PermissionsGuard } from '../../core/guards/permissions.guard';
+import { RequirePermissions } from '../../core/guards/require-permissions.decorator';
 
 @Controller('quincaillerie/stock')
-@UseGuards(SectorPermissionGuard)
+@UseGuards(SectorPermissionGuard, PermissionsGuard)
 @RequireSector(SectorType.QUINCAILLERIE)
 export class QuincaillerieStockController {
-
-
   constructor(private stockService: QuincaillerieStockService) {}
 
   @Get()
@@ -33,6 +33,11 @@ export class QuincaillerieStockController {
     return this.stockService.update(id, dto);
   }
 
+  @Delete(':id')
+  async remove(@Param('id') id: string) {
+    return this.stockService.remove(id);
+  }
+
   @Post(':id/movement')
   async recordMovement(@Param('id') id: string, @Body() dto: RecordMovementDto) {
     return this.stockService.recordMovement(id, dto);
@@ -40,7 +45,7 @@ export class QuincaillerieStockController {
 
   @Post('sales')
   async recordDirectSale(@Body() dto: DirectSaleDto) {
-    return this.stockService.recordDirectSale(dto.lines);
+    return this.stockService.recordDirectSale(dto);
   }
 
   @Get('reports')

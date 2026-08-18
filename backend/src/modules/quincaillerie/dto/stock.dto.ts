@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional, IsEnum, IsArray, ValidateNested } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, IsEnum, IsArray, ValidateNested, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export enum MovementTypeDto {
@@ -88,4 +88,12 @@ export class DirectSaleDto {
   @IsOptional()
   @IsString()
   clientName?: string;
+
+  @IsOptional()
+  @IsString()
+  clientPhone?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  generateInvoice?: boolean;
 }
