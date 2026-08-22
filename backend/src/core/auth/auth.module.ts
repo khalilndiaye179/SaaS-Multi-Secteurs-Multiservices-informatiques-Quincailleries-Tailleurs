@@ -11,7 +11,7 @@ import { NotificationsModule } from '../../modules/notifications/notifications.m
   imports: [
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'kpsy_super_secret_jwt_key_2026_uemoa_multi_sector_app',
+      secret: process.env.JWT_SECRET as string,
       signOptions: { expiresIn: '7d' },
     }),
     NotificationsModule,

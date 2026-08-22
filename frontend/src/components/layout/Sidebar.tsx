@@ -28,12 +28,16 @@ export const Sidebar: React.FC<Props> = ({
         return [
           { id: 'overview', label: 'Vue Globale', icon: '📊' },
           { id: 'stock', label: 'Inventaire & Stock', icon: '📦' },
+          { id: 'depots', label: 'Multi-Dépôts', icon: '🏢' },
           { id: 'sales', label: 'Ventes Comptoir (Caisse)', icon: '🛒' },
           { id: 'movements', label: 'Mouvements Stock', icon: '🔄' },
           { id: 'purchases', label: 'Achats Fournisseurs', icon: '🚚' },
+          { id: 'ai-assistant', label: 'Assistante IA & Inventaire', icon: '🤖' },
           { id: 'reports', label: 'Rapports & Marges', icon: '📈' },
+          { id: 'crm', label: 'Contacts / CRM', icon: '🏢' },
           { id: 'billing', label: 'Devis & Factures', icon: '📄' },
           { id: 'employees', label: 'Collaborateurs', icon: '👥' },
+          { id: 'subscription', label: 'Mon Abonnement', icon: '💳' },
           { id: 'settings', label: 'Paramètres', icon: '⚙️' },
           { id: 'guide', label: 'Guide d\'Utilisation', icon: '📘' },
           { id: 'about', label: 'À Propos', icon: 'ℹ️' },
@@ -47,9 +51,12 @@ export const Sidebar: React.FC<Props> = ({
           { id: 'services', label: 'Catalogue Prestations', icon: '💻' },
           { id: 'sales', label: 'Vente / Achat Matériel', icon: '🛒' },
           { id: 'stock', label: 'Stock Pièces Détachées', icon: '📦' },
+          { id: 'ai-assistant', label: 'Assistante IA & Diagnostic', icon: '🤖' },
           { id: 'customers', label: 'Suivi Client / SAV', icon: '👥' },
+          { id: 'crm', label: 'Contacts / CRM', icon: '🏢' },
           { id: 'billing', label: 'Devis & Factures', icon: '📄' },
           { id: 'employees', label: 'Collaborateurs', icon: '👥' },
+          { id: 'subscription', label: 'Mon Abonnement', icon: '💳' },
           { id: 'settings', label: 'Paramètres', icon: '⚙️' },
           { id: 'guide', label: 'Guide d\'Utilisation', icon: '📘' },
           { id: 'about', label: 'À Propos', icon: 'ℹ️' },
@@ -60,10 +67,14 @@ export const Sidebar: React.FC<Props> = ({
           { id: 'overview', label: 'Vue Atelier', icon: '📊' },
           { id: 'measurements', label: 'Mesures Clients', icon: '📐' },
           { id: 'orders', label: 'Commandes Confection', icon: '✂️' },
+          { id: 'mytasks', label: 'Mes Tâches (Kanban)', icon: '📋' },
           { id: 'fittings', label: 'Rendez-vous & Essayages', icon: '📅' },
           { id: 'services', label: 'Catalogue Modèles', icon: '👗' },
+          { id: 'ai-assistant', label: 'Assistante IA Atelier', icon: '🤖' },
+          { id: 'crm', label: 'Contacts / CRM', icon: '🏢' },
           { id: 'billing', label: 'Devis & Factures', icon: '📄' },
           { id: 'employees', label: 'Collaborateurs', icon: '👥' },
+          { id: 'subscription', label: 'Mon Abonnement', icon: '💳' },
           { id: 'settings', label: 'Paramètres', icon: '⚙️' },
           { id: 'guide', label: 'Guide d\'Utilisation', icon: '📘' },
           { id: 'about', label: 'À Propos', icon: 'ℹ️' },
@@ -71,11 +82,23 @@ export const Sidebar: React.FC<Props> = ({
 
 
 
+
       case 'SUPER_ADMIN':
         return [
           { id: 'overview', label: 'Statistiques SaaS', icon: '📊' },
           { id: 'tenants', label: 'Gestion Tenants', icon: '🏢' },
-          { id: 'payment-proofs', label: 'Preuves de Paiement', icon: '💳' },
+          { id: 'billing', label: 'Comptabilité & Finance', icon: '💰' },
+          { id: 'pricing', label: 'Tarifs & Plans SaaS', icon: '🏷️' },
+          { id: 'quotes', label: 'Devis Commercial SaaS', icon: '📝' },
+          { id: 'payment-providers', label: 'Moteur de Paiement', icon: '💳' },
+          { id: 'payment-proofs', label: 'Preuves de Paiement', icon: '🧾' },
+          { id: 'sms-providers', label: 'Serveur SMS OTP', icon: '💬' },
+          { id: 'analytics', label: 'BI & Visites', icon: '📈' },
+          { id: 'ai-assistant', label: 'Assistante IA Supervision', icon: '🤖' },
+          { id: 'team', label: 'Collaborateurs & RBAC', icon: '👥' },
+          { id: 'audit', label: 'Journal d\'Audit', icon: '📜' },
+          { id: 'security', label: 'Sécurité & Dépendances', icon: '🛡️' },
+          { id: 'about', label: 'À Propos & Versioning', icon: 'ℹ️' },
         ];
       default:
         return [{ id: 'overview', label: 'Vue Globale', icon: '📊' }];
@@ -89,7 +112,7 @@ export const Sidebar: React.FC<Props> = ({
       style={{
         width: 260,
         background: '#0F172A',
-        color: 'white',
+        color: 'var(--text-inverse)',
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
@@ -113,7 +136,7 @@ export const Sidebar: React.FC<Props> = ({
             height: 36,
             borderRadius: 8,
             background: themeColor,
-            color: 'white',
+            color: 'var(--text-inverse)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -129,14 +152,14 @@ export const Sidebar: React.FC<Props> = ({
               fontFamily: "'Sora', sans-serif",
               fontWeight: 800,
               fontSize: '0.92rem',
-              color: 'white',
+              color: 'var(--text-inverse)',
               letterSpacing: '-0.02em',
             }}
           >
             KPSyDesk Suite - Door Waar
           </div>
 
-          <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 600 }}>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>
             {sector.replace('_', ' ')}
           </div>
         </div>
@@ -144,7 +167,7 @@ export const Sidebar: React.FC<Props> = ({
 
       {/* Navigation List */}
       <nav style={{ padding: '16px 12px', flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', padding: '8px 12px', letterSpacing: '0.05em' }}>
+        <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', padding: '8px 12px', letterSpacing: '0.05em' }}>
           Menu Principal
         </div>
         {items.map((item) => {
@@ -199,11 +222,11 @@ export const Sidebar: React.FC<Props> = ({
           padding: '16px 20px',
           borderTop: '1px solid #1E293B',
           fontSize: '0.72rem',
-          color: '#64748B',
+          color: 'var(--text-muted)',
         }}
       >
         <div>Client : <strong>{tenantName}</strong></div>
-        <div style={{ marginTop: 2, color: '#475569' }}>Zone UEMOA (XOF)</div>
+        <div style={{ marginTop: 2, color: 'var(--text-muted)' }}>Zone UEMOA (XOF)</div>
       </div>
     </aside>
   );

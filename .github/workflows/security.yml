@@ -16,7 +16,7 @@ jobs:
         image: postgres:15-alpine
         env:
           POSTGRES_USER: kpsy_user
-          POSTGRES_PASSWORD: kpsy_password
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: kpsy_multisector_db
         ports:
           - 5432:5432
@@ -50,7 +50,7 @@ jobs:
 
       - name: 5. Apply Database Migrations & Seed
         env:
-          DATABASE_URL: "postgresql://kpsy_user:kpsy_password@localhost:5432/kpsy_multisector_db?schema=public"
+          DATABASE_URL: "postgresql://kpsy_user:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/kpsy_multisector_db?schema=public"
         run: |
           cd backend
           npx prisma migrate deploy
@@ -58,14 +58,14 @@ jobs:
 
       - name: 6. Apply PostgreSQL Row Level Security (RLS)
         env:
-          PGPASSWORD: kpsy_password
+          PGPASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
           psql -h localhost -U kpsy_user -d kpsy_multisector_db -f backend/prisma/rls-policies.sql
 
       - name: 7. Execute SECURITY GATE Tests (Cross-Tenant, BOLA, IDOR, RLS, Stress)
         env:
-          DATABASE_URL: "postgresql://kpsy_user:kpsy_password@localhost:5432/kpsy_multisector_db?schema=public"
-          JWT_SECRET: "kpsy_super_secret_jwt_key_2026_uemoa_multi_sector_app"
+          DATABASE_URL: "postgresql://kpsy_user:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/kpsy_multisector_db?schema=public"
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: |
           cd backend
           npm run test:security

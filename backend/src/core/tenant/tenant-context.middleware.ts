@@ -15,7 +15,7 @@ export class TenantContextMiddleware implements NestMiddleware {
       const token = authHeader.substring(7);
       try {
         const decoded = this.jwtService.verify(token, {
-          secret: process.env.JWT_SECRET || 'kpsy_super_secret_jwt_key_2026_uemoa_multi_sector_app',
+          secret: process.env.JWT_SECRET as string,
         });
 
         const isSuperAdmin = decoded?.roles?.includes('SUPER_ADMIN') || false;

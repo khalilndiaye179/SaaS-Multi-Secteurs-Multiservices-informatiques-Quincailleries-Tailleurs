@@ -29,7 +29,7 @@ export const Modal: React.FC<Props> = ({ isOpen, onClose, title, children }) => 
     >
       <div
         style={{
-          background: 'white',
+          background: 'var(--bg-card)',
           borderRadius: 16,
           padding: 28,
           width: '100%',
@@ -42,7 +42,7 @@ export const Modal: React.FC<Props> = ({ isOpen, onClose, title, children }) => 
         <div
           style={{
             display: 'flex',
-            justify: 'space-between',
+            justifyContent: 'space-between',
             alignItems: 'center',
             marginBottom: 20,
             borderBottom: '1px solid #F3F4F6',
@@ -54,7 +54,7 @@ export const Modal: React.FC<Props> = ({ isOpen, onClose, title, children }) => 
               fontFamily: "'Sora', sans-serif",
               fontWeight: 800,
               fontSize: '1.15rem',
-              color: '#111827',
+              color: 'var(--text-main)',
               margin: 0,
             }}
           >
@@ -66,7 +66,7 @@ export const Modal: React.FC<Props> = ({ isOpen, onClose, title, children }) => 
               background: 'none',
               border: 'none',
               fontSize: '1.2rem',
-              color: '#9CA3AF',
+              color: 'var(--text-muted)',
               cursor: 'pointer',
               padding: 4,
             }}

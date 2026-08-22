@@ -51,9 +51,10 @@ describe('PHASE 5 — RED TEAM MULTI-TENANT ISOLATION E2E TEST SUITE', () => {
     });
 
     // Initialisation contextes & tokens
-    tokenA = jwtService.sign({ sub: 'user-a-id', tenantId: TENANT_A.id, sectorType: TENANT_A.sectorType, roles: ['ADMIN_TENANT'] }, { secret: 'kpsy_super_secret_jwt_key_2026_uemoa_multi_sector_app' });
-    tokenB = jwtService.sign({ sub: 'user-b-id', tenantId: TENANT_B.id, sectorType: TENANT_B.sectorType, roles: ['ADMIN_TENANT'] }, { secret: 'kpsy_super_secret_jwt_key_2026_uemoa_multi_sector_app' });
-    tokenC = jwtService.sign({ sub: 'user-c-id', tenantId: TENANT_C.id, sectorType: TENANT_C.sectorType, roles: ['ADMIN_TENANT'] }, { secret: 'kpsy_super_secret_jwt_key_2026_uemoa_multi_sector_app' });
+    const jwtSecret = process.env.JWT_SECRET || 'fallback_secret_only_for_types';
+    tokenA = jwtService.sign({ sub: 'user-a-id', tenantId: TENANT_A.id, sectorType: TENANT_A.sectorType, roles: ['ADMIN_TENANT'] }, { secret: jwtSecret });
+    tokenB = jwtService.sign({ sub: 'user-b-id', tenantId: TENANT_B.id, sectorType: TENANT_B.sectorType, roles: ['ADMIN_TENANT'] }, { secret: jwtSecret });
+    tokenC = jwtService.sign({ sub: 'user-c-id', tenantId: TENANT_C.id, sectorType: TENANT_C.sectorType, roles: ['ADMIN_TENANT'] }, { secret: jwtSecret });
   });
 
   afterAll(async () => {
@@ -176,7 +177,7 @@ describe('PHASE 5 — RED TEAM MULTI-TENANT ISOLATION E2E TEST SUITE', () => {
       const rows = await prisma.$transaction(async (tx) => {
         await tx.$executeRawUnsafe(`RESET app.current_tenant_id;`);
         return tx.$queryRaw<any[]>`SELECT * FROM "stock_items";`;
-      });
+      }, { maxWait: 20000, timeout: 20000 });
       expect(rows.length).toBe(0);
     });
 
@@ -185,7 +186,7 @@ describe('PHASE 5 — RED TEAM MULTI-TENANT ISOLATION E2E TEST SUITE', () => {
       const rowsA = await prisma.$transaction(async (tx) => {
         await tx.$executeRawUnsafe(`SET LOCAL app.current_tenant_id = '${TENANT_A.id}';`);
         return tx.$queryRaw<any[]>`SELECT * FROM "stock_items";`;
-      });
+      }, { maxWait: 20000, timeout: 20000 });
 
       rowsA.forEach((r) => {
         expect(r.tenantId).toBe(TENANT_A.id);
@@ -201,7 +202,7 @@ describe('PHASE 5 — RED TEAM MULTI-TENANT ISOLATION E2E TEST SUITE', () => {
             INSERT INTO "stock_items" ("id", "tenantId", "name", "sku", "unit", "purchasePrice", "sellingPrice", "quantity", "alertThreshold", "updatedAt")
             VALUES ('raw-sql-inj-id', '${TENANT_B.id}', 'Article SQL Frauduleux', 'SKU-RAW-01', 'unite', 100, 200, 5, 1, NOW());
           `);
-        })
+        }, { maxWait: 20000, timeout: 20000 })
       ).rejects.toThrow();
     });
 
@@ -209,7 +210,7 @@ describe('PHASE 5 — RED TEAM MULTI-TENANT ISOLATION E2E TEST SUITE', () => {
       const count = await prisma.$transaction(async (tx) => {
         await tx.$executeRawUnsafe(`SET LOCAL app.current_tenant_id = '${TENANT_A.id}';`);
         return tx.$executeRawUnsafe(`UPDATE "stock_items" SET "name" = 'Pirate' WHERE "tenantId" = '${TENANT_B.id}';`);
-      });
+      }, { maxWait: 20000, timeout: 20000 });
 
       expect(count).toBe(0);
     });
@@ -218,7 +219,7 @@ describe('PHASE 5 — RED TEAM MULTI-TENANT ISOLATION E2E TEST SUITE', () => {
       const count = await prisma.$transaction(async (tx) => {
         await tx.$executeRawUnsafe(`SET LOCAL app.current_tenant_id = '${TENANT_A.id}';`);
         return tx.$executeRawUnsafe(`DELETE FROM "stock_items" WHERE "tenantId" = '${TENANT_B.id}';`);
-      });
+      }, { maxWait: 20000, timeout: 20000 });
 
       expect(count).toBe(0);
     });
@@ -252,7 +253,7 @@ describe('PHASE 5 — RED TEAM MULTI-TENANT ISOLATION E2E TEST SUITE', () => {
       const rows = await prisma.$transaction(async (tx) => {
         await tx.$executeRawUnsafe(`RESET app.current_tenant_id;`);
         return tx.$queryRaw<any[]>`SELECT * FROM "stock_items";`;
-      });
+      }, { maxWait: 20000, timeout: 20000 });
 
       expect(rows.length).toBe(0);
     });

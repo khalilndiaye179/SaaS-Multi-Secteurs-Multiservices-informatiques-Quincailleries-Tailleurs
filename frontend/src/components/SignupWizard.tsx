@@ -71,9 +71,32 @@ export const SignupWizard: React.FC = () => {
     setStep(2);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert(`Compte SaaS créé avec succès ! Sector: ${selectedSector}, Tenant: ${formData.companyName}`);
+    setLoading(true);
+    setError(null);
+    try {
+      // 1. Enregistrement via le backend
+      const { ApiClient } = await import('../services/api-client');
+      const payload = { ...formData, sectorType: selectedSector };
+      await ApiClient.post('/api/auth/register', payload, true);
+      
+      // 2. Connexion automatique
+      const loginRes: any = await ApiClient.post('/api/auth/login', { identifier: formData.email, password: formData.password }, true);
+      localStorage.setItem('kpsy_token', loginRes.access_token);
+      localStorage.setItem('kpsy_user', JSON.stringify(loginRes.user));
+      
+      alert(`Compte SaaS créé avec succès ! Bienvenue ${formData.companyName}.`);
+      window.location.reload();
+    } catch (err: any) {
+      setError(err.message);
+      alert(`Erreur: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -122,7 +145,7 @@ export const SignupWizard: React.FC = () => {
                   <p className="text-xs text-slate-400 mb-6">{sector.subtitle}</p>
                   <ul className="space-y-2 mb-6">
                     {sector.features.map((feat, idx) => (
-                      <li key={idx} className="flex items-center text-xs text-slate-300 gap-2">
+                      <li key={idx} className="flex items-center text-xs text-slate-300 force-gray-text gap-2">
                         <span className="text-indigo-400 font-bold">✓</span> {feat}
                       </li>
                     ))}
@@ -226,9 +249,14 @@ export const SignupWizard: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full py-3 mt-4 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold text-sm hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/25 transition-all duration-200"
+                disabled={loading}
+                className={`w-full py-3 mt-4 rounded-xl font-semibold text-sm shadow-lg transition-all duration-200 ${
+                  loading
+                    ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 shadow-indigo-500/25'
+                }`}
               >
-                Valider et démarrer l’essai gratuit (7 jours) →
+                {loading ? 'Création en cours...' : 'Valider et démarrer l’essai gratuit (7 jours) →'}
               </button>
             </form>
           </div>

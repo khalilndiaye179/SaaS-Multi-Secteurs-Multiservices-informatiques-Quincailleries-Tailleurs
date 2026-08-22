@@ -4,10 +4,35 @@
 :root {
   --brand-dark-forest: #1C4A34;
   --brand-gold: #C8922A;
-  --bg-cream: #F5F0E8;
   --sector-quincaillerie: #C8922A;
   --sector-it: #2A7A6F;
   --sector-tailleur: #C47A6A;
+  
+  /* Light Theme Variables */
+  --bg-main: #F5F0E8; /* --bg-cream previously */
+  --bg-card: #FFFFFF;
+  --bg-sidebar: #FFFFFF;
+  --bg-hover: #F3F4F6;
+  --text-main: #111827;
+  --text-muted: #6B7280;
+  --text-inverse: #FFFFFF;
+  --border-color: #E5E7EB;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='dark'] {
+  /* Dark Theme Variables */
+  --bg-main: #0F172A; /* Slate 900 */
+  --bg-card: #1E293B; /* Slate 800 */
+  --bg-sidebar: #1E293B; /* Slate 800 */
+  --bg-hover: #334155; /* Slate 700 */
+  --text-main: #F8FAFC; /* Slate 50 */
+  --text-muted: #94A3B8; /* Slate 400 */
+  --text-inverse: #0F172A;
+  --border-color: #334155; /* Slate 700 */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
 }
 
 * {
@@ -18,7 +43,9 @@
 
 body {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  background-color: var(--bg-cream);
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* ─── Motif géométrique africain exactement comme la maquette ─── */
@@ -48,3 +75,73 @@ body {
 .sector-card.selected {
   transform: translateY(-8px) scale(1.025);
 }
+
+/* ─── Illustrations Décoratives Latérales (West-African Isometric Art) ─── */
+.side-illustration {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+  opacity: 0.95;
+  transition: opacity 300ms ease, transform 300ms ease;
+}
+
+.side-illustration-left {
+  left: 12px;
+}
+
+.side-illustration-right {
+  right: 12px;
+}
+
+@media (max-width: 1560px) {
+  .side-illustration {
+    opacity: 0.55;
+    transform: translateY(-50%) scale(0.85);
+  }
+}
+
+@media (max-width: 1300px) {
+  .side-illustration {
+    display: none !important;
+  }
+}
+
+/* ─── Silhouettes Filigranes d'Arrière-plan (Watermark) ─── */
+.watermark-silhouettes {
+  transition: opacity 300ms ease;
+}
+
+@media (max-width: 1200px) {
+  .watermark-silhouettes {
+    opacity: 0.5 !important;
+  }
+}
+
+@media (max-width: 992px) {
+  .watermark-silhouettes {
+    display: none !important;
+  }
+}
+
+/* ─── Force Colors (Anti-Dark Mode Extensions) ─── */
+.force-dark-text {
+  color: #1A1A1A !important;
+}
+
+.force-gray-text {
+  color: #555555 !important;
+}
+
+.force-gray-dark-text {
+  color: #2D3748 !important;
+}
+
+.force-white-bg {
+  background-color: #FFFFFF !important;
+}
+
+
+

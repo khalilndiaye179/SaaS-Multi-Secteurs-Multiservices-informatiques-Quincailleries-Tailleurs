@@ -1,4 +1,6 @@
 import React from 'react';
+import { NotificationBell } from '../shared/NotificationBell';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface Props {
   tenantName: string;
@@ -7,6 +9,7 @@ interface Props {
   userName?: string;
   themeColor: string;
   onLogout: () => void;
+  isSuperAdmin?: boolean;
 }
 
 export const TopHeader: React.FC<Props> = ({
@@ -16,7 +19,10 @@ export const TopHeader: React.FC<Props> = ({
   userName,
   themeColor,
   onLogout,
+  isSuperAdmin = false,
 }) => {
+  const { theme, toggleTheme } = useTheme();
+
   const getSectorIcon = () => {
     switch (sector) {
       case 'QUINCAILLERIE':
@@ -35,11 +41,11 @@ export const TopHeader: React.FC<Props> = ({
   return (
     <header
       style={{
-        background: 'white',
-        borderBottom: '1px solid #E5E7EB',
+        background: 'var(--bg-card)',
+        borderBottom: '1px solid var(--border-color)',
         padding: '14px 32px',
         display: 'flex',
-        justify: 'space-between',
+        justifyContent: 'space-between',
         alignItems: 'center',
         boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
       }}
@@ -51,7 +57,7 @@ export const TopHeader: React.FC<Props> = ({
             height: 40,
             borderRadius: 10,
             background: themeColor,
-            color: 'white',
+            color: 'var(--text-inverse)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -68,7 +74,7 @@ export const TopHeader: React.FC<Props> = ({
               fontFamily: "'Sora', sans-serif",
               fontWeight: 800,
               fontSize: '1.1rem',
-              color: '#111827',
+              color: 'var(--text-main)',
               margin: 0,
             }}
           >
@@ -82,23 +88,45 @@ export const TopHeader: React.FC<Props> = ({
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#374151' }}>
+          <div style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-main)' }}>
             {userName || 'Utilisateur'}
           </div>
-          <div style={{ fontSize: '0.7rem', color: '#9CA3AF' }}>Code: {tenantCode}</div>
+          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Code: {tenantCode}</div>
         </div>
+        
+        <button
+          onClick={toggleTheme}
+          title="Basculer le thème"
+          style={{
+            background: 'none',
+            border: 'none',
+            fontSize: '1.2rem',
+            cursor: 'pointer',
+            padding: '4px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {theme === 'light' ? '🌙' : '☀️'}
+        </button>
+
+        <NotificationBell
+          mode={isSuperAdmin ? 'super-admin' : 'tenant'}
+          themeColor={themeColor}
+        />
         <button
           onClick={onLogout}
           style={{
             padding: '8px 16px',
+            background: '#FEE2E2',
+            color: '#DC2626',
+            border: 'none',
             borderRadius: 8,
-            background: '#F3F4F6',
-            color: '#4B5563',
-            border: '1px solid #E5E7EB',
-            fontWeight: 600,
+            fontWeight: 700,
             fontSize: '0.8rem',
             cursor: 'pointer',
-            transition: 'all 200ms ease',
           }}
         >
           Déconnexion

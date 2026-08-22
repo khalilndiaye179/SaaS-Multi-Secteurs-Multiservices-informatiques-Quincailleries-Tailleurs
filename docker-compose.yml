@@ -2,10 +2,11 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: kpsy_multisector_postgres
+    command: postgres -c max_connections=200
     environment:
-      POSTGRES_USER: kpsy_user
-      POSTGRES_PASSWORD: kpsy_password
-      POSTGRES_DB: kpsy_multisector_db
+      POSTGRES_USER: ${POSTGRES_USER:-kpsy_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-kpsy_multisector_db}
     ports:
       - "5434:5432"
     volumes:
@@ -30,9 +31,15 @@ services:
     environment:
       PORT: 3003
       NODE_ENV: development
-      DATABASE_URL: "postgresql://kpsy_user:kpsy_password@postgres:5432/kpsy_multisector_db?schema=public"
-      JWT_SECRET: "kpsy_super_secret_jwt_key_2026_uemoa_multi_sector_app"
-      ENCRYPTION_KEY: "a7f3c91d2e5b084f6a1e9d3c7b4f2a8e1d5c9f3a6b0e4d7c2a8f1b5e9d3c7a4"
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      SMTP_HOST: "sandbox.smtp.mailtrap.io"
+      SMTP_PORT: "2525"
+      SMTP_USER: "testuser"
+      SMTP_PASS: "testpass"
+      SMTP_FROM: '"SaaS UEMOA" <noreply@saas-uemoa.com>'
+      ADMIN_EMAIL: "admin@saas-uemoa.com"
     volumes:
       - ./backend/prisma/migrations:/app/prisma/migrations
     depends_on:

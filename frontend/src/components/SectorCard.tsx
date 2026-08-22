@@ -35,7 +35,7 @@ export const SectorCard: React.FC<SectorCardProps> = ({
           onSelect();
         }
       }}
-      className={`relative bg-white rounded-3xl p-8 border-2 ${borderColor} ${glowColor} ${
+      className={`relative bg-[var(--bg-card)] rounded-3xl p-8 border-2 ${borderColor} ${glowColor} ${
         isSelected
           ? 'ring-4 ring-[#0A3225] scale-[1.03] shadow-2xl z-10'
           : 'shadow-lg hover:-translate-y-1.5 hover:shadow-xl opacity-95 hover:opacity-100'

@@ -75,27 +75,27 @@ export const AuthContainer: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center px-4">
       {redirectedPath ? (
-        <div className="max-w-md w-full bg-slate-900 border border-emerald-500/30 rounded-3xl p-8 text-center space-y-4 shadow-2xl">
+        <div className="max-w-md w-full bg-[var(--bg-main)] border border-emerald-500/30 rounded-3xl p-8 text-center space-y-4 shadow-2xl">
           <div className="text-5xl">🚀</div>
           <h2 className="text-2xl font-bold text-emerald-400">Connexion Réussie !</h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-[var(--text-muted)]">
             Redirection automatique basée sur la claim <code className="text-indigo-400">sectorType</code> du JWT :
           </p>
-          <div className="py-3 px-4 rounded-xl bg-slate-950 border border-slate-800 text-indigo-300 font-mono text-sm">
+          <div className="py-3 px-4 rounded-xl bg-slate-950 border border-[var(--border-color)] text-indigo-300 font-mono text-sm">
             {redirectedPath}
           </div>
           <button
             onClick={() => setRedirectedPath(null)}
-            className="text-xs text-slate-500 underline hover:text-slate-300"
+            className="text-xs text-[var(--text-muted)] underline hover:text-slate-300"
           >
             Se déconnecter / Tester un autre compte
           </button>
         </div>
       ) : (
-        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6">
+        <div className="max-w-md w-full bg-[var(--bg-main)] border border-[var(--border-color)] rounded-3xl p-8 shadow-2xl space-y-6">
           <div className="text-center">
-            <h2 className="text-2xl font-extrabold text-white">Espace Client SaaS UEMOA</h2>
-            <p className="text-xs text-slate-400 mt-1">Connectez-vous pour accéder à votre espace métier</p>
+            <h2 className="text-2xl font-extrabold text-[var(--text-main)]">Espace Client SaaS UEMOA</h2>
+            <p className="text-xs text-[var(--text-muted)] mt-1">Connectez-vous pour accéder à votre espace métier</p>
           </div>
 
           <form onSubmit={handleLoginSubmit} className="space-y-4">
@@ -107,7 +107,7 @@ export const AuthContainer: React.FC = () => {
                 placeholder="QNC-0001-01 ou email@entreprise.sn"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-[var(--border-color)] text-[var(--text-main)] text-sm focus:outline-none focus:border-indigo-500"
               />
             </div>
 
@@ -119,13 +119,13 @@ export const AuthContainer: React.FC = () => {
                 placeholder="••••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-[var(--border-color)] text-[var(--text-main)] text-sm focus:outline-none focus:border-indigo-500"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-colors shadow-lg shadow-indigo-600/20"
+              className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-[var(--text-main)] font-semibold text-sm transition-colors shadow-lg shadow-indigo-600/20"
             >
               Se Connecter →
             </button>

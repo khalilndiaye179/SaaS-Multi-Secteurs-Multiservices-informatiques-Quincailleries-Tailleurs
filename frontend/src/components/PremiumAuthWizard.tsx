@@ -199,20 +199,18 @@ const SectorCardComponent: React.FC<SectorCardProps> = ({ sector, isSelected, on
       {/* En-tête de la Carte (Icône + Titre) */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 10 }}>
         <div>{sector.icon}</div>
-        <h3 style={{
+        <h3 className="force-dark-text" style={{
           fontFamily: "'Sora', sans-serif",
           fontWeight: 800,
           fontSize: '1.2rem',
-          color: '#1A1A1A',
           lineHeight: 1.25,
         }}>
           {sector.title}
         </h3>
-        <p style={{
+        <p className="force-gray-text" style={{
           fontFamily: "'Plus Jakarta Sans', sans-serif",
           fontWeight: 500,
           fontSize: '0.84rem',
-          color: '#555555',
           lineHeight: 1.5,
           margin: '0 auto',
         }}>
@@ -225,11 +223,11 @@ const SectorCardComponent: React.FC<SectorCardProps> = ({ sector, isSelected, on
 
       {/* Liste des 6 Fonctionnalités Principales */}
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '7px' }}>
-        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#777777', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>
+        <span className="force-gray-text" style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>
           Fonctionnalités clés :
         </span>
         {sector.features.map((feat, idx) => (
-          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.83rem', color: '#2D3748', fontWeight: 600 }}>
+          <div key={idx} className="force-gray-dark-text" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.83rem', fontWeight: 600 }}>
             <span style={{ color: sector.borderColor, fontWeight: 800, fontSize: '0.9rem' }}>✓</span>
             <span>{feat}</span>
           </div>
@@ -313,6 +311,47 @@ export const PremiumAuthWizard: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginSuccess, setLoginSuccess] = useState<string | null>(null);
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerError, setRegisterError] = useState<string | null>(null);
+
+  // ─── Handler d'enregistrement vers le backend ───
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRegisterLoading(true);
+    setRegisterError(null);
+    try {
+      const payload = {
+        sectorType: selectedSector,
+        companyName: formData.companyName,
+        managerName: formData.managerName,
+        email: formData.email,
+        phone: formData.phone,
+        country: formData.country,
+        password: formData.password,
+      };
+
+      const { ApiClient } = await import('../services/api-client');
+      await ApiClient.post('/api/auth/register', payload, true);
+      
+      // Auto login
+      const loginRes: any = await ApiClient.post('/api/auth/login', { identifier: formData.email, password: formData.password }, true);
+      localStorage.setItem('kpsy_token', loginRes.accessToken || loginRes.access_token);
+      localStorage.setItem('kpsy_user', JSON.stringify(loginRes.user));
+      if (loginRes.tenant) {
+        localStorage.setItem('kpsy_tenant', JSON.stringify(loginRes.tenant));
+      }
+      
+      alert(`Compte SaaS créé avec succès ! Bienvenue ${formData.companyName}.`);
+      
+      const isSuperAdmin = loginRes.user?.roles?.includes('SUPER_ADMIN');
+      window.dispatchEvent(new CustomEvent('kpsy:login', { detail: { isSuperAdmin } }));
+    } catch (err: any) {
+      setRegisterError(err.message);
+      alert(`Erreur d'inscription: ${err.message}`);
+    } finally {
+      setRegisterLoading(false);
+    }
+  };
 
   // ─── Handler de connexion réelle vers le backend ───
   const handleLogin = async (e: React.FormEvent) => {
@@ -392,7 +431,7 @@ export const PremiumAuthWizard: React.FC = () => {
             fontFamily: "'Sora', sans-serif", fontWeight: 800,
             fontSize: '1rem', color: '#1A1A1A',
           }}>
-            KPSyDesk <span style={{ color: '#C8922A' }}>Suite - Door Waar</span>
+            KPSyDesk <span style={{ color: '#C8922A' }}>Suite - Door Waar (v2.0)</span>
           </span>
         </div>
 
@@ -482,7 +521,7 @@ export const PremiumAuthWizard: React.FC = () => {
               Essai gratuit 7 jours — Zone UEMOA
             </p>
 
-            <form onSubmit={(e) => { e.preventDefault(); alert('Inscription réussie !'); }} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {[
                 { label: "Nom de l'entreprise / Atelier", key: 'companyName', placeholder: 'ex: Quincaillerie Al-Baraka', type: 'text' },
                 { label: 'Nom du gérant', key: 'managerName', placeholder: 'Khalil NDIAYE', type: 'text' },
@@ -510,15 +549,27 @@ export const PremiumAuthWizard: React.FC = () => {
                   />
                 </div>
               ))}
+              
+              {registerError && (
+                <div style={{ color: '#E53E3E', fontSize: '0.8rem', textAlign: 'center', background: '#FFF5F5', padding: '8px', borderRadius: '6px' }}>
+                  {registerError}
+                </div>
+              )}
 
-              <button type="submit" style={{
-                marginTop: 8, padding: '13px', borderRadius: 10,
-                background: '#1C4A34', color: 'white', border: 'none',
-                fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: '0.9rem',
-                cursor: 'pointer', boxShadow: '0 4px 16px rgba(28,74,52,0.35)',
-                transition: 'all 200ms ease',
-              }}>
-                Valider et démarrer l'essai 7 jours →
+              <button
+                type="submit"
+                disabled={registerLoading}
+                style={{
+                  background: registerLoading ? '#A0AEC0' : '#1C4A34',
+                  color: 'white', border: 'none',
+                  padding: '12px', borderRadius: 10,
+                  fontSize: '0.85rem', fontWeight: 800, marginTop: 10,
+                  cursor: registerLoading ? 'not-allowed' : 'pointer',
+                  boxShadow: registerLoading ? 'none' : '0 4px 15px rgba(28,74,52,0.25)',
+                  transition: 'all 200ms ease',
+                }}
+              >
+                {registerLoading ? 'Création en cours...' : 'Valider et démarrer l’essai 7 jours →'}
               </button>
             </form>
           </div>

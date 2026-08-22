@@ -8,6 +8,7 @@ import { TailleurOrderManager } from './tailleur/TailleurOrderManager';
 import { TailleurFittingsManager } from './tailleur/TailleurFittingsManager';
 import { TailleurCatalogManager } from './tailleur/TailleurCatalogManager';
 import { TailleurMeasurementsManager } from './tailleur/TailleurMeasurementsManager';
+import { TailleurTasksKanban } from './tailleur/TailleurTasksKanban';
 
 import { ITTicketsManager } from './multiservices-it/ITTicketsManager';
 import { ITSlaManager } from './multiservices-it/ITSlaManager';
@@ -17,15 +18,25 @@ import { ITHardwareSalesManager } from './multiservices-it/ITHardwareSalesManage
 import { ITSparePartsStock } from './multiservices-it/ITSparePartsStock';
 import { ITClientsHistory } from './multiservices-it/ITClientsHistory';
 import { QuincaillerieStockManager } from './quincaillerie/QuincaillerieStockManager';
-import { QuincaillerieDirectSaleManager } from './quincaillerie/QuincaillerieDirectSaleManager';
+import QuincailleriePOS from './quincaillerie/QuincailleriePOS';
 import { QuincaillerieMovementsManager } from './quincaillerie/QuincaillerieMovementsManager';
 import { QuincaillerieMarginReports } from './quincaillerie/QuincaillerieMarginReports';
 import { QuincailleriePurchasesManager } from './quincaillerie/QuincailleriePurchasesManager';
+import QuincaillerieDepotsManager from './quincaillerie/QuincaillerieDepotsManager';
 import { TenantSettings } from './shared/TenantSettings';
 import { TenantEmployeesManager } from './shared/TenantEmployeesManager';
+import { TenantSubscriptionManager } from './shared/TenantSubscriptionManager';
+import { ContactsCrmView } from './crm/ContactsCrmView';
+
 import { UserGuideManager } from './shared/UserGuideManager';
 import { AboutAppManager } from './shared/AboutAppManager';
+import { AiAssistantWidget } from './shared/AiAssistantWidget';
+import { QuincaillerieOverview } from './quincaillerie/QuincaillerieOverview';
+import { TailleurOverview } from './tailleur/TailleurOverview';
+import { ITOverview } from './multiservices-it/ITOverview';
 
+import { AiInventoryAuditManager } from './shared/AiInventoryAuditManager';
+import { ErrorBoundary } from './shared/ErrorBoundary';
 
 
 
@@ -181,7 +192,7 @@ export const TenantDashboard: React.FC<Props> = ({ onLogout }) => {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#F8FAF9', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-main)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       {/* ── Sidebar Latérale ── */}
       <Sidebar
         sector={sector}
@@ -211,9 +222,14 @@ export const TenantDashboard: React.FC<Props> = ({ onLogout }) => {
             <BusinessBillingManager sector={sector} themeColor={themeColor} />
           )}
 
+          {activeTab === 'crm' && (
+            <ContactsCrmView />
+          )}
+
           {/* 2. ONGLETS SPÉCIFIQUES TAILLEUR */}
           {activeTab === 'measurements' && sector === 'TAILLEUR' && <TailleurMeasurementsManager themeColor={themeColor} />}
           {activeTab === 'orders' && sector === 'TAILLEUR' && <TailleurOrderManager themeColor={themeColor} />}
+          {activeTab === 'mytasks' && sector === 'TAILLEUR' && <TailleurTasksKanban themeColor={themeColor} />}
           {activeTab === 'fittings' && sector === 'TAILLEUR' && <TailleurFittingsManager themeColor={themeColor} />}
           {activeTab === 'services' && sector === 'TAILLEUR' && <TailleurCatalogManager themeColor={themeColor} />}
 
@@ -231,8 +247,11 @@ export const TenantDashboard: React.FC<Props> = ({ onLogout }) => {
           {activeTab === 'stock' && sector === 'QUINCAILLERIE' && (
             <QuincaillerieStockManager themeColor={themeColor} onStockUpdated={fetchData} />
           )}
+          {activeTab === 'depots' && sector === 'QUINCAILLERIE' && (
+            <ErrorBoundary><QuincaillerieDepotsManager /></ErrorBoundary>
+          )}
           {activeTab === 'sales' && sector === 'QUINCAILLERIE' && (
-            <QuincaillerieDirectSaleManager themeColor={themeColor} onSaleCompleted={fetchData} />
+            <ErrorBoundary><QuincailleriePOS /></ErrorBoundary>
           )}
           {activeTab === 'movements' && sector === 'QUINCAILLERIE' && (
             <QuincaillerieMovementsManager themeColor={themeColor} />
@@ -266,41 +285,35 @@ export const TenantDashboard: React.FC<Props> = ({ onLogout }) => {
           {activeTab === 'guide' && <UserGuideManager sector={sector} themeColor={themeColor} />}
           {activeTab === 'about' && <AboutAppManager themeColor={themeColor} />}
 
+          {/* 8. ASSISTANTE IA & INVENTAIRE PÉRIODIQUE */}
+          {activeTab === 'ai-assistant' && (
+            <AiInventoryAuditManager themeColor={themeColor} sectorType={sector} />
+          )}
+
 
 
 
           {/* 3. VUE OVERVIEW */}
+          {activeTab === 'subscription' && (
+            <TenantSubscriptionManager themeColor={themeColor} />
+          )}
+
           {activeTab === 'overview' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
-              <div style={{ background: 'white', padding: 24, borderRadius: 14, border: '1px solid #E5E7EB' }}>
-                <div style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600 }}>Total Enregistrements</div>
-                <div style={{ fontSize: '2rem', fontWeight: 800, marginTop: 4, fontFamily: "'Sora', sans-serif" }}>
-                  {sector === 'QUINCAILLERIE' ? stockItems.length : sector === 'MULTISERVICES_IT' ? tickets.length : measurements.length}
-                </div>
-              </div>
-              <div style={{ background: 'white', padding: 24, borderRadius: 14, border: '1px solid #E5E7EB' }}>
-                <div style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600 }}>Statut Abonnement</div>
-                <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: 8, color: '#059669' }}>
-                  ACTIF (TRIAL 7J)
-                </div>
-              </div>
-              <div style={{ background: 'white', padding: 24, borderRadius: 14, border: '1px solid #E5E7EB' }}>
-                <div style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600 }}>Devis & Factures</div>
-                <div style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: 8, color: themeColor }}>
-                  Module Actif
-                </div>
-              </div>
-            </div>
+            <>
+              {sector === 'QUINCAILLERIE' && <QuincaillerieOverview themeColor={themeColor} />}
+              {sector === 'TAILLEUR' && <TailleurOverview themeColor={themeColor} />}
+              {sector === 'MULTISERVICES_IT' && <ITOverview themeColor={themeColor} />}
+            </>
           )}
 
 
           {/* 3. TABLEAUX SECTORIELS BRUTS (Stock / Tickets) */}
           {(activeTab === 'stock' || activeTab === 'items' || activeTab === 'tickets') && (
 
-            <div style={{ background: 'white', borderRadius: 12, border: '1px solid #E5E7EB', overflow: 'hidden' }}>
+            <div style={{ background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border-color)', overflow: 'hidden' }}>
               {sector === 'QUINCAILLERIE' && (
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
-                  <thead style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
+                  <thead style={{ background: 'var(--bg-main)', borderBottom: '1px solid var(--border-color)' }}>
                     <tr>
                       <th style={{ padding: '14px 20px', fontWeight: 700 }}>Nom Article</th>
                       <th style={{ padding: '14px 20px', fontWeight: 700 }}>SKU</th>
@@ -313,7 +326,7 @@ export const TenantDashboard: React.FC<Props> = ({ onLogout }) => {
                     {stockItems.map((item) => (
                       <tr key={item.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
                         <td style={{ padding: '14px 20px', fontWeight: 600 }}>{item.name}</td>
-                        <td style={{ padding: '14px 20px', color: '#6B7280' }}>{item.sku}</td>
+                        <td style={{ padding: '14px 20px', color: 'var(--text-muted)' }}>{item.sku}</td>
                         <td style={{ padding: '14px 20px' }}>{item.purchasePrice.toLocaleString()} XOF</td>
                         <td style={{ padding: '14px 20px', fontWeight: 700, color: '#059669' }}>{item.sellingPrice.toLocaleString()} XOF</td>
                         <td style={{ padding: '14px 20px', fontWeight: 700 }}>{item.quantity} {item.unit}</td>
@@ -325,7 +338,7 @@ export const TenantDashboard: React.FC<Props> = ({ onLogout }) => {
 
               {sector === 'MULTISERVICES_IT' && (
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
-                  <thead style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
+                  <thead style={{ background: 'var(--bg-main)', borderBottom: '1px solid var(--border-color)' }}>
                     <tr>
                       <th style={{ padding: '14px 20px', fontWeight: 700 }}>N° Ticket</th>
                       <th style={{ padding: '14px 20px', fontWeight: 700 }}>Client</th>
@@ -348,7 +361,7 @@ export const TenantDashboard: React.FC<Props> = ({ onLogout }) => {
 
               {sector === 'TAILLEUR' && (
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
-                  <thead style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
+                  <thead style={{ background: 'var(--bg-main)', borderBottom: '1px solid var(--border-color)' }}>
                     <tr>
                       <th style={{ padding: '14px 20px', fontWeight: 700 }}>Client</th>
                       <th style={{ padding: '14px 20px', fontWeight: 700 }}>Vêtement</th>
@@ -361,7 +374,7 @@ export const TenantDashboard: React.FC<Props> = ({ onLogout }) => {
                       <tr key={m.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
                         <td style={{ padding: '14px 20px', fontWeight: 700 }}>{m.clientName}</td>
                         <td style={{ padding: '14px 20px' }}>{m.garmentType}</td>
-                        <td style={{ padding: '14px 20px', color: '#4B5563' }}>{JSON.stringify(m.measurements)}</td>
+                        <td style={{ padding: '14px 20px', color: 'var(--text-muted)' }}>{JSON.stringify(m.measurements)}</td>
                       </tr>
 
                     ))}
@@ -372,6 +385,9 @@ export const TenantDashboard: React.FC<Props> = ({ onLogout }) => {
           )}
         </main>
       </div>
+
+      {/* Widget Flottant Assistante IA KPSy (Accessible partout) */}
+      <AiAssistantWidget themeColor={themeColor} sectorType={sector} />
     </div>
   );
 };
