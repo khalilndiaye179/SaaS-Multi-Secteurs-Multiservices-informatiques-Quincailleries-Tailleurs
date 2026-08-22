@@ -57,19 +57,19 @@ export const TailleurDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-6 space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[var(--bg-main)] border border-[var(--border-color)] rounded-3xl p-6 shadow-xl">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-3xl">
             ✂️
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-white">Atelier Couture Elegance</h1>
+              <h1 className="text-2xl font-bold text-[var(--text-main)]">Atelier Couture Elegance</h1>
               <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                 Secteur Couture & Tailleur
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-1">Carnet de Mesures Clients & Suivi des Confections</p>
+            <p className="text-xs text-[var(--text-muted)] mt-1">Carnet de Mesures Clients & Suivi des Confections</p>
           </div>
         </div>
 
@@ -85,31 +85,31 @@ export const TailleurDashboard: React.FC = () => {
           placeholder="Rechercher un client ou un type de vêtement..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full max-w-md px-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-emerald-500"
+          className="w-full max-w-md px-4 py-2 rounded-xl bg-slate-950 border border-[var(--border-color)] text-[var(--text-main)] text-sm focus:outline-none focus:border-emerald-500"
         />
       </div>
 
       {/* Measurements Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {filtered.map((m) => (
-          <div key={m.id} className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4 hover:border-slate-700 transition-all">
+          <div key={m.id} className="bg-[var(--bg-main)]/80 border border-[var(--border-color)] rounded-3xl p-6 shadow-xl space-y-4 hover:border-[var(--border-color)] transition-all">
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="text-xl font-bold text-white">{m.clientName}</h3>
+                <h3 className="text-xl font-bold text-[var(--text-main)]">{m.clientName}</h3>
                 <span className="text-xs font-mono text-emerald-400">{m.clientPhone}</span>
               </div>
-              <span className="text-xs font-medium px-3 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+              <span className="text-xs font-medium px-3 py-1 rounded-full bg-[var(--bg-card)] text-slate-300 border border-[var(--border-color)]">
                 {m.garmentType}
               </span>
             </div>
 
             {/* Dynamic JSON Measurements Display */}
-            <div className="bg-slate-950/60 rounded-2xl p-4 border border-slate-800/60">
-              <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Mesures enregistrées (cm)</h4>
+            <div className="bg-slate-950/60 rounded-2xl p-4 border border-[var(--border-color)]/60">
+              <h4 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Mesures enregistrées (cm)</h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {Object.entries(m.measurements).map(([key, val]) => (
-                  <div key={key} className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-                    <span className="block text-[10px] text-slate-400 font-medium capitalize">
+                  <div key={key} className="bg-[var(--bg-main)]/80 p-2.5 rounded-xl border border-[var(--border-color)]">
+                    <span className="block text-[10px] text-[var(--text-muted)] font-medium capitalize">
                       {key.replace(/([A-Z])/g, ' $1')}
                     </span>
                     <span className="text-sm font-bold text-emerald-400">{val} cm</span>
@@ -119,7 +119,7 @@ export const TailleurDashboard: React.FC = () => {
             </div>
 
             {m.notes && (
-              <p className="text-xs text-slate-400 italic bg-slate-800/30 p-3 rounded-xl border border-slate-800/40">
+              <p className="text-xs text-[var(--text-muted)] italic bg-[var(--bg-card)]/30 p-3 rounded-xl border border-[var(--border-color)]/40">
                 📌 {m.notes}
               </p>
             )}

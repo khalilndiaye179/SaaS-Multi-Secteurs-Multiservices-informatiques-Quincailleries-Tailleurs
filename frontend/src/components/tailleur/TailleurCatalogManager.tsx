@@ -101,10 +101,10 @@ export const TailleurCatalogManager: React.FC<Props> = ({ themeColor }) => {
       {/* Header & Add Button */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h2 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: '1.2rem', margin: 0, color: '#111827' }}>
+          <h2 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: '1.2rem', margin: 0, color: 'var(--text-main)' }}>
             Catalogue des Modèles & Tarifs Confection ({services.length})
           </h2>
-          <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280' }}>
+          <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             Grille tarifaire, recommandations tissu et détails d'exécution par type d'ouvrage
           </p>
         </div>
@@ -115,7 +115,7 @@ export const TailleurCatalogManager: React.FC<Props> = ({ themeColor }) => {
             padding: '10px 18px',
             borderRadius: 10,
             background: themeColor,
-            color: 'white',
+            color: 'var(--text-inverse)',
             border: 'none',
             fontWeight: 700,
             fontSize: '0.88rem',
@@ -133,13 +133,13 @@ export const TailleurCatalogManager: React.FC<Props> = ({ themeColor }) => {
           <div
             key={s.id}
             style={{
-              background: 'white',
+              background: 'var(--bg-card)',
               borderRadius: 14,
-              border: '1px solid #E5E7EB',
+              border: '1px solid var(--border-color)',
               padding: 20,
               display: 'flex',
               flexDirection: 'column',
-              justify: 'space-between',
+              justifyContent: 'space-between',
               gap: 14,
               boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
             }}
@@ -158,19 +158,19 @@ export const TailleurCatalogManager: React.FC<Props> = ({ themeColor }) => {
                 >
                   {s.category}
                 </span>
-                <h4 style={{ margin: '8px 0 2px 0', fontSize: '1.05rem', fontWeight: 800, color: '#111827' }}>{s.name}</h4>
-                <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: 2 }}>⏱️ Délai d'exécution : <strong>{s.delaysDays} jours</strong></div>
+                <h4 style={{ margin: '8px 0 2px 0', fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)' }}>{s.name}</h4>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>⏱️ Délai d'exécution : <strong>{s.delaysDays} jours</strong></div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: '1.15rem', fontWeight: 800, color: themeColor, fontFamily: "'Sora', sans-serif" }}>
                   {s.estimatedPrice.toLocaleString()} XOF
                 </div>
-                <div style={{ fontSize: '0.7rem', color: '#9CA3AF' }}>Tarif indicatif</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Tarif indicatif</div>
               </div>
             </div>
 
             {s.description && (
-              <div style={{ fontSize: '0.78rem', color: '#4B5563', background: '#F9FAFB', padding: '8px 12px', borderRadius: 8, border: '1px solid #F3F4F6' }}>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', background: 'var(--bg-main)', padding: '8px 12px', borderRadius: 8, border: '1px solid #F3F4F6' }}>
                 💡 {s.description.substring(0, 75)}...
               </div>
             )}
@@ -182,9 +182,9 @@ export const TailleurCatalogManager: React.FC<Props> = ({ themeColor }) => {
                 style={{
                   padding: '5px 10px',
                   borderRadius: 6,
-                  border: '1px solid #CBD5E1',
-                  background: 'white',
-                  color: '#1E293B',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--bg-card)',
+                  color: 'var(--text-main)',
                   fontSize: '0.75rem',
                   fontWeight: 700,
                   cursor: 'pointer',
@@ -197,9 +197,9 @@ export const TailleurCatalogManager: React.FC<Props> = ({ themeColor }) => {
                 style={{
                   padding: '5px 10px',
                   borderRadius: 6,
-                  border: '1px solid #CBD5E1',
-                  background: 'white',
-                  color: '#1E293B',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--bg-card)',
+                  color: 'var(--text-main)',
                   fontSize: '0.75rem',
                   fontWeight: 700,
                   cursor: 'pointer',
@@ -234,67 +234,67 @@ export const TailleurCatalogManager: React.FC<Props> = ({ themeColor }) => {
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editingId ? 'Modifier le Modèle de Confection' : 'Ajouter un Nouveau Modèle au Catalogue'}>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
-            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151' }}>Nom du Modèle / Vêtement *</label>
+            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Nom du Modèle / Vêtement *</label>
             <input
               type="text"
               required
               placeholder="ex: Grand Boubou 3P Bazin Getzner"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #D1D5DB', marginTop: 4 }}
+              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border-color)', marginTop: 4 }}
             />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
             <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151' }}>Catégorie</label>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Catégorie</label>
               <input
                 type="text"
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #D1D5DB', marginTop: 4 }}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border-color)', marginTop: 4 }}
               />
             </div>
             <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151' }}>Tarif (XOF) *</label>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Tarif (XOF) *</label>
               <input
                 type="number"
                 required
                 value={form.estimatedPrice}
                 onChange={(e) => setForm({ ...form, estimatedPrice: Number(e.target.value) })}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #D1D5DB', marginTop: 4 }}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border-color)', marginTop: 4 }}
               />
             </div>
             <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151' }}>Délai (Jours)</label>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Délai (Jours)</label>
               <input
                 type="number"
                 required
                 value={form.delaysDays}
                 onChange={(e) => setForm({ ...form, delaysDays: Number(e.target.value) })}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #D1D5DB', marginTop: 4 }}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border-color)', marginTop: 4 }}
               />
             </div>
           </div>
 
           <div>
-            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151' }}>Recommandation Tissu</label>
+            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Recommandation Tissu</label>
             <input
               type="text"
               placeholder="ex: Bazin Riche Getzner, Satin Duchesse..."
               value={form.fabricRecommendation}
               onChange={(e) => setForm({ ...form, fabricRecommendation: e.target.value })}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #D1D5DB', marginTop: 4 }}
+              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border-color)', marginTop: 4 }}
             />
           </div>
 
           <div>
-            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151' }}>Description & Détails de Confection</label>
+            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Description & Détails de Confection</label>
             <textarea
               rows={3}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #D1D5DB', marginTop: 4, fontSize: '0.85rem' }}
+              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border-color)', marginTop: 4, fontSize: '0.85rem' }}
             />
           </div>
 
@@ -302,13 +302,13 @@ export const TailleurCatalogManager: React.FC<Props> = ({ themeColor }) => {
             <button
               type="button"
               onClick={() => setShowModal(false)}
-              style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #D1D5DB', background: 'white', cursor: 'pointer', fontWeight: 600 }}
+              style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-card)', cursor: 'pointer', fontWeight: 600 }}
             >
               Annuler
             </button>
             <button
               type="submit"
-              style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: themeColor, color: 'white', cursor: 'pointer', fontWeight: 700 }}
+              style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: themeColor, color: 'var(--text-inverse)', cursor: 'pointer', fontWeight: 700 }}
             >
               Enregistrer Modèle
             </button>
@@ -320,12 +320,12 @@ export const TailleurCatalogManager: React.FC<Props> = ({ themeColor }) => {
       {selectedService && (
         <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title={`Fiche Technique Modèle : ${selectedService.name}`}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F9FAFB', padding: 14, borderRadius: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-main)', padding: 14, borderRadius: 10 }}>
               <div>
                 <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '3px 10px', borderRadius: 12, background: '#F3E8FF', color: '#6B21A8' }}>
                   {selectedService.category}
                 </span>
-                <div style={{ fontSize: '0.8rem', color: '#6B7280', marginTop: 4 }}>Délai moyen d'exécution : <strong>{selectedService.delaysDays} jours</strong></div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4 }}>Délai moyen d'exécution : <strong>{selectedService.delaysDays} jours</strong></div>
               </div>
               <div style={{ fontSize: '1.3rem', fontWeight: 800, color: themeColor }}>
                 {selectedService.estimatedPrice.toLocaleString()} XOF
@@ -340,8 +340,8 @@ export const TailleurCatalogManager: React.FC<Props> = ({ themeColor }) => {
             )}
 
             <div>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>Description & Finitions Atelier</div>
-              <div style={{ fontSize: '0.88rem', color: '#4B5563', lineHeight: 1.5, background: 'white', padding: 12, borderRadius: 8, border: '1px solid #E5E7EB' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>Description & Finitions Atelier</div>
+              <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.5, background: 'var(--bg-card)', padding: 12, borderRadius: 8, border: '1px solid var(--border-color)' }}>
                 {selectedService.description || 'Aucune consigne spécifique enregistrée.'}
               </div>
             </div>

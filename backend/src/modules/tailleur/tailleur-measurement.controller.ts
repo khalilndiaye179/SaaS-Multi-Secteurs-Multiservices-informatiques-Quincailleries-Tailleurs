@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Body, Param, UseGuards } from '@nestjs/common';
 import { TailleurMeasurementService } from './tailleur-measurement.service';
-import { CreateMeasurementDto, UpdateMeasurementDto, CreateTailleurOrderDto, UpdateTailleurOrderStatusDto, UpdateTailleurOrderDto } from './dto/measurement.dto';
+import { CreateMeasurementDto, UpdateMeasurementDto, CreateTailleurOrderDto, UpdateTailleurOrderStatusDto, UpdateTailleurOrderDto, CreateTailleurCatalogItemDto, RegisterPaymentDto } from './dto/measurement.dto';
 
 
 import { SectorPermissionGuard } from '../../core/guards/sector-permission.guard';
@@ -16,6 +16,16 @@ export class TailleurMeasurementController {
   @Get('stats/overview')
   async getTailleurStats() {
     return this.measurementService.getTailleurStats();
+  }
+
+  @Get('catalog/all')
+  async findAllCatalogItems() {
+    return this.measurementService.findAllCatalogItems();
+  }
+
+  @Post('catalog')
+  async createCatalogItem(@Body() dto: CreateTailleurCatalogItemDto) {
+    return this.measurementService.createCatalogItem(dto);
   }
 
   @Get('orders/all')
@@ -39,9 +49,19 @@ export class TailleurMeasurementController {
     return this.measurementService.updateOrder(id, dto);
   }
 
+  @Put('orders/:id/payment')
+  async registerPayment(@Param('id') id: string, @Body() dto: RegisterPaymentDto) {
+    return this.measurementService.registerPayment(id, dto.amount);
+  }
+
   @Post('orders/:id/delete')
   async removeOrder(@Param('id') id: string) {
     return this.measurementService.removeOrder(id);
+  }
+
+  @Get('collaborators')
+  async getCollaborators() {
+    return this.measurementService.getCollaborators();
   }
 
 

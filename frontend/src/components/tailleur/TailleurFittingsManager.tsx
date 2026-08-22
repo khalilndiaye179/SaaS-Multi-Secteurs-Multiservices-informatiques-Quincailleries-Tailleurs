@@ -191,20 +191,20 @@ export const TailleurFittingsManager: React.FC<Props> = ({ themeColor }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
-        <h2 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: '1.2rem', margin: 0, color: '#111827' }}>
+        <h2 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: '1.2rem', margin: 0, color: 'var(--text-main)' }}>
           Agenda des Essayages & Livraisons ({fittings.length})
         </h2>
-        <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280' }}>
+        <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
           Planning des rendez-vous clients d'essayage de tenue et dates de livraison prévues
         </p>
       </div>
 
-      <div style={{ background: 'white', borderRadius: 12, border: '1px solid #E5E7EB', overflow: 'hidden' }}>
+      <div style={{ background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border-color)', overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: '#6B7280' }}>Chargement du planning...</div>
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Chargement du planning...</div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
-            <thead style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
+            <thead style={{ background: 'var(--bg-main)', borderBottom: '1px solid var(--border-color)' }}>
               <tr>
                 <th style={{ padding: '12px 18px', fontWeight: 700 }}>N° Commande</th>
                 <th style={{ padding: '12px 18px', fontWeight: 700 }}>Client</th>
@@ -218,7 +218,7 @@ export const TailleurFittingsManager: React.FC<Props> = ({ themeColor }) => {
             <tbody>
               {fittings.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: 40, textAlign: 'center', color: '#9CA3AF' }}>
+                  <td colSpan={7} style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
                     Aucun rendez-vous d'essayage planifié pour le moment.
                   </td>
                 </tr>
@@ -228,7 +228,7 @@ export const TailleurFittingsManager: React.FC<Props> = ({ themeColor }) => {
                     <td style={{ padding: '14px 18px', fontWeight: 700, color: themeColor }}>{f.orderNumber}</td>
                     <td style={{ padding: '14px 18px' }}>
                       <div style={{ fontWeight: 600 }}>{f.clientName}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>{f.clientPhone}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{f.clientPhone}</div>
                     </td>
                     <td style={{ padding: '14px 18px' }}>{f.garmentType}</td>
                     <td style={{ padding: '14px 18px', fontWeight: 700, color: '#6B21A8' }}>
@@ -250,7 +250,7 @@ export const TailleurFittingsManager: React.FC<Props> = ({ themeColor }) => {
                             padding: '5px 9px',
                             borderRadius: 6,
                             background: themeColor,
-                            color: 'white',
+                            color: 'var(--text-inverse)',
                             border: 'none',
                             fontSize: '0.75rem',
                             fontWeight: 700,
@@ -264,9 +264,9 @@ export const TailleurFittingsManager: React.FC<Props> = ({ themeColor }) => {
                           style={{
                             padding: '5px 9px',
                             borderRadius: 6,
-                            border: '1px solid #CBD5E1',
-                            background: 'white',
-                            color: '#1E293B',
+                            border: '1px solid var(--border-color)',
+                            background: 'var(--bg-card)',
+                            color: 'var(--text-main)',
                             fontSize: '0.75rem',
                             fontWeight: 700,
                             cursor: 'pointer',
@@ -279,9 +279,9 @@ export const TailleurFittingsManager: React.FC<Props> = ({ themeColor }) => {
                           style={{
                             padding: '5px 9px',
                             borderRadius: 6,
-                            border: '1px solid #CBD5E1',
-                            background: 'white',
-                            color: '#1E293B',
+                            border: '1px solid var(--border-color)',
+                            background: 'var(--bg-card)',
+                            color: 'var(--text-main)',
                             fontSize: '0.75rem',
                             fontWeight: 700,
                             cursor: 'pointer',
@@ -321,26 +321,26 @@ export const TailleurFittingsManager: React.FC<Props> = ({ themeColor }) => {
       <Modal isOpen={showRescheduleModal} onClose={() => setShowRescheduleModal(false)} title={`Reprogrammer le Rendez-vous : ${selectedFitting?.orderNumber}`}>
         <form onSubmit={handleSaveReschedule} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>
               Nouvelle Date d'Essayage
             </label>
             <input
               type="date"
               value={newFittingDate}
               onChange={(e) => setNewFittingDate(e.target.value)}
-              style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #D1D5DB' }}
+              style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid var(--border-color)' }}
             />
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>
               Nouvelle Date de Livraison Prévue
             </label>
             <input
               type="date"
               value={newDeliveryDate}
               onChange={(e) => setNewDeliveryDate(e.target.value)}
-              style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #D1D5DB' }}
+              style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid var(--border-color)' }}
             />
           </div>
 
@@ -348,14 +348,14 @@ export const TailleurFittingsManager: React.FC<Props> = ({ themeColor }) => {
             <button
               type="button"
               onClick={() => setShowRescheduleModal(false)}
-              style={{ padding: '9px 16px', borderRadius: 8, border: '1px solid #CBD5E1', background: 'white', fontWeight: 600, cursor: 'pointer' }}
+              style={{ padding: '9px 16px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-card)', fontWeight: 600, cursor: 'pointer' }}
             >
               Annuler
             </button>
             <button
               type="submit"
               disabled={submitting}
-              style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: themeColor, color: 'white', fontWeight: 700, cursor: 'pointer' }}
+              style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: themeColor, color: 'var(--text-inverse)', fontWeight: 700, cursor: 'pointer' }}
             >
               {submitting ? 'Enregistrement...' : 'Enregistrer les Dates'}
             </button>
@@ -367,30 +367,30 @@ export const TailleurFittingsManager: React.FC<Props> = ({ themeColor }) => {
       <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title={`Modifier la Fiche d'Essayage : ${selectedFitting?.orderNumber}`}>
         <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>Nom du Client</label>
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>Nom du Client</label>
             <input
               required
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
-              style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #D1D5DB' }}
+              style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid var(--border-color)' }}
             />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>Téléphone</label>
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>Téléphone</label>
             <input
               required
               value={clientPhone}
               onChange={(e) => setClientPhone(e.target.value)}
-              style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #D1D5DB' }}
+              style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid var(--border-color)' }}
             />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>Modèle / Vêtement</label>
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>Modèle / Vêtement</label>
             <input
               required
               value={garmentType}
               onChange={(e) => setGarmentType(e.target.value)}
-              style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #D1D5DB' }}
+              style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid var(--border-color)' }}
             />
           </div>
 
@@ -398,14 +398,14 @@ export const TailleurFittingsManager: React.FC<Props> = ({ themeColor }) => {
             <button
               type="button"
               onClick={() => setShowEditModal(false)}
-              style={{ padding: '9px 16px', borderRadius: 8, border: '1px solid #CBD5E1', background: 'white', fontWeight: 600, cursor: 'pointer' }}
+              style={{ padding: '9px 16px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-card)', fontWeight: 600, cursor: 'pointer' }}
             >
               Annuler
             </button>
             <button
               type="submit"
               disabled={submitting}
-              style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: themeColor, color: 'white', fontWeight: 700, cursor: 'pointer' }}
+              style={{ padding: '9px 18px', borderRadius: 8, border: 'none', background: themeColor, color: 'var(--text-inverse)', fontWeight: 700, cursor: 'pointer' }}
             >
               {submitting ? 'Enregistrement...' : 'Enregistrer'}
             </button>

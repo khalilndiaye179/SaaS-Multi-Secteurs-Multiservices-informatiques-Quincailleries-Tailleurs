@@ -34,18 +34,13 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
     beneficiaryName: '',
     garmentType: 'Boubou 3 Pièces',
     notes: '',
-    epaule: '',
-    poitrine: '',
-    taille: '',
-    hanche: '',
-    cou: '',
-    cuisses: '',
-    fesses: '',
-    longueurBoubou: '',
-    longueurManche: '',
-    longueurPantalon: '',
-    tourBras: '',
   });
+
+  const [dynamicMeasurements, setDynamicMeasurements] = useState<{name: string, value: string}[]>([
+    { name: 'Épaule', value: '' },
+    { name: 'Poitrine', value: '' },
+    { name: 'Taille', value: '' },
+  ]);
 
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -80,18 +75,12 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
       beneficiaryName: '',
       garmentType: 'Boubou 3 Pièces',
       notes: '',
-      epaule: '',
-      poitrine: '',
-      taille: '',
-      hanche: '',
-      cou: '',
-      cuisses: '',
-      fesses: '',
-      longueurBoubou: '',
-      longueurManche: '',
-      longueurPantalon: '',
-      tourBras: '',
     });
+    setDynamicMeasurements([
+      { name: 'Épaule', value: '' },
+      { name: 'Poitrine', value: '' },
+      { name: 'Taille', value: '' },
+    ]);
   };
 
   const handleOpenNewModal = () => {
@@ -127,18 +116,17 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
       beneficiaryName: m.beneficiaryName || '',
       garmentType: m.garmentType,
       notes: m.notes || '',
-      epaule: ms.epaule ? String(ms.epaule) : '',
-      poitrine: ms.poitrine ? String(ms.poitrine) : '',
-      taille: ms.taille ? String(ms.taille) : '',
-      hanche: ms.hanche ? String(ms.hanche) : '',
-      cou: ms.cou ? String(ms.cou) : '',
-      cuisses: ms.cuisses ? String(ms.cuisses) : '',
-      fesses: ms.fesses ? String(ms.fesses) : '',
-      longueurBoubou: ms.longueurBoubou ? String(ms.longueurBoubou) : '',
-      longueurManche: ms.longueurManche ? String(ms.longueurManche) : '',
-      longueurPantalon: ms.longueurPantalon ? String(ms.longueurPantalon) : '',
-      tourBras: ms.tourBras ? String(ms.tourBras) : '',
     });
+
+    // Transformer le dictionnaire en tableau de {name, value}
+    const dynamicArray = Object.keys(ms).map((k) => ({
+      name: k,
+      value: String(ms[k])
+    }));
+    if (dynamicArray.length === 0) {
+      dynamicArray.push({ name: 'Épaule', value: '' }, { name: 'Poitrine', value: '' }, { name: 'Taille', value: '' });
+    }
+    setDynamicMeasurements(dynamicArray);
 
     if (!m.parentMeasurementId) {
       fetchFamilyMembers(m.id);
@@ -217,17 +205,11 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
     try {
       const token = localStorage.getItem('kpsy_token');
       const payloadMeasurements: Record<string, string> = {};
-      if (form.epaule) payloadMeasurements.epaule = form.epaule;
-      if (form.poitrine) payloadMeasurements.poitrine = form.poitrine;
-      if (form.taille) payloadMeasurements.taille = form.taille;
-      if (form.hanche) payloadMeasurements.hanche = form.hanche;
-      if (form.cou) payloadMeasurements.cou = form.cou;
-      if (form.cuisses) payloadMeasurements.cuisses = form.cuisses;
-      if (form.fesses) payloadMeasurements.fesses = form.fesses;
-      if (form.longueurBoubou) payloadMeasurements.longueurBoubou = form.longueurBoubou;
-      if (form.longueurManche) payloadMeasurements.longueurManche = form.longueurManche;
-      if (form.longueurPantalon) payloadMeasurements.longueurPantalon = form.longueurPantalon;
-      if (form.tourBras) payloadMeasurements.tourBras = form.tourBras;
+      dynamicMeasurements.forEach((dm) => {
+        if (dm.name.trim() !== '') {
+          payloadMeasurements[dm.name.trim()] = dm.value;
+        }
+      });
 
       const url = editingId ? `/api/tailleur/measurements/${editingId}` : '/api/tailleur/measurements';
       const method = editingId ? 'PUT' : 'POST';
@@ -281,12 +263,12 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Header Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white', padding: 20, borderRadius: 14, border: '1px solid #E5E7EB' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)', padding: 20, borderRadius: 14, border: '1px solid var(--border-color)' }}>
         <div>
-          <h2 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: '1.2rem', margin: 0, color: '#111827' }}>
+          <h2 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: '1.2rem', margin: 0, color: 'var(--text-main)' }}>
             📐 Carnet de Mesures Clients
           </h2>
-          <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#6B7280' }}>
+          <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             Gestion des fiches de mensurations sur-mesure pour les confections couture
           </p>
         </div>
@@ -294,7 +276,7 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
           onClick={handleOpenNewModal}
           style={{
             background: themeColor,
-            color: 'white',
+            color: 'var(--text-inverse)',
             border: 'none',
             padding: '10px 18px',
             borderRadius: 10,
@@ -309,7 +291,7 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
       </div>
 
       {/* Barre de Recherche */}
-      <div style={{ background: 'white', padding: '12px 20px', borderRadius: 12, border: '1px solid #E5E7EB' }}>
+      <div style={{ background: 'var(--bg-card)', padding: '12px 20px', borderRadius: 12, border: '1px solid var(--border-color)' }}>
         <input
           type="text"
           placeholder="Rechercher par nom de client, téléphone ou modèle..."
@@ -319,7 +301,7 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
             width: '100%',
             padding: '10px 14px',
             borderRadius: 8,
-            border: '1px solid #D1D5DB',
+            border: '1px solid var(--border-color)',
             fontSize: '0.88rem',
             outline: 'none',
           }}
@@ -328,9 +310,9 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
 
       {/* Grille des Fiches de Mesures Principales (Tuteurs) */}
       {loading ? (
-        <div style={{ padding: 40, textAlign: 'center', color: '#6B7280' }}>Chargement des mensurations...</div>
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Chargement des mensurations...</div>
       ) : filtered.length === 0 ? (
-        <div style={{ padding: 40, textAlign: 'center', background: 'white', borderRadius: 12, border: '1px solid #E5E7EB', color: '#6B7280' }}>
+        <div style={{ padding: 40, textAlign: 'center', background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
           Aucune fiche de mesure enregistrée pour le moment.
         </div>
       ) : (
@@ -339,9 +321,9 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
             <div
               key={m.id}
               style={{
-                background: 'white',
+                background: 'var(--bg-card)',
                 borderRadius: 14,
-                border: '1px solid #E5E7EB',
+                border: '1px solid var(--border-color)',
                 padding: 20,
                 display: 'flex',
                 flexDirection: 'column',
@@ -351,7 +333,7 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#111827' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)' }}>
                     {m.clientName}
                   </h3>
                   {m.beneficiaryName && (
@@ -393,34 +375,34 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
               </div>
 
               {/* Conteneur des mesures */}
-              <div style={{ background: '#F9FAFB', padding: 12, borderRadius: 10, border: '1px solid #F3F4F6' }}>
-                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', marginBottom: 8 }}>
+              <div style={{ background: 'var(--bg-main)', padding: 12, borderRadius: 10, border: '1px solid #F3F4F6' }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
                   Mensurations (cm)
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                   {typeof m.measurements === 'object' && m.measurements !== null ? (
                     Object.entries(m.measurements).map(([k, v]) => (
-                      <div key={k} style={{ background: 'white', padding: '6px 8px', borderRadius: 6, border: '1px solid #E5E7EB' }}>
-                        <div style={{ fontSize: '0.68rem', color: '#6B7280', textTransform: 'capitalize' }}>{k}</div>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#111827' }}>{String(v)} cm</div>
+                      <div key={k} style={{ background: 'var(--bg-card)', padding: '6px 8px', borderRadius: 6, border: '1px solid var(--border-color)' }}>
+                        <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{k}</div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-main)' }}>{String(v)} cm</div>
                       </div>
                     ))
                   ) : (
-                    <div style={{ fontSize: '0.8rem', color: '#9CA3AF' }}>Format non pris en charge</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Format non pris en charge</div>
                   )}
                 </div>
               </div>
 
               {m.notes && (
-                <div style={{ fontSize: '0.78rem', color: '#4B5563', background: '#FFFBEB', padding: '8px 12px', borderRadius: 8, border: '1px solid #FDE68A' }}>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', background: '#FFFBEB', padding: '8px 12px', borderRadius: 8, border: '1px solid #FDE68A' }}>
                   📌 {m.notes}
                 </div>
               )}
 
               {/* Aperçu des membres de la famille s'il y en a */}
               {m.members && m.members.length > 0 && (
-                <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '8px 10px' }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 4 }}>
+                <div style={{ background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: 8, padding: '8px 10px' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 4 }}>
                     👨‍👩‍👧‍👦 Membres Rattachés ({m.members.length}) :
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -436,7 +418,7 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
                           alignItems: 'center',
                           padding: '3px 6px',
                           borderRadius: 4,
-                          background: 'white',
+                          background: 'var(--bg-card)',
                           border: '1px solid #F1F5F9',
                         }}
                       >
@@ -507,9 +489,9 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
                     style={{
                       padding: '5px 10px',
                       borderRadius: 6,
-                      border: '1px solid #CBD5E1',
-                      background: 'white',
-                      color: '#1E293B',
+                      border: '1px solid var(--border-color)',
+                      background: 'var(--bg-card)',
+                      color: 'var(--text-main)',
                       fontSize: '0.75rem',
                       fontWeight: 700,
                       cursor: 'pointer',
@@ -545,7 +527,7 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
       {/* Modal Fiche de Mesure avec Gestion Familiale */}
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 16 }}>
-          <div style={{ background: 'white', width: '100%', maxWidth: 540, maxHeight: '90vh', overflowY: 'auto', borderRadius: 16, padding: 24, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+          <div style={{ background: 'var(--bg-card)', width: '100%', maxWidth: 540, maxHeight: '90vh', overflowY: 'auto', borderRadius: 16, padding: 24, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
             
             {/* Fil d'Ariane si on est dans la sous-fiche d'un membre */}
             {currentParent ? (
@@ -563,7 +545,7 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
                   }}
                   style={{
                     background: '#6B21A8',
-                    color: 'white',
+                    color: 'var(--text-inverse)',
                     border: 'none',
                     padding: '4px 10px',
                     borderRadius: 6,
@@ -576,14 +558,14 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
                 </button>
               </div>
             ) : (
-              <h3 style={{ margin: '0 0 16px 0', fontSize: '1.1rem', fontWeight: 800, color: '#111827' }}>
+              <h3 style={{ margin: '0 0 16px 0', fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)' }}>
                 {editingId ? 'Modifier la Fiche Client Tuteur' : 'Nouvelle Fiche de Mesure Client'}
               </h3>
             )}
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>
                   {currentParent ? 'Nom du Chef de Famille / Tuteur (Hérité)' : 'Nom du Chef de Famille / Client Responsable *'}
                 </label>
                 <input
@@ -597,7 +579,7 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
                     width: '100%',
                     padding: '8px 12px',
                     borderRadius: 8,
-                    border: '1px solid #D1D5DB',
+                    border: '1px solid var(--border-color)',
                     marginTop: 4,
                     background: currentParent ? '#F9FAFB' : 'white',
                   }}
@@ -605,7 +587,7 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
               </div>
 
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>
                   {currentParent ? 'Lien de Parenté / Nom du Membre * (ex: Fils Moussa, Épouse Awa)' : 'Libellé / Bénéficiaire (Optionnel pour le tuteur)'}
                 </label>
                 <input
@@ -614,13 +596,13 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
                   placeholder="ex: Fils (Moussa), Épouse (Fatou), Fille (Awa)..."
                   value={form.beneficiaryName}
                   onChange={(e) => setForm({ ...form, beneficiaryName: e.target.value })}
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #D1D5DB', marginTop: 4 }}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border-color)', marginTop: 4 }}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151' }}>Téléphone *</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Téléphone *</label>
                   <input
                     type="text"
                     required
@@ -631,79 +613,100 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
                       width: '100%',
                       padding: '8px 12px',
                       borderRadius: 8,
-                      border: '1px solid #D1D5DB',
+                      border: '1px solid var(--border-color)',
                       marginTop: 4,
                       background: currentParent ? '#F9FAFB' : 'white',
                     }}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151' }}>Type de Vêtement *</label>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Type de Vêtement *</label>
                   <input
                     type="text"
                     required
                     value={form.garmentType}
                     onChange={(e) => setForm({ ...form, garmentType: e.target.value })}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #D1D5DB', marginTop: 4 }}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border-color)', marginTop: 4 }}
                   />
                 </div>
               </div>
 
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151', marginTop: 4 }}>Mensurations Propres au Sujet (cm)</div>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginTop: 4 }}>Mensurations Propres au Sujet (cm)</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                <div>
-                  <span style={{ fontSize: '0.68rem', color: '#6B7280' }}>Épaule</span>
-                  <input type="number" value={form.epaule} onChange={(e) => setForm({ ...form, epaule: e.target.value })} style={{ width: '100%', padding: '6px', borderRadius: 6, border: '1px solid #D1D5DB' }} />
-                </div>
-                <div>
-                  <span style={{ fontSize: '0.68rem', color: '#6B7280' }}>Poitrine</span>
-                  <input type="number" value={form.poitrine} onChange={(e) => setForm({ ...form, poitrine: e.target.value })} style={{ width: '100%', padding: '6px', borderRadius: 6, border: '1px solid #D1D5DB' }} />
-                </div>
-                <div>
-                  <span style={{ fontSize: '0.68rem', color: '#6B7280' }}>Taille</span>
-                  <input type="number" value={form.taille} onChange={(e) => setForm({ ...form, taille: e.target.value })} style={{ width: '100%', padding: '6px', borderRadius: 6, border: '1px solid #D1D5DB' }} />
-                </div>
-                <div>
-                  <span style={{ fontSize: '0.68rem', color: '#6B7280' }}>Hanche</span>
-                  <input type="number" value={form.hanche} onChange={(e) => setForm({ ...form, hanche: e.target.value })} style={{ width: '100%', padding: '6px', borderRadius: 6, border: '1px solid #D1D5DB' }} />
-                </div>
-                <div>
-                  <span style={{ fontSize: '0.68rem', color: '#6B7280' }}>Tour Cou</span>
-                  <input type="number" value={form.cou} onChange={(e) => setForm({ ...form, cou: e.target.value })} style={{ width: '100%', padding: '6px', borderRadius: 6, border: '1px solid #D1D5DB' }} />
-                </div>
-                <div>
-                  <span style={{ fontSize: '0.68rem', color: '#6B7280' }}>Tour Cuisses</span>
-                  <input type="number" value={form.cuisses} onChange={(e) => setForm({ ...form, cuisses: e.target.value })} style={{ width: '100%', padding: '6px', borderRadius: 6, border: '1px solid #D1D5DB' }} />
-                </div>
-                <div>
-                  <span style={{ fontSize: '0.68rem', color: '#6B7280' }}>Tour Fesses</span>
-                  <input type="number" value={form.fesses} onChange={(e) => setForm({ ...form, fesses: e.target.value })} style={{ width: '100%', padding: '6px', borderRadius: 6, border: '1px solid #D1D5DB' }} />
-                </div>
-                <div>
-                  <span style={{ fontSize: '0.68rem', color: '#6B7280' }}>Long. Boubou</span>
-                  <input type="number" value={form.longueurBoubou} onChange={(e) => setForm({ ...form, longueurBoubou: e.target.value })} style={{ width: '100%', padding: '6px', borderRadius: 6, border: '1px solid #D1D5DB' }} />
-                </div>
-                <div>
-                  <span style={{ fontSize: '0.68rem', color: '#6B7280' }}>Long. Manche</span>
-                  <input type="number" value={form.longueurManche} onChange={(e) => setForm({ ...form, longueurManche: e.target.value })} style={{ width: '100%', padding: '6px', borderRadius: 6, border: '1px solid #D1D5DB' }} />
-                </div>
+                {dynamicMeasurements.map((dm, idx) => (
+                  <div key={idx} style={{ position: 'relative' }}>
+                    <input
+                      type="text"
+                      placeholder="Nom (ex: Épaule)"
+                      value={dm.name}
+                      onChange={(e) => {
+                        const newArr = [...dynamicMeasurements];
+                        newArr[idx].name = e.target.value;
+                        setDynamicMeasurements(newArr);
+                      }}
+                      style={{ fontSize: '0.68rem', color: 'var(--text-muted)', width: '100%', border: 'none', background: 'transparent', outline: 'none', padding: '0 2px', marginBottom: 2, fontWeight: 700 }}
+                    />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <input
+                        type="text"
+                        placeholder="Valeur"
+                        value={dm.value}
+                        onChange={(e) => {
+                          const newArr = [...dynamicMeasurements];
+                          newArr[idx].value = e.target.value;
+                          setDynamicMeasurements(newArr);
+                        }}
+                        style={{ width: '100%', padding: '6px', borderRadius: 6, border: '1px solid var(--border-color)' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newArr = dynamicMeasurements.filter((_, i) => i !== idx);
+                          setDynamicMeasurements(newArr);
+                        }}
+                        style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: '0.9rem', padding: 0 }}
+                        title="Supprimer cette mesure"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
+              <button
+                type="button"
+                onClick={() => setDynamicMeasurements([...dynamicMeasurements, { name: '', value: '' }])}
+                style={{
+                  alignSelf: 'flex-start',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  color: themeColor,
+                  background: '#F3E8FF',
+                  border: `1px solid ${themeColor}40`,
+                  padding: '4px 10px',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  marginTop: -4
+                }}
+              >
+                + Ajouter une mesure personnalisée
+              </button>
 
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#374151' }}>Notes & Instructions Tissu</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>Notes & Instructions Tissu</label>
                 <textarea
                   rows={2}
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #D1D5DB', marginTop: 4, fontSize: '0.85rem' }}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border-color)', marginTop: 4, fontSize: '0.85rem' }}
                 />
               </div>
 
               {/* Section Membres de la famille (Affichée uniquement sur la fiche d'un Tuteur en mode édition) */}
               {editingId && !parentMeasurementId && !currentParent && (
-                <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #E5E7EB' }}>
+                <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border-color)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#111827' }}>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-main)' }}>
                       👨‍👩‍👧‍👦 Membres de la Famille Rattachés ({familyMembers.length})
                     </div>
                     <button
@@ -728,9 +731,9 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
                   </div>
 
                   {loadingMembers ? (
-                    <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>Chargement des membres...</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Chargement des membres...</div>
                   ) : familyMembers.length === 0 ? (
-                    <div style={{ fontSize: '0.75rem', color: '#9CA3AF', fontStyle: 'italic' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
                       Aucun membre rattaché à ce tuteur pour le moment.
                     </div>
                   ) : (
@@ -742,15 +745,15 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
                             display: 'flex',
                             justify: 'space-between',
                             alignItems: 'center',
-                            background: '#F9FAFB',
+                            background: 'var(--bg-main)',
                             padding: '8px 12px',
                             borderRadius: 8,
-                            border: '1px solid #E5E7EB',
+                            border: '1px solid var(--border-color)',
                           }}
                         >
                           <div>
-                            <strong style={{ fontSize: '0.8rem', color: '#111827' }}>{mem.beneficiaryName || 'Membre sans nom'}</strong>
-                            <div style={{ fontSize: '0.72rem', color: '#6B7280' }}>Modèle : {mem.garmentType}</div>
+                            <strong style={{ fontSize: '0.8rem', color: 'var(--text-main)' }}>{mem.beneficiaryName || 'Membre sans nom'}</strong>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Modèle : {mem.garmentType}</div>
                           </div>
                           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                             <button
@@ -764,7 +767,7 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
                                 fontSize: '0.72rem',
                                 fontWeight: 700,
                                 color: '#6B21A8',
-                                background: 'white',
+                                background: 'var(--bg-card)',
                                 border: '1px solid #E9D5FF',
                                 padding: '3px 8px',
                                 borderRadius: 6,
@@ -808,13 +811,13 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #D1D5DB', background: 'white', cursor: 'pointer', fontWeight: 600 }}
+                  style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-card)', cursor: 'pointer', fontWeight: 600 }}
                 >
                   Fermer
                 </button>
                 <button
                   type="submit"
-                  style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: themeColor, color: 'white', cursor: 'pointer', fontWeight: 700 }}
+                  style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: themeColor, color: 'var(--text-inverse)', cursor: 'pointer', fontWeight: 700 }}
                 >
                   Enregistrer Fiche
                 </button>

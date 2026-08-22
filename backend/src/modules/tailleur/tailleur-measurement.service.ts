@@ -1,10 +1,16 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateMeasurementDto, UpdateMeasurementDto, CreateTailleurOrderDto, UpdateTailleurOrderStatusDto } from './dto/measurement.dto';
+import { TenantContextService } from '../../core/tenant/tenant-context.service';
+import { BillingSequenceService } from '../billing/billing-sequence.service';
+import { BillingDocumentType } from '@prisma/client';
 
 @Injectable()
 export class TailleurMeasurementService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private billingSequence: BillingSequenceService,
+  ) {}
 
   async findAll() {
     return this.prisma.extended.clientMeasurement.findMany({
@@ -104,32 +110,194 @@ export class TailleurMeasurementService {
 
 
   async createOrder(dto: CreateTailleurOrderDto) {
+    const tenantId = TenantContextService.getTenantId();
+    if (!tenantId) throw new ForbiddenException('Contexte tenant manquant');
 
     const year = new Date().getFullYear();
     const count = await this.prisma.extended.tailleurOrder.count();
     const orderNumber = `CMD-${year}-${(count + 1).toString().padStart(4, '0')}`;
 
-    return this.prisma.extended.tailleurOrder.create({
-      data: {
-        orderNumber,
-        clientName: dto.clientName,
-        clientPhone: dto.clientPhone,
-        garmentType: dto.garmentType,
-        fabricDesc: dto.fabricDesc,
-        fittingDate: dto.fittingDate ? new Date(dto.fittingDate) : null,
-        deliveryDate: dto.deliveryDate ? new Date(dto.deliveryDate) : null,
-        totalPrice: dto.totalPrice,
-        advancePaid: dto.advancePaid || 0,
-        measurementsId: dto.measurementsId || null,
-        status: 'ORDERED',
-      } as any,
+    const invoiceNumber = await this.billingSequence.getNextSequenceNumber(
+      tenantId,
+      BillingDocumentType.INVOICE,
+      'FAC',
+    );
+
+    const itemsCreateData = dto.items && dto.items.length > 0
+      ? {
+          create: dto.items.map((it) => ({
+            garmentType: it.garmentType,
+            unitPrice: it.unitPrice || 0,
+            quantity: it.quantity || 1,
+            notes: it.notes || null,
+          })),
+        }
+      : undefined;
+
+    return this.prisma.extended.$transaction(async (tx) => {
+      const invoice = await tx.invoice.create({
+        data: {
+          number: invoiceNumber,
+          clientName: dto.clientName,
+          clientPhone: dto.clientPhone,
+          totalAmount: dto.totalPrice,
+          paidAmount: dto.advancePaid || 0,
+          status: 'DRAFT',
+          lines: {
+            create: [
+              {
+                description: dto.garmentType,
+                quantity: 1,
+                unitPrice: dto.totalPrice,
+                vatRate: 0,
+                totalPrice: dto.totalPrice,
+              },
+            ],
+          },
+        } as any,
+      });
+
+      return tx.tailleurOrder.create({
+        data: {
+          orderNumber,
+          clientName: dto.clientName,
+          clientPhone: dto.clientPhone,
+          garmentType: dto.garmentType,
+          fabricDesc: dto.fabricDesc,
+          fittingDate: dto.fittingDate ? new Date(dto.fittingDate) : null,
+          deliveryDate: dto.deliveryDate ? new Date(dto.deliveryDate) : null,
+          totalPrice: dto.totalPrice,
+          advancePaid: dto.advancePaid || 0,
+          measurementsId: dto.measurementsId || null,
+          fabricProvided: dto.fabricProvided || false,
+          fabricMeters: dto.fabricMeters || null,
+          assigneeId: dto.assigneeId || null,
+          invoiceId: invoice.id,
+          status: 'ORDERED',
+          ...(itemsCreateData ? { items: itemsCreateData } : {}),
+        } as any,
+        include: { items: true, measurement: true, invoice: true, assignee: { select: { id: true, fullName: true } } },
+      });
     });
   }
 
+  async registerPayment(orderId: string, amount: number) {
+    const order = await this.prisma.extended.tailleurOrder.findFirst({
+      where: { id: orderId },
+    });
+    if (!order) throw new NotFoundException('Commande introuvable.');
+
+    const newAdvancePaid = order.advancePaid + amount;
+    if (newAdvancePaid > order.totalPrice) {
+      throw new BadRequestException(
+        `Le paiement dépasse le solde restant (${order.totalPrice - order.advancePaid} XOF).`,
+      );
+    }
+
+    return this.prisma.extended.$transaction(async (tx) => {
+      const updatedOrder = await tx.tailleurOrder.update({
+        where: { id: orderId },
+        data: { advancePaid: newAdvancePaid },
+        include: { items: true, measurement: true, invoice: true },
+      });
+
+      if (order.invoiceId) {
+        await tx.invoice.update({
+          where: { id: order.invoiceId },
+          data: { paidAmount: { increment: amount } },
+        });
+      }
+
+      return updatedOrder;
+    });
+  }
+
+  async migrateOrphanOrders() {
+    const orphanOrders = await this.prisma.withoutTenantScope((client) =>
+      client.tailleurOrder.findMany({
+        where: { invoiceId: null },
+        include: { tenant: true },
+      }),
+    );
+
+    let migratedCount = 0;
+    const errors: string[] = [];
+
+    for (const order of orphanOrders) {
+      try {
+        const invoiceNumber = await this.billingSequence.getNextSequenceNumber(
+          order.tenantId,
+          BillingDocumentType.INVOICE,
+          'FAC',
+        );
+
+        await this.prisma.withoutTenantScope(async (client) => {
+          const invoice = await client.invoice.create({
+            data: {
+              tenant: { connect: { id: order.tenantId } },
+              number: invoiceNumber,
+              clientName: order.clientName,
+              clientPhone: order.clientPhone,
+              totalAmount: order.totalPrice,
+              paidAmount: order.advancePaid,
+              status: 'DRAFT',
+              lines: {
+                create: [
+                  {
+                    description: order.garmentType,
+                    quantity: 1,
+                    unitPrice: order.totalPrice,
+                    vatRate: 0,
+                    totalPrice: order.totalPrice,
+                  },
+                ],
+              },
+            } as any,
+          });
+
+          await client.tailleurOrder.update({
+            where: { id: order.id },
+            data: { invoiceId: invoice.id },
+          });
+        });
+
+        migratedCount++;
+      } catch (e) {
+        errors.push(`Commande ${order.orderNumber}: ${e.message}`);
+      }
+    }
+
+    return { totalOrphans: orphanOrders.length, migratedCount, errors };
+  }
+
+
   async findAllOrders() {
     return this.prisma.extended.tailleurOrder.findMany({
-      include: { measurement: true },
+      include: { 
+        items: true, 
+        measurement: true,
+        assignee: { select: { id: true, fullName: true } }
+      },
       orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async findAllCatalogItems() {
+    return this.prisma.extended.tailleurCatalogItem.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async createCatalogItem(dto: any) {
+    return this.prisma.extended.tailleurCatalogItem.create({
+      data: {
+        name: dto.name,
+        category: dto.category || 'Traditionnel',
+        estimatedPrice: dto.estimatedPrice || 0,
+        delaysDays: dto.delaysDays || 5,
+        description: dto.description || null,
+        fabricRecommendation: dto.fabricRecommendation || null,
+      } as any,
     });
   }
 
@@ -199,6 +367,14 @@ export class TailleurMeasurementService {
       totalAdvancesXOF,
       totalPendingBalanceXOF,
     };
+  }
+
+  async getCollaborators() {
+    return this.prisma.extended.user.findMany({
+      where: { isActive: true },
+      select: { id: true, fullName: true, username: true },
+      orderBy: { fullName: 'asc' },
+    });
   }
 }
 

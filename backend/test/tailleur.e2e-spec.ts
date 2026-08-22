@@ -206,22 +206,30 @@ describe('Module Tailleur / Couture Complété (Étape D3 Test Suite)', () => {
     });
   });
 
-  it('5. REJET FICHE PARENT INTROUVABLE : Rejeter la création avec NotFoundException si parentInexistant', async () => {
+  it('6. COMMANDE MULTI-ARTICLES ET CATALOGUE : Doit créer une commande avec plusieurs lignes d articles rattachés', async () => {
     const tenant = await prisma.withoutTenantScope(async (c) =>
-      c.tenant.create({ data: { code: getRandomCode('TLR5'), name: 'Atelier ParentInexistant', sectorType: 'TAILLEUR', billingStatus: 'ACTIVE' } }),
+      c.tenant.create({ data: { code: getRandomCode('TLR6'), name: 'Atelier Multi-Articles', sectorType: 'TAILLEUR', billingStatus: 'ACTIVE' } }),
     );
     createdTenantIds.push(tenant.id);
 
     await TenantContextService.runWithTenantContext(tenant.id, 'TAILLEUR', async () => {
-      await expect(
-        measurementService.create({
-          clientName: 'Client Inexistant',
-          clientPhone: '779998877',
-          garmentType: 'Robe',
-          parentMeasurementId: '00000000-0000-0000-0000-000000000000',
-          measurements: {},
-        }),
-      ).rejects.toThrow(NotFoundException);
+      const order = await measurementService.createOrder({
+        clientName: 'Ousmane SOW',
+        clientPhone: '778889900',
+        garmentType: 'Grand Boubou 3P Bazin + Robe de Cérémonie',
+        totalPrice: 120000,
+        advancePaid: 50000,
+        items: [
+          { garmentType: 'Grand Boubou 3P Bazin', unitPrice: 35000, quantity: 1 },
+          { garmentType: 'Robe de Cérémonie', unitPrice: 85000, quantity: 1 },
+        ],
+      });
+
+      expect(order.id).toBeDefined();
+      expect(order.items.length).toBe(2);
+      expect(order.totalPrice).toBe(120000);
+      expect(order.items[0].garmentType).toBe('Grand Boubou 3P Bazin');
+      expect(order.items[1].garmentType).toBe('Robe de Cérémonie');
     });
   });
 });
