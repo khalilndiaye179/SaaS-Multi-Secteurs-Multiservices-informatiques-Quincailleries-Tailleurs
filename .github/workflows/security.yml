@@ -67,6 +67,7 @@ jobs:
         env:
           DATABASE_URL: "postgresql://kpsy_user:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/kpsy_multisector_db?schema=public"
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
         run: |
           cd backend
           npm run test:security
