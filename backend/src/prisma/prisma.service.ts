@@ -13,8 +13,12 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   constructor() {
     const isTest = process.env.NODE_ENV === 'test';
-    const testUrl = process.env.TEST_DATABASE_URL || 'postgresql://kpsy_user:kpsy_password@postgres:5432/kpsy_multisector_test_db?schema=public';
+    const testUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
     const dbUrl = isTest ? testUrl : process.env.DATABASE_URL;
+
+    if (!dbUrl) {
+      throw new Error("DATABASE_URL manquante — vérifiez votre fichier .env");
+    }
 
     console.log('🔍 PRISMA: connexion a la base ' + (isTest ? 'TEST' : 'PRODUCTION/DEV'));
 
@@ -105,7 +109,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
                     return (tx as any)[modelName][operation](args);
                   }
                   return query(args);
-                });
+                }, process.env.NODE_ENV === 'test' ? { maxWait: 20000, timeout: 20000 } : undefined);
               }
             }
 

@@ -44,9 +44,12 @@ docker exec -i kpsy_multisector_postgres psql -U kpsy_user -d kpsy_multisector_d
 
 ---
 
-## 🔑 3. Identifiants de Démonstration Officiels
+## 🔑 3. Création des comptes de Démonstration
 
-- 🔩 **Quincaillerie** : `QNC-0001-01` / `Password123!`
-- 💻 **Multiservices IT** : `ITS-0001-01` / `Password123!`
-- ✂️ **Tailleur / Couture** : `TLR-0001-01` / `Password123!`
-- 👑 **Super Admin SaaS** : `ADMIN-0001` / `Password123!`
+Pour des raisons de sécurité, les identifiants de démonstration et du Super Admin ne sont pas codés en dur. 
+Avant la première utilisation, vous devez générer les comptes de démonstration via le script seed :
+
+```bash
+cd backend
+npx prisma db seed
+```
