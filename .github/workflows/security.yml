@@ -60,6 +60,7 @@ jobs:
         env:
           PGPASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
+          psql -h localhost -U kpsy_user -d kpsy_multisector_db -f backend/prisma/rls_setup.sql
           psql -h localhost -U kpsy_user -d kpsy_multisector_db -f backend/prisma/rls-policies.sql
 
       - name: 7. Execute SECURITY GATE Tests (Cross-Tenant, BOLA, IDOR, RLS, Stress)
