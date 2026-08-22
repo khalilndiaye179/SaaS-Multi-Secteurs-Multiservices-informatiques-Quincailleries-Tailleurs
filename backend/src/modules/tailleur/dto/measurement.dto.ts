@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsObject, IsOptional, IsNumber, IsEnum, IsDateString } from 'class-validator';
+import { IsString, IsNotEmpty, IsObject, IsOptional, IsNumber, IsEnum, IsDateString, IsPositive, IsBoolean } from 'class-validator';
 
 export enum TailleurOrderStatusDto {
   ORDERED = 'ORDERED',
@@ -70,6 +70,23 @@ export class UpdateMeasurementDto {
   notes?: string;
 }
 
+export class TailleurOrderItemDto {
+  @IsString()
+  @IsNotEmpty()
+  garmentType: string;
+
+  @IsNumber()
+  unitPrice: number;
+
+  @IsOptional()
+  @IsNumber()
+  quantity?: number;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
 export class CreateTailleurOrderDto {
   @IsString()
   @IsNotEmpty()
@@ -82,6 +99,21 @@ export class CreateTailleurOrderDto {
   @IsString()
   @IsNotEmpty()
   garmentType: string;
+
+  @IsOptional()
+  items?: TailleurOrderItemDto[];
+
+  @IsOptional()
+  @IsBoolean()
+  fabricProvided?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  fabricMeters?: number;
+
+  @IsOptional()
+  @IsString()
+  assigneeId?: string;
 
   @IsOptional()
   @IsString()
@@ -105,6 +137,31 @@ export class CreateTailleurOrderDto {
   @IsOptional()
   @IsString()
   measurementsId?: string;
+}
+
+export class CreateTailleurCatalogItemDto {
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @IsNumber()
+  estimatedPrice: number;
+
+  @IsOptional()
+  @IsNumber()
+  delaysDays?: number;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  fabricRecommendation?: string;
 }
 
 export class UpdateTailleurOrderStatusDto {
@@ -152,5 +209,23 @@ export class UpdateTailleurOrderDto {
   @IsOptional()
   @IsDateString()
   deliveryDate?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  fabricProvided?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  fabricMeters?: number;
+
+  @IsOptional()
+  @IsString()
+  assigneeId?: string;
+}
+
+export class RegisterPaymentDto {
+  @IsNumber()
+  @IsPositive()
+  amount: number;
 }
 

@@ -31,6 +31,10 @@ export class CreateStockItemDto {
 
   @IsNumber()
   alertThreshold: number;
+
+  @IsOptional()
+  @IsString()
+  depotId?: string; // Optionnel : l'ID du dépôt où le stock initial sera affecté
 }
 
 export class UpdateStockItemDto {
@@ -65,6 +69,10 @@ export class RecordMovementDto {
   @IsOptional()
   @IsString()
   reason?: string;
+
+  @IsOptional()
+  @IsString()
+  depotId?: string; // Dépôt ciblé par le mouvement (in, out, adjustment)
 }
 
 export class SaleLineDto {
@@ -96,4 +104,29 @@ export class DirectSaleDto {
   @IsOptional()
   @IsBoolean()
   generateInvoice?: boolean;
+
+  @IsOptional()
+  @IsString()
+  depotId?: string; // Dépôt depuis lequel la vente est effectuée
+}
+
+export class TransferStockDto {
+  @IsNotEmpty()
+  @IsString()
+  stockItemId: string;
+
+  @IsNotEmpty()
+  @IsString()
+  sourceDepotId: string;
+
+  @IsNotEmpty()
+  @IsString()
+  destinationDepotId: string;
+
+  @IsNumber()
+  quantity: number;
+
+  @IsOptional()
+  @IsString()
+  reason?: string;
 }
