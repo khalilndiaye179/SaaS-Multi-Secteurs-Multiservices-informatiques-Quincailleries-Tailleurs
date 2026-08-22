@@ -134,3 +134,28 @@ CREATE POLICY tailleur_orders_select_policy ON "tailleur_orders" FOR SELECT USIN
 CREATE POLICY tailleur_orders_insert_policy ON "tailleur_orders" FOR INSERT WITH CHECK (get_current_tenant_id() IS NOT NULL AND ("tenantId" = get_current_tenant_id() OR get_current_tenant_id() = '__SYSTEM_GLOBAL_SUPERADMIN__'));
 CREATE POLICY tailleur_orders_update_policy ON "tailleur_orders" FOR UPDATE USING (get_current_tenant_id() IS NOT NULL AND ("tenantId" = get_current_tenant_id() OR get_current_tenant_id() = '__SYSTEM_GLOBAL_SUPERADMIN__')) WITH CHECK (get_current_tenant_id() IS NOT NULL AND ("tenantId" = get_current_tenant_id() OR get_current_tenant_id() = '__SYSTEM_GLOBAL_SUPERADMIN__'));
 CREATE POLICY tailleur_orders_delete_policy ON "tailleur_orders" FOR DELETE USING (get_current_tenant_id() IS NOT NULL AND ("tenantId" = get_current_tenant_id() OR get_current_tenant_id() = '__SYSTEM_GLOBAL_SUPERADMIN__'));
+
+-- 10. Table audit_logs — Immuabilité RLS (Append-Only : SELECT/INSERT autorisés, UPDATE/DELETE interdits au niveau SGBD)
+ALTER TABLE "audit_logs" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "audit_logs" FORCE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS audit_logs_select_policy ON "audit_logs";
+DROP POLICY IF EXISTS audit_logs_insert_policy ON "audit_logs";
+DROP POLICY IF EXISTS audit_logs_update_deny  ON "audit_logs";
+DROP POLICY IF EXISTS audit_logs_delete_deny  ON "audit_logs";
+
+CREATE POLICY audit_logs_select_policy ON "audit_logs" FOR SELECT
+  USING (
+    get_current_tenant_id() IS NOT NULL AND
+    ("tenantId" = get_current_tenant_id() OR get_current_tenant_id() = '__SYSTEM_GLOBAL_SUPERADMIN__')
+  );
+
+CREATE POLICY audit_logs_insert_policy ON "audit_logs" FOR INSERT
+  WITH CHECK (get_current_tenant_id() IS NOT NULL);
+
+CREATE POLICY audit_logs_update_deny ON "audit_logs" FOR UPDATE
+  USING (FALSE)
+  WITH CHECK (FALSE);
+
+CREATE POLICY audit_logs_delete_deny ON "audit_logs" FOR DELETE
+  USING (FALSE);

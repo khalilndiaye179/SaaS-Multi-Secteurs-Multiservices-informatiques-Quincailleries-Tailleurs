@@ -1,4 +1,4 @@
-﻿-- AlterEnum
+-- AlterEnum
 ALTER TYPE "BillingDocumentStatus" ADD VALUE 'PARTIALLY_PAID';
 
 -- CreateTable
