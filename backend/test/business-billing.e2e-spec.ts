@@ -3,10 +3,12 @@ import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { TenantContextService } from '../src/core/tenant/tenant-context.service';
+import { BusinessBillingService } from '../src/modules/billing/business-billing.service';
 
 describe('Moteur de Devis & Facturation Générique (Étape C Test Suite)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let billingService: BusinessBillingService;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -17,6 +19,7 @@ describe('Moteur de Devis & Facturation Générique (Étape C Test Suite)', () =
     await app.init();
 
     prisma = app.get<PrismaService>(PrismaService);
+    billingService = app.get<BusinessBillingService>(BusinessBillingService);
   });
 
   afterAll(async () => {
@@ -108,7 +111,7 @@ describe('Moteur de Devis & Facturation Générique (Étape C Test Suite)', () =
       const invoice = await prisma.extended.invoice.create({
         data: {
           number: `FAC-${year}-0001`,
-          quoteId: quote.id,
+          sourceQuoteId: quote.id,
           clientName: quote.clientName,
           totalAmount: quote.totalAmount,
           status: 'DRAFT',
@@ -157,6 +160,45 @@ describe('Moteur de Devis & Facturation Générique (Étape C Test Suite)', () =
     await TenantContextService.runWithTenantContext(tenantB.id, 'QUINCAILLERIE', async () => {
       const quotesB = await prisma.extended.quote.findMany();
       expect(quotesB.length).toBe(0);
+    });
+  });
+
+  it('4. CONCURRENCE : 20 factures paralleles pour un meme tenant ne doivent generer aucun doublon de numero', async () => {
+    const tenant = await prisma.withoutTenantScope(async (client) => {
+      return client.tenant.create({
+        data: {
+          code: getRandomCode('CONC1'),
+          name: 'Quincaillerie Concurrence',
+          sectorType: 'QUINCAILLERIE',
+          billingStatus: 'ACTIVE',
+        },
+      });
+    });
+    createdTenantIds.push(tenant.id);
+
+    await TenantContextService.runWithTenantContext(tenant.id, 'QUINCAILLERIE', async () => {
+      const dto = {
+        clientName: 'Client Concurrence',
+        lines: [{ description: 'Prestation test', quantity: 1, unitPrice: 1000 }],
+      } as any;
+
+      const invoices = await Promise.all(
+        Array.from({ length: 20 }, () => billingService.createInvoice(dto)),
+      );
+
+      const numbers = invoices.map((inv) => inv.number);
+      expect(new Set(numbers).size).toBe(20);
+
+      const year = new Date().getFullYear();
+      const expected = Array.from({ length: 20 }, (_, i) =>
+        `FAC-${year}-${(i + 1).toString().padStart(4, '0')}`,
+      );
+      expect(numbers.sort()).toEqual(expected.sort());
+
+      const sequence = await prisma.extended.billingSequence.findFirst({
+        where: { tenantId: tenant.id, year, type: 'INVOICE' },
+      });
+      expect(sequence?.currentValue).toBe(20);
     });
   });
 });

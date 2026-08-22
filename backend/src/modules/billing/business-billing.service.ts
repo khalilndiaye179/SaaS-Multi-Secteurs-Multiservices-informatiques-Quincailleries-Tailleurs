@@ -217,7 +217,7 @@ export class BusinessBillingService {
     });
   }
 
-  async registerPayment(id: string, amount: number) {
+  async registerPayment(id: string, amount: number, method: string = 'CASH', reference?: string, notes?: string) {
     const tenantId = TenantContextService.getTenantId();
     if (!tenantId) throw new ForbiddenException('Contexte tenant manquant');
 
@@ -241,7 +241,19 @@ export class BusinessBillingService {
         },
       });
 
-      // Si la facture devient totalement payée pour la première fois, on déduit les stocks
+      // 1. Enregistrer l'historique du paiement
+      await tx.paymentInstallment.create({
+        data: {
+          tenantId,
+          invoiceId: id,
+          amount,
+          method,
+          reference,
+          notes,
+        },
+      });
+
+      // 2. Si la facture devient totalement payée pour la première fois, on déduit les stocks
       if (isFullyPaid && invoice.status !== 'PAID') {
         for (const line of invoice.lines) {
           if (line.stockItemId) {
@@ -268,6 +280,16 @@ export class BusinessBillingService {
       }
 
       return updatedInvoice;
+    });
+  }
+
+  async getInvoicePayments(invoiceId: string) {
+    const tenantId = TenantContextService.getTenantId();
+    if (!tenantId) throw new ForbiddenException('Contexte tenant manquant');
+
+    return this.prisma.extended.paymentInstallment.findMany({
+      where: { tenantId, invoiceId },
+      orderBy: { paymentDate: 'desc' },
     });
   }
 }

@@ -68,8 +68,13 @@ export class BusinessBillingController {
   }
 
   @Patch('invoices/:id/payment')
-  async registerPayment(@Param('id') id: string, @Body() body: { amount: number }) {
-    return this.billingService.registerPayment(id, body.amount);
+  async registerPayment(@Param('id') id: string, @Body() body: { amount: number; method?: string; reference?: string; notes?: string }) {
+    return this.billingService.registerPayment(id, body.amount, body.method, body.reference, body.notes);
+  }
+
+  @Get('invoices/:id/payments')
+  async getInvoicePayments(@Param('id') id: string) {
+    return this.billingService.getInvoicePayments(id);
   }
 
   @Get('invoices/:id/pdf')

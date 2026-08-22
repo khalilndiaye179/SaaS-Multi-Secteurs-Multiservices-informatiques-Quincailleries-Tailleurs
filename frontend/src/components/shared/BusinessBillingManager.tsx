@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from './Modal';
 import { DocumentPrintModal } from './DocumentPrintModal';
+import { PaymentInstallmentsModal } from './PaymentInstallmentsModal';
 
 
 interface Props {
@@ -35,7 +36,8 @@ interface Invoice {
   clientName: string;
   clientPhone?: string;
   totalAmount: number;
-  status: 'DRAFT' | 'SENT' | 'PAID' | 'CANCELLED';
+  paidAmount?: number;
+  status: 'DRAFT' | 'SENT' | 'PARTIALLY_PAID' | 'PAID' | 'CANCELLED';
   createdAt: string;
   lines: QuoteLine[];
 }
@@ -46,6 +48,7 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [stockItems, setStockItems] = useState<any[]>([]);
 
   // Print Modal State
   const [showPrintModal, setShowPrintModal] = useState(false);
@@ -63,6 +66,13 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
     clientName: '',
     items: [],
   });
+
+  const [paymentModalData, setPaymentModalData] = useState<{
+    invoiceId: string;
+    invoiceNumber: string;
+    totalAmount: number;
+    paidAmount: number;
+  } | null>(null);
 
   const handleOpenPrintModal = (
     type: 'DEVIS' | 'FACTURE',
@@ -107,6 +117,37 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
     }
   };
 
+  const handlePayInvoice = async (id: string) => {
+    if (!window.confirm('Voulez-vous marquer cette facture comme TOTALEMENT PAYÉE ? Cette action mettra à jour les stocks (si applicable).')) return;
+    try {
+      const invoice = invoices.find(i => i.id === id);
+      const remainingAmount = invoice ? invoice.totalAmount - (invoice.paidAmount || 0) : 0;
+      
+      const res = await fetch(`/api/business-billing/invoices/${id}/payment`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ amount: remainingAmount })
+      });
+      if (res.ok) {
+        fetchData();
+      } else {
+        const err = await res.json();
+        alert('Erreur: ' + (err.message || 'Impossible de marquer comme payée.'));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handlePartialPayment = async (id: string, number: string, currentPaid: number, total: number) => {
+    setPaymentModalData({
+      invoiceId: id,
+      invoiceNumber: number,
+      totalAmount: total,
+      paidAmount: currentPaid,
+    });
+  };
+
   const handleCancelDocument = (type: 'QUOTE' | 'INVOICE', id: string) => {
     if (!isAdmin) {
       alert('Action réservée à l\'Administrateur de l\'établissement.');
@@ -132,6 +173,7 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
     { description: sector === 'TAILLEUR' ? 'Grand Boubou 3 Pièces Bazin' : 'Prestation / Article', quantity: 1, unitPrice: 15000 },
   ]);
   const [submitting, setSubmitting] = useState(false);
+  const [applyVat, setApplyVat] = useState(false);
 
   const token = localStorage.getItem('kpsy_token');
   const headers = {
@@ -149,6 +191,13 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
 
       if (resQ.ok) setQuotes(await resQ.json());
       if (resI.ok) setInvoices(await resI.json());
+
+      if (sector === 'QUINCAILLERIE') {
+        const resStock = await fetch('/api/quincaillerie/stock', { headers });
+        if (resStock.ok) {
+          setStockItems(await resStock.json());
+        }
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -170,7 +219,20 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
 
   const handleLineChange = (index: number, field: string, value: any) => {
     const newLines = [...lines];
-    (newLines[index] as any)[field] = value;
+    if (field === 'stockItemId') {
+      const selectedItem = stockItems.find((item) => item.id === value);
+      if (selectedItem) {
+        (newLines[index] as any)['stockItemId'] = selectedItem.id;
+        (newLines[index] as any)['description'] = selectedItem.name;
+        (newLines[index] as any)['unitPrice'] = selectedItem.sellingPrice;
+      } else {
+        (newLines[index] as any)['stockItemId'] = '';
+        (newLines[index] as any)['description'] = '';
+        (newLines[index] as any)['unitPrice'] = 0;
+      }
+    } else {
+      (newLines[index] as any)[field] = value;
+    }
     setLines(newLines);
   };
 
@@ -187,6 +249,7 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
         body: JSON.stringify({
           clientName,
           clientPhone,
+          applyVat,
           lines,
         }),
       });
@@ -195,6 +258,7 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
         setShowModal(false);
         setClientName('');
         setClientPhone('');
+        setApplyVat(false);
         setLines([{ description: '', quantity: 1, unitPrice: 0 }]);
         fetchData();
       }
@@ -221,8 +285,27 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
     }
   };
 
+  const handleDownloadPdf = async (type: 'QUOTE' | 'INVOICE', id: string, number: string) => {
+    const endpoint = type === 'QUOTE'
+      ? `/api/business-billing/quotes/${id}/pdf`
+      : `/api/business-billing/invoices/${id}/pdf`;
+    const res = await fetch(endpoint, { headers });
+    if (!res.ok) {
+      alert('Erreur lors de la génération du PDF.');
+      return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${type === 'QUOTE' ? 'devis' : 'facture'}-${number}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const calculateTotal = () => {
-    return lines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0);
+    const ht = lines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0);
+    return applyVat ? Math.round(ht * 1.18) : ht;
   };
 
   return (
@@ -268,7 +351,7 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
             padding: '10px 20px',
             borderRadius: 8,
             background: themeColor,
-            color: 'white',
+            color: 'var(--text-inverse)',
             border: 'none',
             fontWeight: 700,
             fontSize: '0.85rem',
@@ -281,12 +364,12 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
       </div>
 
       {/* Table Content */}
-      <div style={{ background: 'white', borderRadius: 12, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+      <div style={{ background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border-color)', overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: '#64748B' }}>Chargement des documents...</div>
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Chargement des documents...</div>
         ) : subTab === 'quotes' ? (
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
-            <thead style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+            <thead style={{ background: 'var(--bg-main)', borderBottom: '1px solid var(--border-color)' }}>
               <tr>
                 <th style={{ padding: '12px 18px', fontWeight: 700 }}>N° Devis</th>
                 <th style={{ padding: '12px 18px', fontWeight: 700 }}>Client</th>
@@ -298,7 +381,7 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
             <tbody>
               {quotes.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: 40, textAlign: 'center', color: '#94A3B8' }}>
+                  <td colSpan={5} style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
                     Aucun devis enregistré pour le moment.
                   </td>
                 </tr>
@@ -308,7 +391,7 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
                     <td style={{ padding: '14px 18px', fontWeight: 700, color: themeColor }}>{q.number}</td>
                     <td style={{ padding: '14px 18px' }}>
                       <div style={{ fontWeight: 600 }}>{q.clientName}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{q.clientPhone || '—'}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{q.clientPhone || '—'}</div>
                     </td>
                     <td style={{ padding: '14px 18px', fontWeight: 800, color: '#0F172A' }}>
                       {q.totalAmount.toLocaleString()} XOF
@@ -334,15 +417,30 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
                           style={{
                             padding: '5px 10px',
                             borderRadius: 6,
-                            border: '1px solid #CBD5E1',
-                            background: 'white',
-                            color: '#1E293B',
+                            border: '1px solid var(--border-color)',
+                            background: 'var(--bg-card)',
+                            color: 'var(--text-main)',
                             fontWeight: 700,
                             fontSize: '0.75rem',
                             cursor: 'pointer',
                           }}
                         >
                           👁️ Visionner / 🖨️ PDF
+                        </button>
+                        <button
+                          onClick={() => handleDownloadPdf('QUOTE', q.id, q.number)}
+                          style={{
+                            padding: '5px 10px',
+                            borderRadius: 6,
+                            border: 'none',
+                            background: '#3B82F6',
+                            color: 'var(--text-inverse)',
+                            fontWeight: 700,
+                            fontSize: '0.75rem',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          📥 Télécharger PDF
                         </button>
                         {q.status !== 'ACCEPTED' && q.status !== 'REJECTED' && (
                           <>
@@ -353,7 +451,7 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
                                 borderRadius: 6,
                                 border: 'none',
                                 background: '#059669',
-                                color: 'white',
+                                color: 'var(--text-inverse)',
                                 fontWeight: 700,
                                 fontSize: '0.75rem',
                                 cursor: 'pointer',
@@ -405,7 +503,7 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
           </table>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
-            <thead style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+            <thead style={{ background: 'var(--bg-main)', borderBottom: '1px solid var(--border-color)' }}>
               <tr>
                 <th style={{ padding: '12px 18px', fontWeight: 700 }}>N° Facture</th>
                 <th style={{ padding: '12px 18px', fontWeight: 700 }}>Client</th>
@@ -417,7 +515,7 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
             <tbody>
               {invoices.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: 40, textAlign: 'center', color: '#94A3B8' }}>
+                  <td colSpan={5} style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
                     Aucune facture enregistrée pour le moment.
                   </td>
                 </tr>
@@ -427,31 +525,65 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
                     <td style={{ padding: '14px 18px', fontWeight: 700, color: themeColor }}>{inv.number}</td>
                     <td style={{ padding: '14px 18px' }}>
                       <div style={{ fontWeight: 600 }}>{inv.clientName}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{inv.clientPhone || '—'}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{inv.clientPhone || '—'}</div>
                     </td>
                     <td style={{ padding: '14px 18px', fontWeight: 800, color: '#0F172A' }}>
                       {inv.totalAmount.toLocaleString()} XOF
+                      {inv.paidAmount && inv.paidAmount > 0 && inv.status !== 'PAID' ? (
+                        <div style={{ fontSize: '0.75rem', color: '#DC2626', fontWeight: 600, marginTop: 4 }}>
+                          Reste: {(inv.totalAmount - inv.paidAmount).toLocaleString()} XOF
+                        </div>
+                      ) : null}
                     </td>
                     <td style={{ padding: '14px 18px' }}>
-                      <span style={{ padding: '4px 10px', borderRadius: 20, fontWeight: 700, fontSize: '0.75rem', background: inv.status === 'PAID' ? '#D1FAE5' : inv.status === 'CANCELLED' ? '#FEE2E2' : '#FEF3C7', color: inv.status === 'PAID' ? '#065F46' : inv.status === 'CANCELLED' ? '#DC2626' : '#92400E' }}>
-                        {inv.status}
+                      <span style={{ padding: '4px 10px', borderRadius: 20, fontWeight: 700, fontSize: '0.75rem', background: inv.status === 'PAID' ? '#D1FAE5' : inv.status === 'PARTIALLY_PAID' ? '#DBEAFE' : inv.status === 'CANCELLED' ? '#FEE2E2' : '#FEF3C7', color: inv.status === 'PAID' ? '#065F46' : inv.status === 'PARTIALLY_PAID' ? '#1D4ED8' : inv.status === 'CANCELLED' ? '#DC2626' : '#92400E' }}>
+                        {inv.status === 'PARTIALLY_PAID' ? 'PAIEMENT PARTIEL' : inv.status}
                       </span>
                     </td>
                     <td style={{ padding: '14px 18px' }}>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button
                           onClick={() => handleOpenPrintModal('FACTURE', inv.number, inv.createdAt, inv.clientName, inv.clientPhone, inv.lines)}
-                          style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid #CBD5E1', background: 'white', color: '#1E293B', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}
+                          style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}
                         >
                           👁️ Visionner / 🖨️ PDF
                         </button>
+                        <button
+                          onClick={() => handleDownloadPdf('INVOICE', inv.id, inv.number)}
+                          style={{
+                            padding: '5px 10px',
+                            borderRadius: 6,
+                            border: 'none',
+                            background: '#3B82F6',
+                            color: 'var(--text-inverse)',
+                            fontWeight: 700,
+                            fontSize: '0.75rem',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          📥 Télécharger PDF
+                        </button>
                         {inv.status !== 'CANCELLED' && inv.status !== 'PAID' && (
-                          <button
-                            onClick={() => handleCancelDocument('INVOICE', inv.id)}
-                            style={{ padding: '5px 10px', borderRadius: 6, border: 'none', background: '#FEF3C7', color: '#92400E', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}
-                          >
-                            🚫 Annuler
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handlePartialPayment(inv.id, inv.number, inv.paidAmount || 0, inv.totalAmount)}
+                              style={{ padding: '5px 10px', borderRadius: 6, border: 'none', background: '#3B82F6', color: 'var(--text-inverse)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}
+                            >
+                              💵 Pmt Partiel
+                            </button>
+                            <button
+                              onClick={() => handlePayInvoice(inv.id)}
+                              style={{ padding: '5px 10px', borderRadius: 6, border: 'none', background: '#059669', color: 'var(--text-inverse)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}
+                            >
+                              ✅ Totalement Payée
+                            </button>
+                            <button
+                              onClick={() => handleCancelDocument('INVOICE', inv.id)}
+                              style={{ padding: '5px 10px', borderRadius: 6, border: 'none', background: '#FEF3C7', color: '#92400E', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}
+                            >
+                              🚫 Annuler
+                            </button>
+                          </>
                         )}
                         {isAdmin && (
                           <button
@@ -482,7 +614,7 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
       >
         <form onSubmit={handleCreateDocument} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: 4 }}>
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>
               Nom du Client
             </label>
             <input
@@ -490,36 +622,52 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
               placeholder="ex: Ousmane SOW"
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
-              style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: '0.85rem' }}
+              style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid var(--border-color)', fontSize: '0.85rem' }}
             />
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: 4 }}>
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>
               Téléphone Client
             </label>
             <input
               placeholder="ex: +221 77 123 45 67"
               value={clientPhone}
               onChange={(e) => setClientPhone(e.target.value)}
-              style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: '0.85rem' }}
+              style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid var(--border-color)', fontSize: '0.85rem' }}
             />
           </div>
 
           <div style={{ marginTop: 10 }}>
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: 6 }}>
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>
               Lignes de Prestations / Articles
             </label>
 
             {lines.map((line, idx) => (
               <div key={idx} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
-                <input
-                  required
-                  placeholder="Description..."
-                  value={line.description}
-                  onChange={(e) => handleLineChange(idx, 'description', e.target.value)}
-                  style={{ flex: 2, padding: '8px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: '0.82rem' }}
-                />
+                {sector === 'QUINCAILLERIE' ? (
+                  <select
+                    required
+                    value={(line as any).stockItemId || ''}
+                    onChange={(e) => handleLineChange(idx, 'stockItemId', e.target.value)}
+                    style={{ flex: 2, padding: '8px', borderRadius: 6, border: '1px solid var(--border-color)', fontSize: '0.82rem', background: 'var(--bg-card)' }}
+                  >
+                    <option value="" disabled>Sélectionner un article...</option>
+                    {stockItems.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} ({item.quantity} en stock) - {item.sellingPrice} XOF
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    required
+                    placeholder="Description..."
+                    value={line.description}
+                    onChange={(e) => handleLineChange(idx, 'description', e.target.value)}
+                    style={{ flex: 2, padding: '8px', borderRadius: 6, border: '1px solid var(--border-color)', fontSize: '0.82rem' }}
+                  />
+                )}
                 <input
                   type="number"
                   required
@@ -527,7 +675,7 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
                   placeholder="Qté"
                   value={line.quantity}
                   onChange={(e) => handleLineChange(idx, 'quantity', Number(e.target.value))}
-                  style={{ width: 60, padding: '8px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: '0.82rem' }}
+                  style={{ width: 60, padding: '8px', borderRadius: 6, border: '1px solid var(--border-color)', fontSize: '0.82rem' }}
                 />
                 <input
                   type="number"
@@ -535,7 +683,7 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
                   placeholder="Prix (XOF)"
                   value={line.unitPrice}
                   onChange={(e) => handleLineChange(idx, 'unitPrice', Number(e.target.value))}
-                  style={{ width: 100, padding: '8px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: '0.82rem' }}
+                  style={{ width: 100, padding: '8px', borderRadius: 6, border: '1px solid var(--border-color)', fontSize: '0.82rem' }}
                 />
                 {lines.length > 1 && (
                   <button
@@ -554,8 +702,8 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
               onClick={handleAddLine}
               style={{
                 marginTop: 6,
-                background: '#F1F5F9',
-                color: '#334155',
+                background: 'var(--bg-main)',
+                color: 'var(--text-muted)',
                 border: '1px dashed #94A3B8',
                 borderRadius: 6,
                 padding: '6px 12px',
@@ -569,6 +717,18 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
             </button>
           </div>
 
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+            <input
+              type="checkbox"
+              id="applyVat"
+              checked={applyVat}
+              onChange={(e) => setApplyVat(e.target.checked)}
+            />
+            <label htmlFor="applyVat" style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer' }}>
+              Appliquer la TVA (18%)
+            </label>
+          </div>
+
           <div style={{ textAlign: 'right', marginTop: 10, fontSize: '0.9rem', fontWeight: 800, color: '#0F172A' }}>
             Total Estimé : {calculateTotal().toLocaleString()} XOF
           </div>
@@ -577,14 +737,14 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
             <button
               type="button"
               onClick={() => setShowModal(false)}
-              style={{ flex: 1, padding: 10, borderRadius: 8, border: '1px solid #CBD5E1', background: 'white', cursor: 'pointer' }}
+              style={{ flex: 1, padding: 10, borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-card)', cursor: 'pointer' }}
             >
               Annuler
             </button>
             <button
               type="submit"
               disabled={submitting}
-              style={{ flex: 1, padding: 10, borderRadius: 8, border: 'none', background: themeColor, color: 'white', fontWeight: 700, cursor: 'pointer' }}
+              style={{ flex: 1, padding: 10, borderRadius: 8, border: 'none', background: themeColor, color: 'var(--text-inverse)', fontWeight: 700, cursor: 'pointer' }}
             >
               {submitting ? 'Enregistrement...' : 'Valider'}
             </button>
@@ -605,7 +765,23 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
         items={printDoc.items}
         themeColor={themeColor}
       />
+
+      {/* MODAL GESTION ACOMPTES/VERSEMENTS */}
+      {paymentModalData && (
+        <PaymentInstallmentsModal
+          invoiceId={paymentModalData.invoiceId}
+          invoiceNumber={paymentModalData.invoiceNumber}
+          totalAmount={paymentModalData.totalAmount}
+          paidAmount={paymentModalData.paidAmount}
+          themeColor={themeColor}
+          onClose={() => setPaymentModalData(null)}
+          onPaymentAdded={() => {
+            fetchData();
+            // On ferme la modale car le state de 'paidAmount' serait désync dans le composant
+            setPaymentModalData(null);
+          }}
+        />
+      )}
     </div>
   );
 };
-

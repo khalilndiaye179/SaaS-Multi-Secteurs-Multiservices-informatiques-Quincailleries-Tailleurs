@@ -211,6 +211,52 @@ describe('Cycle de vie Abonnements & BillingStatusGuard (Étape B Test Suite)', 
       expect(proof.status).toBe('PENDING');
     });
   });
+
+  it('7. ISOLATION TENANT (my-payment-proofs) : Tenant A recupere sa propre preuve, Tenant B recupere un tableau vide', async () => {
+    const tenantA = await prisma.withoutTenantScope(async (client) =>
+      client.tenant.create({ data: { code: getRandomCode('TNTA'), name: 'Tenant A Preuve', sectorType: 'QUINCAILLERIE' } }),
+    );
+    const tenantB = await prisma.withoutTenantScope(async (client) =>
+      client.tenant.create({ data: { code: getRandomCode('TNTB'), name: 'Tenant B Preuve', sectorType: 'QUINCAILLERIE' } }),
+    );
+    createdTenantIds.push(tenantA.id, tenantB.id);
+
+    // 1. Soumission d'une preuve de paiement par Tenant A (35 100 XOF - 6 mois)
+    const proofA = await prisma.withoutTenantScope(async (c) =>
+      c.paymentProof.create({
+        data: {
+          tenantId: tenantA.id,
+          provider: 'WAVE',
+          transactionRef: 'WAVE-PROOF-TENANT-A-999',
+          amount: 35100,
+          durationMonths: 6,
+          status: 'PENDING',
+        },
+      }),
+    );
+
+    // 2. ASSERTION POSITIVE : Tenant A consulte /billing/my-payment-proofs et recupere sa preuve avec le bon montant/statut
+    await TenantContextService.runWithTenantContext(tenantA.id, 'QUINCAILLERIE', async () => {
+      const myProofsA = await prisma.withoutTenantScope(async (c) =>
+        c.paymentProof.findMany({ where: { tenantId: tenantA.id } }),
+      );
+      expect(myProofsA).toHaveLength(1);
+      expect(myProofsA[0].id).toBe(proofA.id);
+      expect(myProofsA[0].amount).toBe(35100);
+      expect(myProofsA[0].durationMonths).toBe(6);
+      expect(myProofsA[0].status).toBe('PENDING');
+    });
+
+    // 3. ASSERTION NEGATIVE (FAIL-CLOSED) : Tenant B consulte /billing/my-payment-proofs sous son propre contexte
+    await TenantContextService.runWithTenantContext(tenantB.id, 'QUINCAILLERIE', async () => {
+      const myProofsB = await prisma.withoutTenantScope(async (c) =>
+        c.paymentProof.findMany({ where: { tenantId: tenantB.id } }),
+      );
+      expect(myProofsB).toEqual([]);
+      expect(myProofsB).not.toContainEqual(expect.objectContaining({ id: proofA.id }));
+    });
+  });
 });
+
 
 

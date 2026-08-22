@@ -2,10 +2,14 @@ import { Controller, Post, Get, Body, BadRequestException } from '@nestjs/common
 import { PrismaService } from '../../prisma/prisma.service';
 import { BillingExempt } from '../auth/billing-exempt.decorator';
 import { TenantContextService } from '../tenant/tenant-context.service';
+import { NotificationsService } from '../../modules/notifications/notifications.service';
 
 @Controller('billing')
 export class BillingController {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   @BillingExempt()
   @Get('status')
@@ -49,7 +53,7 @@ export class BillingController {
       throw new BadRequestException('Veuillez fournir tous les champs requis (provider, transactionRef, amount).');
     }
 
-    return this.prisma.withoutTenantScope(async (client) => {
+    const result = await this.prisma.withoutTenantScope(async (client) => {
       return client.paymentProof.create({
         data: {
           tenantId,
@@ -61,6 +65,19 @@ export class BillingController {
         },
       });
     });
+
+    // 🔔 Notification Super Admin : nouvelle preuve de paiement en attente
+    try {
+      await this.notificationsService.create({
+        tenantId: null,
+        type: 'PAYMENT_PENDING',
+        title: '🧾 Nouvelle preuve de paiement',
+        message: `Un tenant a soumis une preuve de paiement de ${Number(amount).toLocaleString()} XOF (${Number(durationMonths) || 1} mois). En attente de validation.`,
+        link: '/super-admin/billing',
+      });
+    } catch (e) { /* non-bloquant */ }
+
+    return result;
   }
 
   @BillingExempt()
