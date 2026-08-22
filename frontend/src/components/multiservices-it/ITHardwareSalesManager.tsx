@@ -99,10 +99,10 @@ export const ITHardwareSalesManager: React.FC<Props> = ({ themeColor }) => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h2 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: '1.2rem', margin: 0, color: '#111827' }}>
+          <h2 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: '1.2rem', margin: 0, color: 'var(--text-main)' }}>
             Vente & Achat de Matériel Informatique ({items.length})
           </h2>
-          <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280' }}>
+          <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             Gestion des équipements d'occasion, accessoires neufs et reconditionnement
           </p>
         </div>
@@ -113,7 +113,7 @@ export const ITHardwareSalesManager: React.FC<Props> = ({ themeColor }) => {
             padding: '10px 20px',
             borderRadius: 8,
             background: themeColor,
-            color: 'white',
+            color: 'var(--text-inverse)',
             border: 'none',
             fontWeight: 700,
             fontSize: '0.85rem',
@@ -125,9 +125,9 @@ export const ITHardwareSalesManager: React.FC<Props> = ({ themeColor }) => {
         </button>
       </div>
 
-      <div style={{ background: 'white', borderRadius: 12, border: '1px solid #E5E7EB', overflow: 'hidden' }}>
+      <div style={{ background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border-color)', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
-          <thead style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
+          <thead style={{ background: 'var(--bg-main)', borderBottom: '1px solid var(--border-color)' }}>
             <tr>
               <th style={{ padding: '12px 18px', fontWeight: 700 }}>Désignation Équipement</th>
               <th style={{ padding: '12px 18px', fontWeight: 700 }}>Catégorie</th>
@@ -142,7 +142,7 @@ export const ITHardwareSalesManager: React.FC<Props> = ({ themeColor }) => {
             {items.map((h) => (
               <tr key={h.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
                 <td style={{ padding: '14px 18px', fontWeight: 700 }}>{h.name}</td>
-                <td style={{ padding: '14px 18px', color: '#6B7280' }}>{h.category}</td>
+                <td style={{ padding: '14px 18px', color: 'var(--text-muted)' }}>{h.category}</td>
                 <td style={{ padding: '14px 18px' }}>
                   <span style={{ padding: '4px 8px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 700, background: h.condition === 'NEW' ? '#D1FAE5' : '#FEF3C7', color: h.condition === 'NEW' ? '#065F46' : '#92400E' }}>
                     {h.condition}
@@ -159,7 +159,7 @@ export const ITHardwareSalesManager: React.FC<Props> = ({ themeColor }) => {
                 </td>
                 <td style={{ padding: '14px 18px' }}>
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <button onClick={() => handleOpenEdit(h)} style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid #CBD5E1', background: 'white', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700 }}>
+                    <button onClick={() => handleOpenEdit(h)} style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border-color)', background: 'var(--bg-card)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700 }}>
                       ✏️ Edit
                     </button>
                     {isAdmin && h.status !== 'CANCELLED' && (
@@ -179,18 +179,18 @@ export const ITHardwareSalesManager: React.FC<Props> = ({ themeColor }) => {
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={selectedId ? 'Modifier le Matériel' : 'Enregistrer un Matériel'}>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>Désignation</label>
-            <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="ex: PC Lenovo ThinkPad T480" style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #D1D5DB' }} />
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>Désignation</label>
+            <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="ex: PC Lenovo ThinkPad T480" style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--border-color)' }} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>Catégorie</label>
-              <input required value={category} onChange={(e) => setCategory(e.target.value)} style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #D1D5DB' }} />
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>Catégorie</label>
+              <input required value={category} onChange={(e) => setCategory(e.target.value)} style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--border-color)' }} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>État</label>
-              <select value={condition} onChange={(e) => setCondition(e.target.value as any)} style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #D1D5DB' }}>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>État</label>
+              <select value={condition} onChange={(e) => setCondition(e.target.value as any)} style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--border-color)' }}>
                 <option value="NEW">Neuf</option>
                 <option value="REFURBISHED">Reconditionné</option>
                 <option value="USED">Occasion</option>
@@ -200,16 +200,16 @@ export const ITHardwareSalesManager: React.FC<Props> = ({ themeColor }) => {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>Prix de Vente (XOF)</label>
-              <input type="number" required value={priceXOF} onChange={(e) => setPriceXOF(Number(e.target.value))} style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #D1D5DB' }} />
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>Prix de Vente (XOF)</label>
+              <input type="number" required value={priceXOF} onChange={(e) => setPriceXOF(Number(e.target.value))} style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--border-color)' }} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>Quantité Stock</label>
-              <input type="number" required value={stockQty} onChange={(e) => setStockQty(Number(e.target.value))} style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #D1D5DB' }} />
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>Quantité Stock</label>
+              <input type="number" required value={stockQty} onChange={(e) => setStockQty(Number(e.target.value))} style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--border-color)' }} />
             </div>
           </div>
 
-          <button type="submit" style={{ padding: 12, borderRadius: 8, border: 'none', background: themeColor, color: 'white', fontWeight: 800, cursor: 'pointer', marginTop: 10 }}>
+          <button type="submit" style={{ padding: 12, borderRadius: 8, border: 'none', background: themeColor, color: 'var(--text-inverse)', fontWeight: 800, cursor: 'pointer', marginTop: 10 }}>
             Enregistrer Matériel ✓
           </button>
         </form>
@@ -219,11 +219,11 @@ export const ITHardwareSalesManager: React.FC<Props> = ({ themeColor }) => {
       <Modal isOpen={showCancelModal} onClose={() => setShowCancelModal(false)} title="Annulation d'une Vente / Matériel (Admin Only)">
         <form onSubmit={handleConfirmCancel} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>Motif d'Annulation Obligatoire</label>
-            <textarea required rows={3} value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} placeholder="ex: Erreur de saisie, client s'est désisté à la caisse..." style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #D1D5DB' }} />
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>Motif d'Annulation Obligatoire</label>
+            <textarea required rows={3} value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} placeholder="ex: Erreur de saisie, client s'est désisté à la caisse..." style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--border-color)' }} />
           </div>
 
-          <button type="submit" style={{ padding: 12, borderRadius: 8, border: 'none', background: '#DC2626', color: 'white', fontWeight: 800, cursor: 'pointer' }}>
+          <button type="submit" style={{ padding: 12, borderRadius: 8, border: 'none', background: '#DC2626', color: 'var(--text-inverse)', fontWeight: 800, cursor: 'pointer' }}>
             Confirmer l'Annulation 🚫
           </button>
         </form>

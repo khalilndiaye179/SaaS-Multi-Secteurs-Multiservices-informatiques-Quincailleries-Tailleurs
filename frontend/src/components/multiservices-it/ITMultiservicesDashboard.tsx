@@ -19,7 +19,7 @@ const DEMO_TICKETS: Ticket[] = [
 ];
 
 const STATUS_CONFIG = {
-  RECEIVED: { label: 'Reçu', bg: 'bg-slate-500/20', text: 'text-slate-400', border: 'border-slate-500/30' },
+  RECEIVED: { label: 'Reçu', bg: 'bg-[var(--bg-main)]0/20', text: 'text-[var(--text-muted)]', border: 'border-slate-500/30' },
   DIAGNOSIS: { label: 'En Diagnostic', bg: 'bg-amber-500/20', text: 'text-amber-400', border: 'border-amber-500/30' },
   IN_REPAIR: { label: 'En Réparation', bg: 'bg-cyan-500/20', text: 'text-cyan-400', border: 'border-cyan-500/30' },
   READY: { label: 'Prêt', bg: 'bg-emerald-500/20', text: 'text-emerald-400', border: 'border-emerald-500/30' },
@@ -35,19 +35,19 @@ export const ITMultiservicesDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-6 space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[var(--bg-main)] border border-[var(--border-color)] rounded-3xl p-6 shadow-xl">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-3xl">
             💻
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-white">Multiservices IT Dakar</h1>
+              <h1 className="text-2xl font-bold text-[var(--text-main)]">Multiservices IT Dakar</h1>
               <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
                 Secteur Multiservices IT
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-1">Atelier de Réparation, Dépannage & Vente Matériel</p>
+            <p className="text-xs text-[var(--text-muted)] mt-1">Atelier de Réparation, Dépannage & Vente Matériel</p>
           </div>
         </div>
 
@@ -57,11 +57,11 @@ export const ITMultiservicesDashboard: React.FC = () => {
       </div>
 
       {/* Tabs / Kanban Filters */}
-      <div className="flex gap-2 border-b border-slate-800 overflow-x-auto pb-2">
+      <div className="flex gap-2 border-b border-[var(--border-color)] overflow-x-auto pb-2">
         <button
           onClick={() => setActiveTab('ALL')}
           className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-            activeTab === 'ALL' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-900 text-slate-400 hover:text-white'
+            activeTab === 'ALL' ? 'bg-cyan-500 text-slate-950' : 'bg-[var(--bg-main)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
           }`}
         >
           Tous ({tickets.length})
@@ -73,7 +73,7 @@ export const ITMultiservicesDashboard: React.FC = () => {
               key={key}
               onClick={() => setActiveTab(key)}
               className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 ${
-                activeTab === key ? 'bg-slate-800 text-white border border-cyan-500/40' : 'bg-slate-900/60 text-slate-400 hover:text-white'
+                activeTab === key ? 'bg-[var(--bg-card)] text-[var(--text-main)] border border-cyan-500/40' : 'bg-[var(--bg-main)]/60 text-[var(--text-muted)] hover:text-[var(--text-main)]'
               }`}
             >
               <span>{cfg.label}</span>
@@ -88,7 +88,7 @@ export const ITMultiservicesDashboard: React.FC = () => {
         {filteredTickets.map((t) => {
           const cfg = STATUS_CONFIG[t.status];
           return (
-            <div key={t.id} className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4 hover:border-slate-700 transition-all">
+            <div key={t.id} className="bg-[var(--bg-main)]/80 border border-[var(--border-color)] rounded-3xl p-6 shadow-xl space-y-4 hover:border-[var(--border-color)] transition-all">
               <div className="flex justify-between items-start">
                 <span className="text-xs font-mono text-cyan-400 font-bold px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
                   {t.ticketNumber}
@@ -99,17 +99,17 @@ export const ITMultiservicesDashboard: React.FC = () => {
               </div>
 
               <div>
-                <h3 className="text-lg font-bold text-white">{t.deviceModel}</h3>
-                <p className="text-xs text-slate-400 mt-1 line-clamp-2">{t.issueDesc}</p>
+                <h3 className="text-lg font-bold text-[var(--text-main)]">{t.deviceModel}</h3>
+                <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-2">{t.issueDesc}</p>
               </div>
 
-              <div className="pt-4 border-t border-slate-800/80 flex justify-between items-center text-xs">
+              <div className="pt-4 border-t border-[var(--border-color)]/80 flex justify-between items-center text-xs">
                 <div>
-                  <span className="block text-slate-400">{t.clientName}</span>
-                  <span className="block font-mono text-slate-500">{t.clientPhone}</span>
+                  <span className="block text-[var(--text-muted)]">{t.clientName}</span>
+                  <span className="block font-mono text-[var(--text-muted)]">{t.clientPhone}</span>
                 </div>
                 <div className="text-right">
-                  <span className="block text-slate-400">Devis estimé</span>
+                  <span className="block text-[var(--text-muted)]">Devis estimé</span>
                   <span className="font-bold text-cyan-400">{t.estimatedCost?.toLocaleString('fr-FR')} FCFA</span>
                 </div>
               </div>

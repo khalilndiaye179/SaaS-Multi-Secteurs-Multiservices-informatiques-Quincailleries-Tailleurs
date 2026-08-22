@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateTicketDto, UpdateTicketStatusDto, ConvertToStockDto } from './dto/ticket.dto';
+import { SmsProviderService } from '../sms-provider/sms-provider.service';
 
 @Injectable()
 export class ITMultiservicesTicketService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private smsService: SmsProviderService,
+  ) {}
 
   async findAll() {
     return this.prisma.extended.repairTicket.findMany({
@@ -47,7 +51,7 @@ export class ITMultiservicesTicketService {
       throw new NotFoundException('Ticket de réparation introuvable.');
     }
 
-    return this.prisma.extended.$transaction(async (tx) => {
+    const updatedTicket = await this.prisma.extended.$transaction(async (tx) => {
       if (dto.usedParts && dto.usedParts.length > 0 && ['READY', 'DELIVERED'].includes(dto.status)) {
         if (ticket.usedParts.length > 0) {
           throw new BadRequestException("Des pièces ont déjà été déduites pour ce ticket.");
@@ -93,9 +97,25 @@ export class ITMultiservicesTicketService {
           estimatedCost: dto.estimatedCost !== undefined ? dto.estimatedCost : ticket.estimatedCost,
           finalCost: dto.finalCost !== undefined ? dto.finalCost : ticket.finalCost,
           notes: dto.notes !== undefined ? dto.notes : ticket.notes,
+          photoBefore: dto.photoBefore !== undefined ? dto.photoBefore : ticket.photoBefore,
+          photoAfter: dto.photoAfter !== undefined ? dto.photoAfter : ticket.photoAfter,
         },
       });
     });
+
+    // Envoi du SMS si le statut passe à READY (et n'y était pas déjà)
+    if (dto.status === 'READY' && ticket.status !== 'READY') {
+      try {
+        const message = `Bonjour ${ticket.clientName}, votre appareil (${ticket.deviceModel}) est réparé et prêt à être récupéré ! (Ticket: ${ticket.ticketNumber})`;
+        this.smsService.sendNotification(ticket.clientPhone, message).catch((err) => {
+          console.error("Erreur lors de l'envoi du SMS de notification (background):", err);
+        });
+      } catch (e) {
+        console.error("Erreur lors de la préparation du SMS de notification:", e);
+      }
+    }
+
+    return updatedTicket;
   }
 
   async getStats() {

@@ -100,10 +100,10 @@ export const ITSlaManager: React.FC<Props> = ({ themeColor }) => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h2 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: '1.2rem', margin: 0, color: '#111827' }}>
+          <h2 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: '1.2rem', margin: 0, color: 'var(--text-main)' }}>
             Niveaux de Service & Engagements SLA ({policies.length})
           </h2>
-          <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280' }}>
+          <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             Configuration des délais de prise en charge et de résolution des pannes pour vos clients et contrats
           </p>
         </div>
@@ -115,7 +115,7 @@ export const ITSlaManager: React.FC<Props> = ({ themeColor }) => {
               padding: '10px 20px',
               borderRadius: 8,
               background: themeColor,
-              color: 'white',
+              color: 'var(--text-inverse)',
               border: 'none',
               fontWeight: 700,
               fontSize: '0.85rem',
@@ -130,25 +130,25 @@ export const ITSlaManager: React.FC<Props> = ({ themeColor }) => {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
         {policies.map((p) => (
-          <div key={p.id} style={{ background: 'white', padding: 20, borderRadius: 12, border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div key={p.id} style={{ background: 'var(--bg-card)', padding: 20, borderRadius: 12, border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                 {getPriorityBadge(p.priority)}
                 <span style={{ fontSize: '1rem', fontWeight: 800, color: themeColor }}>⏱️ Délai Max : {p.targetHours}h</span>
               </div>
 
-              <h3 style={{ margin: '0 0 6px 0', fontSize: '0.98rem', fontWeight: 700, color: '#111827' }}>{p.name}</h3>
-              <p style={{ margin: '0 0 12px 0', fontSize: '0.82rem', color: '#6B7280', lineHeight: 1.4 }}>{p.description}</p>
+              <h3 style={{ margin: '0 0 6px 0', fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-main)' }}>{p.name}</h3>
+              <p style={{ margin: '0 0 12px 0', fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>{p.description}</p>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #F1F5F9', paddingTop: 10, marginTop: 10 }}>
-              <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
                 Pénalité Retard : {p.penaltyPerDayXOF ? `${p.penaltyPerDayXOF.toLocaleString()} XOF / Jour` : 'Aucune'}
               </span>
 
               {isAdmin && (
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <button onClick={() => handleOpenEdit(p)} style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #CBD5E1', background: 'white', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
+                  <button onClick={() => handleOpenEdit(p)} style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border-color)', background: 'var(--bg-card)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
                     ✏️ Edit
                   </button>
                   <button onClick={() => handleDelete(p.id)} style={{ padding: '4px 10px', borderRadius: 6, border: 'none', background: '#FEE2E2', color: '#DC2626', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
@@ -165,14 +165,14 @@ export const ITSlaManager: React.FC<Props> = ({ themeColor }) => {
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editingId ? 'Modifier la Règle SLA' : 'Créer une Règle SLA'}>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>Nom de la Politique SLA</label>
-            <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="ex: SLA Premium Entreprise — Intervention 2h" style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #D1D5DB' }} />
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>Nom de la Politique SLA</label>
+            <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="ex: SLA Premium Entreprise — Intervention 2h" style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--border-color)' }} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>Niveau de Priorité</label>
-              <select value={priority} onChange={(e) => setPriority(e.target.value as any)} style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #D1D5DB' }}>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>Niveau de Priorité</label>
+              <select value={priority} onChange={(e) => setPriority(e.target.value as any)} style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--border-color)' }}>
                 <option value="CRITICAL">🔴 Critique (Panne bloquante)</option>
                 <option value="HIGH">🟠 Haute (Matériel gérant)</option>
                 <option value="STANDARD">🟡 Standard (Atelier)</option>
@@ -180,22 +180,22 @@ export const ITSlaManager: React.FC<Props> = ({ themeColor }) => {
               </select>
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>Délai Max Résolution (Heures)</label>
-              <input type="number" required value={targetHours} onChange={(e) => setTargetHours(Number(e.target.value))} style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #D1D5DB' }} />
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>Délai Max Résolution (Heures)</label>
+              <input type="number" required value={targetHours} onChange={(e) => setTargetHours(Number(e.target.value))} style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--border-color)' }} />
             </div>
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>Description & Engagements</label>
-            <textarea required rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Préciser les modalités de diagnostic et de résolution..." style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #D1D5DB' }} />
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>Description & Engagements</label>
+            <textarea required rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Préciser les modalités de diagnostic et de résolution..." style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--border-color)' }} />
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>Pénalité Forfaitaire par Jour de Retard (XOF)</label>
-            <input type="number" value={penaltyPerDayXOF} onChange={(e) => setPenaltyPerDayXOF(Number(e.target.value))} style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #D1D5DB' }} />
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>Pénalité Forfaitaire par Jour de Retard (XOF)</label>
+            <input type="number" value={penaltyPerDayXOF} onChange={(e) => setPenaltyPerDayXOF(Number(e.target.value))} style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--border-color)' }} />
           </div>
 
-          <button type="submit" style={{ padding: 12, borderRadius: 8, border: 'none', background: themeColor, color: 'white', fontWeight: 800, cursor: 'pointer', marginTop: 10 }}>
+          <button type="submit" style={{ padding: 12, borderRadius: 8, border: 'none', background: themeColor, color: 'var(--text-inverse)', fontWeight: 800, cursor: 'pointer', marginTop: 10 }}>
             Enregistrer la Règle SLA ✓
           </button>
         </form>

@@ -89,10 +89,10 @@ export const ITPrestationsCatalog: React.FC<Props> = ({ themeColor }) => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h2 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: '1.2rem', margin: 0, color: '#111827' }}>
+          <h2 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: '1.2rem', margin: 0, color: 'var(--text-main)' }}>
             Catalogue des Forfaits & Prestations IT ({services.length})
           </h2>
-          <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280' }}>
+          <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             Grille tarifaire standard des réparations informatiques et interventions d'atelier
           </p>
         </div>
@@ -104,7 +104,7 @@ export const ITPrestationsCatalog: React.FC<Props> = ({ themeColor }) => {
               padding: '10px 20px',
               borderRadius: 8,
               background: themeColor,
-              color: 'white',
+              color: 'var(--text-inverse)',
               border: 'none',
               fontWeight: 700,
               fontSize: '0.85rem',
@@ -119,10 +119,10 @@ export const ITPrestationsCatalog: React.FC<Props> = ({ themeColor }) => {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
         {services.map((s) => (
-          <div key={s.id} style={{ background: 'white', padding: 20, borderRadius: 12, border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div key={s.id} style={{ background: 'var(--bg-card)', padding: 20, borderRadius: 12, border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                <span style={{ padding: '3px 8px', borderRadius: 6, background: '#F1F5F9', color: '#475569', fontSize: '0.72rem', fontWeight: 700 }}>
+                <span style={{ padding: '3px 8px', borderRadius: 6, background: 'var(--bg-main)', color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: 700 }}>
                   {s.category}
                 </span>
                 <span style={{ fontSize: '1.15rem', fontWeight: 800, color: themeColor, fontFamily: "'Sora', sans-serif" }}>
@@ -130,16 +130,16 @@ export const ITPrestationsCatalog: React.FC<Props> = ({ themeColor }) => {
                 </span>
               </div>
 
-              <h3 style={{ margin: '0 0 6px 0', fontSize: '0.98rem', fontWeight: 700, color: '#111827' }}>{s.title}</h3>
-              <p style={{ margin: '0 0 12px 0', fontSize: '0.82rem', color: '#6B7280', lineHeight: 1.4 }}>{s.description}</p>
+              <h3 style={{ margin: '0 0 6px 0', fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-main)' }}>{s.title}</h3>
+              <p style={{ margin: '0 0 12px 0', fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>{s.description}</p>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #F1F5F9', paddingTop: 10, marginTop: 10 }}>
-              <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 600 }}>⏱️ Durée est. {s.estimatedHours}</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>⏱️ Durée est. {s.estimatedHours}</span>
 
               {isAdmin && (
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <button onClick={() => handleOpenEdit(s)} style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #CBD5E1', background: 'white', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
+                  <button onClick={() => handleOpenEdit(s)} style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border-color)', background: 'var(--bg-card)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
                     ✏️ Modifier
                   </button>
                   <button onClick={() => handleDelete(s.id)} style={{ padding: '4px 10px', borderRadius: 6, border: 'none', background: '#FEE2E2', color: '#DC2626', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
@@ -156,27 +156,27 @@ export const ITPrestationsCatalog: React.FC<Props> = ({ themeColor }) => {
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editingId ? 'Modifier la Prestation IT' : 'Ajouter une Prestation IT'}>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>Titre du Forfait</label>
-            <input required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="ex: Nettoyage Système & Antivirus" style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #D1D5DB' }} />
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>Titre du Forfait</label>
+            <input required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="ex: Nettoyage Système & Antivirus" style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--border-color)' }} />
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>Description Détallée</label>
-            <textarea required rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Détail des opérations effectuées..." style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #D1D5DB' }} />
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>Description Détallée</label>
+            <textarea required rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Détail des opérations effectuées..." style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--border-color)' }} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>Prix de la Prestation (XOF)</label>
-              <input type="number" required value={priceXOF} onChange={(e) => setPriceXOF(Number(e.target.value))} style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #D1D5DB' }} />
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>Prix de la Prestation (XOF)</label>
+              <input type="number" required value={priceXOF} onChange={(e) => setPriceXOF(Number(e.target.value))} style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--border-color)' }} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>Durée Estimée</label>
-              <input required value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)} placeholder="ex: 1h30" style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #D1D5DB' }} />
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>Durée Estimée</label>
+              <input required value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)} placeholder="ex: 1h30" style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--border-color)' }} />
             </div>
           </div>
 
-          <button type="submit" style={{ padding: 12, borderRadius: 8, border: 'none', background: themeColor, color: 'white', fontWeight: 800, cursor: 'pointer', marginTop: 10 }}>
+          <button type="submit" style={{ padding: 12, borderRadius: 8, border: 'none', background: themeColor, color: 'var(--text-inverse)', fontWeight: 800, cursor: 'pointer', marginTop: 10 }}>
             Enregistrer dans le Catalogue ✓
           </button>
         </form>

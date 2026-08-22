@@ -68,6 +68,14 @@ export class UpdateTicketStatusDto {
   notes?: string;
 
   @IsOptional()
+  @IsString()
+  photoBefore?: string;
+
+  @IsOptional()
+  @IsString()
+  photoAfter?: string;
+
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => RepairPartDto)
