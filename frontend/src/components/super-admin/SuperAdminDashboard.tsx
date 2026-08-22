@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface TenantRow {
   id: string;
@@ -20,6 +21,7 @@ const DEMO_TENANTS: TenantRow[] = [
 ];
 
 export const SuperAdminDashboard: React.FC = () => {
+  const { theme, toggleTheme } = useTheme();
   const [tenants, setTenants] = useState<TenantRow[]>(DEMO_TENANTS);
   const [selectedSectorFilter, setSelectedSectorFilter] = useState<string>('ALL');
 
@@ -38,48 +40,55 @@ export const SuperAdminDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#090D16] text-[#F8FAFC] p-8 space-y-8 font-['Plus_Jakarta_Sans',sans-serif]">
+    <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-main)] p-8 space-y-8 font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Header Bar */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#0F172A] border border-slate-800 rounded-3xl p-6 shadow-2xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-3xl p-6 shadow-2xl">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1B4D3E] to-[#0F3D2E] border border-[#D9A441]/40 flex items-center justify-center font-['Sora'] font-bold text-2xl text-[#D9A441] shadow-lg">
             K
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-['Sora'] font-extrabold text-white">Super Admin Dashboard</h1>
+              <h1 className="text-2xl font-['Sora'] font-extrabold text-[var(--text-main)]">Super Admin Dashboard</h1>
               <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#D9A441]/20 text-[#D9A441] border border-[#D9A441]/30">
                 KPSyDesk Suite - Door Waar Global
               </span>
-
             </div>
-            <p className="text-xs text-slate-400 mt-1">Supervision globale multi-tenant & validation des abonnements UEMOA</p>
+            <p className="text-xs text-[var(--text-muted)] mt-1">Supervision globale multi-tenant & validation des abonnements UEMOA</p>
           </div>
         </div>
+        
+        <button
+          onClick={toggleTheme}
+          title="Basculer le thème"
+          className="text-2xl p-2 rounded-full hover:bg-[var(--bg-hover)] transition-colors"
+        >
+          {theme === 'light' ? '🌙' : '☀️'}
+        </button>
       </div>
 
       {/* Stats Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-[#0F172A]/80 border border-slate-800 rounded-2xl p-6">
-          <span className="text-xs font-medium text-slate-400">Total Tenants</span>
-          <div className="text-3xl font-extrabold text-white mt-2">{tenants.length}</div>
+        <div className="bg-[var(--bg-card)]/80 border border-[var(--border-color)] rounded-2xl p-6">
+          <span className="text-xs font-medium text-[var(--text-muted)]">Total Tenants</span>
+          <div className="text-3xl font-extrabold text-[var(--text-main)] mt-2">{tenants.length}</div>
         </div>
 
-        <div className="bg-[#0F172A]/80 border border-[#D9A441]/30 rounded-2xl p-6">
+        <div className="bg-[var(--bg-card)]/80 border border-[#D9A441]/30 rounded-2xl p-6">
           <span className="text-xs font-medium text-[#D9A441]">Essais Actifs (Trial 7D)</span>
           <div className="text-3xl font-extrabold text-[#D9A441] mt-2">
             {tenants.filter((t) => t.billingStatus === 'TRIAL_7D').length}
           </div>
         </div>
 
-        <div className="bg-[#0F172A]/80 border border-emerald-500/30 rounded-2xl p-6">
+        <div className="bg-[var(--bg-card)]/80 border border-emerald-500/30 rounded-2xl p-6">
           <span className="text-xs font-medium text-emerald-400">Abonnements Actifs</span>
           <div className="text-3xl font-extrabold text-emerald-400 mt-2">
             {tenants.filter((t) => t.billingStatus === 'ACTIVE').length}
           </div>
         </div>
 
-        <div className="bg-[#0F172A]/80 border border-red-500/30 rounded-2xl p-6">
+        <div className="bg-[var(--bg-card)]/80 border border-red-500/30 rounded-2xl p-6">
           <span className="text-xs font-medium text-red-400">Suspendus</span>
           <div className="text-3xl font-extrabold text-red-400 mt-2">
             {tenants.filter((t) => t.billingStatus === 'SUSPENDED').length}
@@ -88,32 +97,32 @@ export const SuperAdminDashboard: React.FC = () => {
       </div>
 
       {/* Sector Filter & Tenants Table */}
-      <div className="bg-[#0F172A]/90 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6">
+      <div className="bg-[var(--bg-card)]/90 border border-[var(--border-color)] rounded-3xl p-6 shadow-2xl space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h3 className="text-lg font-['Sora'] font-bold text-white">Liste des Entreprises & Ateliers</h3>
+          <h3 className="text-lg font-['Sora'] font-bold text-[var(--text-main)]">Liste des Entreprises & Ateliers</h3>
 
-          <div className="flex items-center gap-2 bg-[#090D16] p-1.5 rounded-xl border border-slate-800 text-xs">
+          <div className="flex items-center gap-2 bg-[var(--bg-main)] p-1.5 rounded-xl border border-[var(--border-color)] text-xs">
             <button
               onClick={() => setSelectedSectorFilter('ALL')}
-              className={`px-3 py-1.5 rounded-lg transition-colors ${selectedSectorFilter === 'ALL' ? 'bg-[#1B4D3E] text-white font-bold' : 'text-slate-400 hover:text-white'}`}
+              className={`px-3 py-1.5 rounded-lg transition-colors ${selectedSectorFilter === 'ALL' ? 'bg-[#1B4D3E] text-[var(--text-main)] font-bold' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
             >
               Tous
             </button>
             <button
               onClick={() => setSelectedSectorFilter('QUINCAILLERIE')}
-              className={`px-3 py-1.5 rounded-lg transition-colors ${selectedSectorFilter === 'QUINCAILLERIE' ? 'bg-[#D9A441] text-[#090D16] font-bold' : 'text-slate-400 hover:text-white'}`}
+              className={`px-3 py-1.5 rounded-lg transition-colors ${selectedSectorFilter === 'QUINCAILLERIE' ? 'bg-[#D9A441] text-[#090D16] font-bold' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
             >
               🔩 Quincailleries
             </button>
             <button
               onClick={() => setSelectedSectorFilter('MULTISERVICES_IT')}
-              className={`px-3 py-1.5 rounded-lg transition-colors ${selectedSectorFilter === 'MULTISERVICES_IT' ? 'bg-[#14B8A6] text-[#090D16] font-bold' : 'text-slate-400 hover:text-white'}`}
+              className={`px-3 py-1.5 rounded-lg transition-colors ${selectedSectorFilter === 'MULTISERVICES_IT' ? 'bg-[#14B8A6] text-[#090D16] font-bold' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
             >
               💻 Multiservices IT
             </button>
             <button
               onClick={() => setSelectedSectorFilter('TAILLEUR')}
-              className={`px-3 py-1.5 rounded-lg transition-colors ${selectedSectorFilter === 'TAILLEUR' ? 'bg-[#E07A5F] text-white font-bold' : 'text-slate-400 hover:text-white'}`}
+              className={`px-3 py-1.5 rounded-lg transition-colors ${selectedSectorFilter === 'TAILLEUR' ? 'bg-[#E07A5F] text-[var(--text-main)] font-bold' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
             >
               ✂️ Tailleurs
             </button>
@@ -122,7 +131,7 @@ export const SuperAdminDashboard: React.FC = () => {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="text-xs text-slate-400 bg-[#090D16]/80 uppercase border-b border-slate-800">
+            <thead className="text-xs text-[var(--text-muted)] bg-[var(--bg-main)]/80 uppercase border-b border-[var(--border-color)]">
               <tr>
                 <th className="py-4 px-4">Code</th>
                 <th className="py-4 px-4">Entreprise</th>
@@ -135,11 +144,11 @@ export const SuperAdminDashboard: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-800/60">
               {filteredTenants.map((t) => (
-                <tr key={t.id} className="hover:bg-slate-800/30 transition-colors">
+                <tr key={t.id} className="hover:bg-[var(--bg-card)]/30 transition-colors">
                   <td className="py-4 px-4 font-mono text-xs text-[#D9A441] font-bold">{t.code}</td>
-                  <td className="py-4 px-4 font-semibold text-white">{t.name}</td>
+                  <td className="py-4 px-4 font-semibold text-[var(--text-main)]">{t.name}</td>
                   <td className="py-4 px-4">
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-[var(--bg-card)] text-slate-300 border border-[var(--border-color)]">
                       {t.sectorType}
                     </span>
                   </td>

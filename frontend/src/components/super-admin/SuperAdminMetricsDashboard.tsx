@@ -50,22 +50,22 @@ export const SuperAdminMetricsDashboard: React.FC<Props> = ({ themeColor }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       <div>
-        <h2 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: '1.2rem', margin: 0, color: '#111827' }}>
+        <h2 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: '1.2rem', margin: 0, color: 'var(--text-main)' }}>
           Vue Consolidée SaaS Multi-Secteurs UEMOA
         </h2>
-        <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280' }}>
+        <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
           Statistiques d'abonnements, volumes financiers consolidés en XOF et file de validation des paiements
         </p>
       </div>
 
       {loading ? (
-        <div style={{ padding: 40, textAlign: 'center', color: '#6B7280' }}>Chargement des métriques globales...</div>
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Chargement des métriques globales...</div>
       ) : (
         <>
           {/* Cartes Clés */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-            <div style={{ background: 'white', padding: 20, borderRadius: 12, border: '1px solid #E5E7EB' }}>
-              <div style={{ fontSize: '0.78rem', color: '#6B7280', fontWeight: 600 }}>Total Entreprises Inscrites</div>
+            <div style={{ background: 'var(--bg-card)', padding: 20, borderRadius: 12, border: '1px solid var(--border-color)' }}>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>Total Entreprises Inscrites</div>
               <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: 4, fontFamily: "'Sora', sans-serif" }}>
                 {stats?.totalTenants || 0}
               </div>
@@ -74,33 +74,33 @@ export const SuperAdminMetricsDashboard: React.FC<Props> = ({ themeColor }) => {
               </div>
             </div>
 
-            <div style={{ background: 'white', padding: 20, borderRadius: 12, border: '1px solid #E5E7EB' }}>
-              <div style={{ fontSize: '0.78rem', color: '#6B7280', fontWeight: 600 }}>Paiements en Attente</div>
+            <div style={{ background: 'var(--bg-card)', padding: 20, borderRadius: 12, border: '1px solid var(--border-color)' }}>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>Paiements en Attente</div>
               <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: 4, color: '#D97706', fontFamily: "'Sora', sans-serif" }}>
                 {stats?.pendingProofsCount || 0}
               </div>
               <div style={{ fontSize: '0.72rem', color: '#D97706', marginTop: 4, fontWeight: 700 }}>Preuves Wave / OM</div>
             </div>
 
-            <div style={{ background: 'white', padding: 20, borderRadius: 12, border: '1px solid #E5E7EB' }}>
-              <div style={{ fontSize: '0.78rem', color: '#6B7280', fontWeight: 600 }}>Volume Facturé Consolidé</div>
+            <div style={{ background: 'var(--bg-card)', padding: 20, borderRadius: 12, border: '1px solid var(--border-color)' }}>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>Volume Facturé Consolidé</div>
               <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: 6, color: themeColor, fontFamily: "'Sora', sans-serif" }}>
                 {stats?.totalInvoicesVolumeXOF?.toLocaleString() || 0} XOF
               </div>
-              <div style={{ fontSize: '0.72rem', color: '#9CA3AF', marginTop: 4 }}>Devis & Factures</div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>Devis & Factures</div>
             </div>
 
-            <div style={{ background: 'white', padding: 20, borderRadius: 12, border: '1px solid #E5E7EB' }}>
-              <div style={{ fontSize: '0.78rem', color: '#6B7280', fontWeight: 600 }}>Ventes Quincaillerie XOF</div>
+            <div style={{ background: 'var(--bg-card)', padding: 20, borderRadius: 12, border: '1px solid var(--border-color)' }}>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>Ventes Quincaillerie XOF</div>
               <div style={{ fontSize: '1.5rem', fontWeight: 800, marginTop: 6, color: '#059669', fontFamily: "'Sora', sans-serif" }}>
                 {stats?.totalQuincaillerieSalesXOF?.toLocaleString() || 0} XOF
               </div>
-              <div style={{ fontSize: '0.72rem', color: '#9CA3AF', marginTop: 4 }}>Total Caisse direct</div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>Total Caisse direct</div>
             </div>
           </div>
 
           {/* Répartition par Secteur */}
-          <div style={{ background: 'white', padding: 24, borderRadius: 12, border: '1px solid #E5E7EB' }}>
+          <div style={{ background: 'var(--bg-card)', padding: 24, borderRadius: 12, border: '1px solid var(--border-color)' }}>
             <h3 style={{ margin: '0 0 16px 0', fontSize: '1rem', fontWeight: 700 }}>Répartition par Secteur d'Activité</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
               <div style={{ background: '#ECFDF5', padding: 16, borderRadius: 10, border: '1px solid #A7F3D0' }}>

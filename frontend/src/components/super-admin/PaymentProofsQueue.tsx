@@ -88,20 +88,20 @@ export const PaymentProofsQueue: React.FC<Props> = ({ themeColor }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
-        <h2 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: '1.2rem', margin: 0, color: '#111827' }}>
+        <h2 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: '1.2rem', margin: 0, color: 'var(--text-main)' }}>
           File d'Attente des Preuves de Paiement UEMOA
         </h2>
-        <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280' }}>
-          Validation manuelle des reçus Wave / Orange Money et renouvellement automatique des abonnements
+        <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+          Validation manuelle des reçus de paiement et renouvellement automatique des abonnements
         </p>
       </div>
 
-      <div style={{ background: 'white', borderRadius: 12, border: '1px solid #E5E7EB', overflow: 'hidden' }}>
+      <div style={{ background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border-color)', overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: '#6B7280' }}>Chargement des preuves...</div>
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Chargement des preuves...</div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
-            <thead style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
+            <thead style={{ background: 'var(--bg-main)', borderBottom: '1px solid var(--border-color)' }}>
               <tr>
                 <th style={{ padding: '12px 18px', fontWeight: 700 }}>Date Soumission</th>
                 <th style={{ padding: '12px 18px', fontWeight: 700 }}>Entreprise (Tenant)</th>
@@ -116,14 +116,14 @@ export const PaymentProofsQueue: React.FC<Props> = ({ themeColor }) => {
             <tbody>
               {proofs.length === 0 ? (
                 <tr>
-                  <td colSpan={8} style={{ padding: 40, textAlign: 'center', color: '#9CA3AF' }}>
+                  <td colSpan={8} style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
                     Aucune preuve de paiement dans la file pour le moment.
                   </td>
                 </tr>
               ) : (
                 proofs.map((p) => (
                   <tr key={p.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                    <td style={{ padding: '14px 18px', color: '#6B7280' }}>
+                    <td style={{ padding: '14px 18px', color: 'var(--text-muted)' }}>
                       {new Date(p.submittedAt).toLocaleString('fr-FR')}
                     </td>
                     <td style={{ padding: '14px 18px' }}>
@@ -131,13 +131,25 @@ export const PaymentProofsQueue: React.FC<Props> = ({ themeColor }) => {
                       <div style={{ fontSize: '0.75rem', color: themeColor }}>{p.tenant?.code}</div>
                     </td>
                     <td style={{ padding: '14px 18px', fontWeight: 700 }}>{p.provider}</td>
-                    <td style={{ padding: '14px 18px', fontFamily: 'monospace', fontWeight: 700, color: '#374151' }}>
+                    <td style={{ padding: '14px 18px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--text-muted)' }}>
                       {p.transactionRef}
                     </td>
-                    <td style={{ padding: '14px 18px', fontWeight: 800, color: '#059669' }}>
-                      {p.amount.toLocaleString()} XOF
+                    <td style={{ padding: '14px 18px' }}>
+                      <div style={{ fontWeight: 800, color: '#059669' }}>
+                        {p.amount.toLocaleString()} XOF
+                      </div>
+                      {(p as any).expectedAmount && (
+                        <div style={{
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          color: (p as any).expectedAmount === p.amount ? '#059669' : '#DC2626',
+                        }}>
+                          {(p as any).expectedAmount === p.amount ? '✓ Montant Conforme' : `⚠️ Attendu: ${(p as any).expectedAmount.toLocaleString()} XOF`}
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: '14px 18px', fontWeight: 700 }}>{p.durationMonths} mois</td>
+
                     <td style={{ padding: '14px 18px' }}>
                       <span
                         style={{
@@ -162,7 +174,7 @@ export const PaymentProofsQueue: React.FC<Props> = ({ themeColor }) => {
                               padding: '6px 10px',
                               borderRadius: 6,
                               background: '#059669',
-                              color: 'white',
+                              color: 'var(--text-inverse)',
                               border: 'none',
                               fontSize: '0.75rem',
                               fontWeight: 700,
@@ -178,7 +190,7 @@ export const PaymentProofsQueue: React.FC<Props> = ({ themeColor }) => {
                               padding: '6px 10px',
                               borderRadius: 6,
                               background: '#DC2626',
-                              color: 'white',
+                              color: 'var(--text-inverse)',
                               border: 'none',
                               fontSize: '0.75rem',
                               fontWeight: 700,
@@ -189,7 +201,7 @@ export const PaymentProofsQueue: React.FC<Props> = ({ themeColor }) => {
                           </button>
                         </div>
                       ) : (
-                        <span style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>Traitée</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Traitée</span>
                       )}
                     </td>
                   </tr>

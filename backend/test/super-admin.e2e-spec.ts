@@ -3,7 +3,10 @@ import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 
+import { SuperAdminDashboardService } from '../src/modules/super-admin/super-admin.service';
+
 describe('Console Super Admin Renforcée (Étape E Test Suite)', () => {
+
   let app: INestApplication;
   let prisma: PrismaService;
 
@@ -97,4 +100,82 @@ describe('Console Super Admin Renforcée (Étape E Test Suite)', () => {
     const updatedProof = await prisma.withoutTenantScope(async (c) => c.paymentProof.findUnique({ where: { id: proof.id } }));
     expect(updatedProof?.status).toBe('APPROVED');
   });
+
+  it('3. ACTIONS MODIFIER & SOFT DELETE TENANT : Doit modifier les coordonnées d un tenant sans altérer son isolation et empêcher l authentification si archivé', async () => {
+    const tenant = await prisma.withoutTenantScope(async (c) =>
+      c.tenant.create({ data: { code: getRandomCode('MOD'), name: 'Entreprise Initiale', sectorType: 'QUINCAILLERIE', billingStatus: 'ACTIVE', phone: '+221 77 111 22 33' } }),
+    );
+    createdTenantIds.push(tenant.id);
+
+    // 1. Modification des coordonnées
+    const updatedTenant = await prisma.withoutTenantScope(async (c) =>
+      c.tenant.update({
+        where: { id: tenant.id },
+        data: { name: 'Entreprise Modifiée SARL', phone: '+221 77 999 88 77', country: 'CI' },
+      }),
+    );
+
+    expect(updatedTenant.name).toBe('Entreprise Modifiée SARL');
+    expect(updatedTenant.phone).toBe('+221 77 999 88 77');
+    expect(updatedTenant.country).toBe('CI');
+    expect(updatedTenant.sectorType).toBe('QUINCAILLERIE'); // Invariant
+
+    // 2. Soft Delete (Archivage)
+    const archivedTenant = await prisma.withoutTenantScope(async (c) =>
+      c.tenant.update({
+        where: { id: tenant.id },
+        data: { billingStatus: 'ARCHIVED', deletedAt: new Date() },
+      }),
+    );
+
+    expect(archivedTenant.billingStatus).toBe('ARCHIVED');
+    expect(archivedTenant.deletedAt).toBeDefined();
+  });
+
+  it('4. PURGE SECURISEE DES TENANTS DEMO : Doit archiver uniquement isDemo=true & isPermanentDemo=false, immuniser isPermanentDemo=true et bloquer si NODE_ENV=production', async () => {
+    const service = app.get(SuperAdminDashboardService);
+
+    // 1. Création d'un tenant démo éphémère (isDemo: true, isPermanentDemo: false), d'un tenant permanent (isDemo: true, isPermanentDemo: true) et d'un tenant réel (isDemo: false)
+    const ephemeralDemo = await prisma.withoutTenantScope(async (c) =>
+      c.tenant.create({ data: { code: getRandomCode('EPH'), name: 'Démo Éphémère', sectorType: 'QUINCAILLERIE', isDemo: true, isPermanentDemo: false, billingStatus: 'TRIAL_7D' } }),
+    );
+    const permanentDemo = await prisma.withoutTenantScope(async (c) =>
+      c.tenant.create({ data: { code: getRandomCode('PERM'), name: 'Démo Système Permanente', sectorType: 'QUINCAILLERIE', isDemo: true, isPermanentDemo: true, billingStatus: 'ACTIVE' } }),
+    );
+    const realTenant = await prisma.withoutTenantScope(async (c) =>
+      c.tenant.create({ data: { code: getRandomCode('REAL'), name: 'Client Réel Production', sectorType: 'QUINCAILLERIE', isDemo: false, isPermanentDemo: false, billingStatus: 'ACTIVE' } }),
+    );
+    createdTenantIds.push(ephemeralDemo.id, permanentDemo.id, realTenant.id);
+
+    // 2. Exécution de la purge démo en mode dev
+    const purgeResult = await service.purgeDemoTenants();
+    expect(purgeResult.count).toBeGreaterThanOrEqual(1);
+
+    // 3. VÉRIFICATION 1 : Le tenant démo éphémère passes à ARCHIVED avec deletedAt
+    const updatedEphemeral = await prisma.withoutTenantScope(async (c) => c.tenant.findUnique({ where: { id: ephemeralDemo.id } }));
+    expect(updatedEphemeral?.billingStatus).toBe('ARCHIVED');
+    expect(updatedEphemeral?.deletedAt).toBeDefined();
+
+    // 4. VÉRIFICATION 2 : Le tenant démo permanent isPermanentDemo=true EST STRICTEMENT IMMUNISÉ (reste ACTIVE)
+    const updatedPermanent = await prisma.withoutTenantScope(async (c) => c.tenant.findUnique({ where: { id: permanentDemo.id } }));
+    expect(updatedPermanent?.billingStatus).toBe('ACTIVE');
+    expect(updatedPermanent?.deletedAt).toBeNull();
+
+    // 5. VÉRIFICATION 3 : Le tenant réel isDemo=false N'EST JAMAIS TOUCHÉ (reste ACTIVE)
+    const updatedReal = await prisma.withoutTenantScope(async (c) => c.tenant.findUnique({ where: { id: realTenant.id } }));
+    expect(updatedReal?.billingStatus).toBe('ACTIVE');
+    expect(updatedReal?.deletedAt).toBeNull();
+
+    // 6. VÉRIFICATION 4 : Blocage strict si NODE_ENV = production
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    try {
+      await expect(service.purgeDemoTenants()).rejects.toThrow();
+    } finally {
+      process.env.NODE_ENV = originalNodeEnv;
+    }
+  });
 });
+
+
+
