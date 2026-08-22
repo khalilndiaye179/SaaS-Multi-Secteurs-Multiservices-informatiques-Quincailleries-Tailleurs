@@ -126,6 +126,8 @@ export const QuincaillerieStockManager: React.FC<Props> = ({ themeColor, onStock
     } finally {
       setSubmitting(false);
     }
+  };
+
   const handleTransfer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!transferItemId || !sourceDepotId || !targetDepotId || transferQuantity <= 0) {
@@ -496,3 +498,5 @@ export const QuincaillerieStockManager: React.FC<Props> = ({ themeColor, onStock
     </div>
   );
 };
+
+export default QuincaillerieStockManager;
