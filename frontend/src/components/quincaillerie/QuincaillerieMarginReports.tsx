@@ -36,36 +36,36 @@ export const QuincaillerieMarginReports: React.FC<Props> = ({ themeColor }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
-        <h2 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: '1.2rem', margin: 0, color: '#111827' }}>
+        <h2 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: '1.2rem', margin: 0, color: 'var(--text-main)' }}>
           Rapports Financiers & Valorisation de Stock
         </h2>
-        <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280' }}>
+        <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
           Analyse de la valeur totale du stock (Prix Achat vs Prix Vente) et marge brute potentielle en XOF
         </p>
       </div>
 
       {loading ? (
-        <div style={{ padding: 40, textAlign: 'center', color: '#6B7280' }}>Chargement des données financières...</div>
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Chargement des données financières...</div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
-          <div style={{ background: 'white', padding: 24, borderRadius: 14, border: '1px solid #E5E7EB' }}>
-            <div style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600 }}>Valeur d'Achat du Stock</div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: 6, color: '#374151', fontFamily: "'Sora', sans-serif" }}>
+          <div style={{ background: 'var(--bg-card)', padding: 24, borderRadius: 14, border: '1px solid var(--border-color)' }}>
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600 }}>Valeur d'Achat du Stock</div>
+            <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: 6, color: 'var(--text-muted)', fontFamily: "'Sora', sans-serif" }}>
               {report?.totalPurchaseValueXOF?.toLocaleString() || 0} XOF
             </div>
-            <div style={{ fontSize: '0.72rem', color: '#9CA3AF', marginTop: 4 }}>Capital immobilisé</div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>Capital immobilisé</div>
           </div>
 
-          <div style={{ background: 'white', padding: 24, borderRadius: 14, border: '1px solid #E5E7EB' }}>
-            <div style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600 }}>Valeur de Vente Potentielle</div>
+          <div style={{ background: 'var(--bg-card)', padding: 24, borderRadius: 14, border: '1px solid var(--border-color)' }}>
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600 }}>Valeur de Vente Potentielle</div>
             <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: 6, color: themeColor, fontFamily: "'Sora', sans-serif" }}>
               {report?.totalSellingValueXOF?.toLocaleString() || 0} XOF
             </div>
-            <div style={{ fontSize: '0.72rem', color: '#9CA3AF', marginTop: 4 }}>Chiffre d'affaires brut estimé</div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>Chiffre d'affaires brut estimé</div>
           </div>
 
-          <div style={{ background: 'white', padding: 24, borderRadius: 14, border: '1px solid #E5E7EB' }}>
-            <div style={{ fontSize: '0.82rem', color: '#6B7280', fontWeight: 600 }}>Marge Brute Potentielle</div>
+          <div style={{ background: 'var(--bg-card)', padding: 24, borderRadius: 14, border: '1px solid var(--border-color)' }}>
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600 }}>Marge Brute Potentielle</div>
             <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: 6, color: '#059669', fontFamily: "'Sora', sans-serif" }}>
               +{report?.potentialMarginXOF?.toLocaleString() || 0} XOF
             </div>

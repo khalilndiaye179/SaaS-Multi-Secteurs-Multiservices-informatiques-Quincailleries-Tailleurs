@@ -24,6 +24,9 @@ interface Props {
 export const QuincaillerieDirectSaleManager: React.FC<Props> = ({ themeColor, onSaleCompleted }) => {
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [cart, setCart] = useState<SaleLine[]>([]);
+  const [clientName, setClientName] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+  const [generateInvoice, setGenerateInvoice] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState('');
   const [qtyToSell, setQtyToSell] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -77,12 +80,18 @@ export const QuincaillerieDirectSaleManager: React.FC<Props> = ({ themeColor, on
         method: 'POST',
         headers,
         body: JSON.stringify({
-          items: cart.map((c) => ({ stockItemId: c.stockItemId, quantity: c.quantity, unitPrice: c.unitPrice })),
+          lines: cart.map((c) => ({ stockItemId: c.stockItemId, quantity: c.quantity, sellingPrice: c.unitPrice })),
+          clientName,
+          clientPhone,
+          generateInvoice,
         }),
       });
 
       if (res.ok) {
         setCart([]);
+        setClientName('');
+        setClientPhone('');
+        setGenerateInvoice(false);
         setSuccessMsg('Vente enregistrée avec succès ! Le stock a été décrémenté.');
         setTimeout(() => setSuccessMsg(''), 4000);
         fetchStock();
@@ -98,10 +107,10 @@ export const QuincaillerieDirectSaleManager: React.FC<Props> = ({ themeColor, on
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
-        <h2 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: '1.2rem', margin: 0, color: '#111827' }}>
+        <h2 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: '1.2rem', margin: 0, color: 'var(--text-main)' }}>
           Interface Caisse & Vente Directe Comptoir
         </h2>
-        <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280' }}>
+        <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
           Saisie rapide des ventes comptoir avec décrémentation automatique du stock en temps réel
         </p>
       </div>
@@ -114,18 +123,18 @@ export const QuincaillerieDirectSaleManager: React.FC<Props> = ({ themeColor, on
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
         {/* Colonne Sélection */}
-        <div style={{ background: 'white', padding: 24, borderRadius: 12, border: '1px solid #E5E7EB' }}>
+        <div style={{ background: 'var(--bg-card)', padding: 24, borderRadius: 12, border: '1px solid var(--border-color)' }}>
           <h3 style={{ margin: '0 0 16px 0', fontSize: '1rem', fontWeight: 700 }}>Ajouter un Article à la Vente</h3>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>
                 Sélectionner l'Article en Stock
               </label>
               <select
                 value={selectedItemId}
                 onChange={(e) => setSelectedItemId(e.target.value)}
-                style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #D1D5DB', fontWeight: 600 }}
+                style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--border-color)', fontWeight: 600 }}
               >
                 {stockItems.map((item) => (
                   <option key={item.id} value={item.id}>
@@ -136,7 +145,7 @@ export const QuincaillerieDirectSaleManager: React.FC<Props> = ({ themeColor, on
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#374151', marginBottom: 4 }}>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>
                 Quantité Vendue
               </label>
               <input
@@ -144,7 +153,7 @@ export const QuincaillerieDirectSaleManager: React.FC<Props> = ({ themeColor, on
                 min="1"
                 value={qtyToSell}
                 onChange={(e) => setQtyToSell(Number(e.target.value))}
-                style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #D1D5DB', fontWeight: 700 }}
+                style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--border-color)', fontWeight: 700 }}
               />
             </div>
 
@@ -156,7 +165,7 @@ export const QuincaillerieDirectSaleManager: React.FC<Props> = ({ themeColor, on
                 borderRadius: 8,
                 border: 'none',
                 background: themeColor,
-                color: 'white',
+                color: 'var(--text-inverse)',
                 fontWeight: 700,
                 cursor: 'pointer',
                 marginTop: 6,
@@ -168,21 +177,21 @@ export const QuincaillerieDirectSaleManager: React.FC<Props> = ({ themeColor, on
         </div>
 
         {/* Colonne Panier Caisse */}
-        <div style={{ background: 'white', padding: 24, borderRadius: 12, border: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div style={{ background: 'var(--bg-card)', padding: 24, borderRadius: 12, border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
             <h3 style={{ margin: '0 0 16px 0', fontSize: '1rem', fontWeight: 700 }}>Panier de Vente Actuel</h3>
 
             {cart.length === 0 ? (
-              <div style={{ padding: 30, textAlign: 'center', color: '#9CA3AF', fontSize: '0.88rem' }}>
+              <div style={{ padding: 30, textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
                 Le panier est vide. Sélectionnez un article pour commencer la vente.
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {cart.map((c, idx) => (
-                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: '#F9FAFB', borderRadius: 8 }}>
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--bg-main)', borderRadius: 8 }}>
                     <div>
                       <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{c.name}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                         {c.quantity} x {c.unitPrice.toLocaleString()} XOF
                       </div>
                     </div>
@@ -196,10 +205,48 @@ export const QuincaillerieDirectSaleManager: React.FC<Props> = ({ themeColor, on
             )}
           </div>
 
-          <div style={{ marginTop: 20, borderTop: '1px solid #E5E7EB', paddingTop: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2rem', fontWeight: 800, color: '#111827', marginBottom: 14 }}>
+          <div style={{ marginTop: 20, borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: 14 }}>
               <span>Total Caisse :</span>
               <span style={{ color: themeColor, fontFamily: "'Sora', sans-serif" }}>{totalCart().toLocaleString()} XOF</span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>
+                  Nom du Client (optionnel)
+                </label>
+                <input
+                  type="text"
+                  value={clientName}
+                  onChange={(e) => setClientName(e.target.value)}
+                  style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid var(--border-color)' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>
+                  Téléphone Client (optionnel)
+                </label>
+                <input
+                  type="text"
+                  value={clientPhone}
+                  onChange={(e) => setClientPhone(e.target.value)}
+                  style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid var(--border-color)' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+                <input
+                  type="checkbox"
+                  id="generateInvoice"
+                  checked={generateInvoice}
+                  onChange={(e) => setGenerateInvoice(e.target.checked)}
+                />
+                <label htmlFor="generateInvoice" style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer' }}>
+                  Générer une facture pour cette vente
+                </label>
+              </div>
             </div>
 
             <button
@@ -211,7 +258,7 @@ export const QuincaillerieDirectSaleManager: React.FC<Props> = ({ themeColor, on
                 borderRadius: 10,
                 border: 'none',
                 background: cart.length === 0 ? '#CBD5E1' : themeColor,
-                color: 'white',
+                color: 'var(--text-inverse)',
                 fontWeight: 800,
                 fontSize: '0.95rem',
                 cursor: cart.length === 0 ? 'not-allowed' : 'pointer',

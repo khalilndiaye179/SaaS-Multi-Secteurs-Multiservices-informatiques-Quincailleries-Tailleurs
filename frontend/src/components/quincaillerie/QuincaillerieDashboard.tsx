@@ -35,19 +35,19 @@ export const QuincaillerieDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-6 space-y-8">
       {/* Header Bar */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[var(--bg-main)] border border-[var(--border-color)] rounded-3xl p-6 shadow-xl">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-3xl">
             🔩
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-white">Quincaillerie Al-Baraka</h1>
+              <h1 className="text-2xl font-bold text-[var(--text-main)]">Quincaillerie Al-Baraka</h1>
               <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
                 Secteur Quincaillerie
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-1">Gestion de Stock & Point de Vente — Devise XOF</p>
+            <p className="text-xs text-[var(--text-muted)] mt-1">Gestion de Stock & Point de Vente — Devise XOF</p>
           </div>
         </div>
 
@@ -61,39 +61,39 @@ export const QuincaillerieDashboard: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
-          <span className="text-xs font-medium text-slate-400">Total Références</span>
-          <div className="text-3xl font-extrabold text-white mt-2">{items.length}</div>
+        <div className="bg-[var(--bg-main)]/60 border border-[var(--border-color)] rounded-2xl p-6">
+          <span className="text-xs font-medium text-[var(--text-muted)]">Total Références</span>
+          <div className="text-3xl font-extrabold text-[var(--text-main)] mt-2">{items.length}</div>
         </div>
 
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
-          <span className="text-xs font-medium text-slate-400">Valorisation du Stock</span>
+        <div className="bg-[var(--bg-main)]/60 border border-[var(--border-color)] rounded-2xl p-6">
+          <span className="text-xs font-medium text-[var(--text-muted)]">Valorisation du Stock</span>
           <div className="text-3xl font-extrabold text-amber-400 mt-2">
             {totalStockValue.toLocaleString('fr-FR')} <span className="text-sm">FCFA</span>
           </div>
         </div>
 
-        <div className="bg-slate-900/60 border border-red-500/30 rounded-2xl p-6">
+        <div className="bg-[var(--bg-main)]/60 border border-red-500/30 rounded-2xl p-6">
           <span className="text-xs font-medium text-red-400">Alertes Rupture</span>
           <div className="text-3xl font-extrabold text-red-400 mt-2">{alertsCount} article(s)</div>
         </div>
       </div>
 
       {/* Stock Table */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+      <div className="bg-[var(--bg-main)]/80 border border-[var(--border-color)] rounded-3xl p-6 shadow-xl space-y-4">
         <div className="flex justify-between items-center gap-4">
           <input
             type="text"
             placeholder="Rechercher par nom ou SKU..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full max-w-md px-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-amber-500"
+            className="w-full max-w-md px-4 py-2 rounded-xl bg-slate-950 border border-[var(--border-color)] text-[var(--text-main)] text-sm focus:outline-none focus:border-amber-500"
           />
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="text-xs text-slate-400 bg-slate-950/60 uppercase border-b border-slate-800">
+            <thead className="text-xs text-[var(--text-muted)] bg-slate-950/60 uppercase border-b border-[var(--border-color)]">
               <tr>
                 <th className="py-3.5 px-4">Article</th>
                 <th className="py-3.5 px-4">SKU</th>
@@ -108,11 +108,11 @@ export const QuincaillerieDashboard: React.FC = () => {
               {filteredItems.map((item) => {
                 const isAlert = item.quantity <= item.alertThreshold;
                 return (
-                  <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="py-4 px-4 font-semibold text-white">{item.name}</td>
-                    <td className="py-4 px-4 text-xs font-mono text-slate-400">{item.sku}</td>
+                  <tr key={item.id} className="hover:bg-[var(--bg-card)]/30 transition-colors">
+                    <td className="py-4 px-4 font-semibold text-[var(--text-main)]">{item.name}</td>
+                    <td className="py-4 px-4 text-xs font-mono text-[var(--text-muted)]">{item.sku}</td>
                     <td className="py-4 px-4 text-slate-300">{item.unit}</td>
-                    <td className="py-4 px-4 text-slate-400">{item.purchasePrice.toLocaleString('fr-FR')} FCFA</td>
+                    <td className="py-4 px-4 text-[var(--text-muted)]">{item.purchasePrice.toLocaleString('fr-FR')} FCFA</td>
                     <td className="py-4 px-4 text-amber-400 font-bold">{item.sellingPrice.toLocaleString('fr-FR')} FCFA</td>
                     <td className="py-4 px-4">
                       <span

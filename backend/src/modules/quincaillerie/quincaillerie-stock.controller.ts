@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { QuincaillerieStockService } from './quincaillerie-stock.service';
-import { CreateStockItemDto, UpdateStockItemDto, RecordMovementDto, DirectSaleDto } from './dto/stock.dto';
+import { CreateStockItemDto, UpdateStockItemDto, RecordMovementDto, DirectSaleDto, TransferStockDto } from './dto/stock.dto';
 import { SectorPermissionGuard } from '../../core/guards/sector-permission.guard';
 import { RequireSector } from '../../core/tenant/sector.decorator';
 import { SectorType } from '../../core/types/tenant.types';
@@ -36,6 +36,11 @@ export class QuincaillerieStockController {
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return this.stockService.remove(id);
+  }
+
+  @Post('transfer')
+  async transferStock(@Body() dto: TransferStockDto) {
+    return this.stockService.transferStock(dto);
   }
 
   @Post(':id/movement')
