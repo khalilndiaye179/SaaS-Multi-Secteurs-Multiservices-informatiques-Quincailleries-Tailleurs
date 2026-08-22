@@ -1,6 +1,6 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto } from './dto/auth.dto';
+import { RegisterDto, LoginDto, RegisterConfirmDto } from './dto/auth.dto';
 import { Public } from './public.decorator';
 
 @Controller('auth')
@@ -8,9 +8,15 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Public()
-  @Post('register')
-  async register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  @Post('register/init')
+  async registerInit(@Body() dto: RegisterDto) {
+    return this.authService.registerInit(dto);
+  }
+
+  @Public()
+  @Post('register/confirm')
+  async registerConfirm(@Body() dto: RegisterConfirmDto) {
+    return this.authService.registerConfirm(dto.email, dto.otp);
   }
 
   @Public()

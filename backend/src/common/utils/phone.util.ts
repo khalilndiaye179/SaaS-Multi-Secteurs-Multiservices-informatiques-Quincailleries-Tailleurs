@@ -1,3 +1,5 @@
+import { registerDecorator, ValidationOptions, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments } from 'class-validator';
+
 /**
  * Utilitaire backend de normalisation des numéros de téléphone sénégalais vers le format E.164 (sans symbole +)
  * Exemple: "+221 77 987 65 43" -> "221779876543"
@@ -20,4 +22,27 @@ export function normalizeSenegalPhone(phoneRaw?: string | null): string | null {
   }
 
   return null;
+}
+
+@ValidatorConstraint({ async: false })
+export class IsSenegalPhoneConstraint implements ValidatorConstraintInterface {
+  validate(phone: any, args: ValidationArguments) {
+    return normalizeSenegalPhone(phone) !== null;
+  }
+
+  defaultMessage(args: ValidationArguments) {
+    return 'Numéro de téléphone invalide, format attendu : 77XXXXXXX ou +221XXXXXXXXX';
+  }
+}
+
+export function IsSenegalPhone(validationOptions?: ValidationOptions) {
+  return function (object: Object, propertyName: string) {
+    registerDecorator({
+      target: object.constructor,
+      propertyName: propertyName,
+      options: validationOptions,
+      constraints: [],
+      validator: IsSenegalPhoneConstraint,
+    });
+  };
 }

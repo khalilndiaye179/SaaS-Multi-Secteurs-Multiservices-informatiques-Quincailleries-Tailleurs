@@ -1,5 +1,7 @@
 import { IsEnum, IsNotEmpty, IsEmail, IsString, MinLength, IsOptional } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { SectorType } from '../../types/tenant.types';
+import { IsSenegalPhone, normalizeSenegalPhone } from '../../../common/utils/phone.util';
 
 export class RegisterDto {
   @IsEnum(SectorType)
@@ -18,8 +20,8 @@ export class RegisterDto {
   @IsNotEmpty()
   email: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsSenegalPhone()
+  @Transform(({ value }) => normalizeSenegalPhone(value))
   phone: string;
 
   @IsOptional()
@@ -39,4 +41,14 @@ export class LoginDto {
   @IsString()
   @IsNotEmpty()
   password: string;
+}
+
+export class RegisterConfirmDto {
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  otp: string;
 }

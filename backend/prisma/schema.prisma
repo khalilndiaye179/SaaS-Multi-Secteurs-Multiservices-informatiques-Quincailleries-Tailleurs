@@ -245,6 +245,7 @@ model User {
   username     String   @unique // format: {CODE_TENANT}-{SEQUENCE}
   fullName     String
   email        String
+  emailVerified Boolean @default(false)
   phone        String
   passwordHash String
   isActive     Boolean  @default(true)

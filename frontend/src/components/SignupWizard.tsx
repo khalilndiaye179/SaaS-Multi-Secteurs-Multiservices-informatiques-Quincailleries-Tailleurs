@@ -55,7 +55,7 @@ const SECTORS: SectorCard[] = [
 ];
 
 export const SignupWizard: React.FC = () => {
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedSector, setSelectedSector] = useState<SectorType | null>(null);
   const [formData, setFormData] = useState({
     companyName: '',
@@ -65,6 +65,7 @@ export const SignupWizard: React.FC = () => {
     country: 'SN',
     password: '',
   });
+  const [otp, setOtp] = useState('');
 
   const handleSelectSector = (sector: SectorType) => {
     setSelectedSector(sector);
@@ -74,15 +75,32 @@ export const SignupWizard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleInitSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
-      // 1. Enregistrement via le backend
       const { ApiClient } = await import('../services/api-client');
       const payload = { ...formData, sectorType: selectedSector };
-      await ApiClient.post('/api/auth/register', payload, true);
+      await ApiClient.post('/api/auth/register/init', payload, true);
+      
+      setStep(3); // Passage à l'étape OTP
+    } catch (err: any) {
+      setError(err.message);
+      alert(`Erreur: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      const { ApiClient } = await import('../services/api-client');
+      // 1. Confirmation OTP
+      await ApiClient.post('/api/auth/register/confirm', { email: formData.email, otp }, true);
       
       // 2. Connexion automatique
       const loginRes: any = await ApiClient.post('/api/auth/login', { identifier: formData.email, password: formData.password }, true);
@@ -171,7 +189,7 @@ export const SignupWizard: React.FC = () => {
               ← Changer de secteur ({selectedSector})
             </button>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleInitSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-slate-300 mb-1">Nom de l’entreprise / Atelier</label>
                 <input
@@ -256,9 +274,55 @@ export const SignupWizard: React.FC = () => {
                     : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 shadow-indigo-500/25'
                 }`}
               >
-                {loading ? 'Création en cours...' : 'Valider et démarrer l’essai gratuit (7 jours) →'}
+                {loading ? 'Traitement en cours...' : 'Continuer vers la vérification →'}
               </button>
             </form>
+          </div>
+        )}
+
+        {/* Step 3: OTP Verification */}
+        {step === 3 && (
+          <div className="max-w-md mx-auto bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl text-center">
+            <h2 className="text-2xl font-bold text-white mb-2">Vérification de l'Email</h2>
+            <p className="text-sm text-slate-400 mb-6">
+              Nous avons envoyé un code à 6 chiffres à <strong>{formData.email}</strong>. 
+              Veuillez le saisir ci-dessous.
+            </p>
+
+            <form onSubmit={handleConfirmSubmit} className="space-y-6">
+              <div>
+                <input
+                  type="text"
+                  required
+                  maxLength={6}
+                  placeholder="000000"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  className="w-full text-center tracking-[0.5em] text-2xl font-mono px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || otp.length < 6}
+                className={`w-full py-3 rounded-xl font-semibold text-sm shadow-lg transition-all duration-200 ${
+                  loading || otp.length < 6
+                    ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 shadow-emerald-500/25'
+                }`}
+              >
+                {loading ? 'Vérification...' : 'Valider et démarrer l’essai gratuit'}
+              </button>
+            </form>
+
+            <button
+              type="button"
+              onClick={handleInitSubmit}
+              disabled={loading}
+              className="mt-6 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+            >
+              Renvoyer le code
+            </button>
           </div>
         )}
       </div>

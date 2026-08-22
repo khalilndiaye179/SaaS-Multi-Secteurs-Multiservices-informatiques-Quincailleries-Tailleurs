@@ -1,18 +1,22 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RegisterDto, LoginDto } from './dto/auth.dto';
 import { SectorType, RoleType, BillingStatus, JwtPayload } from '../types/tenant.types';
 import * as bcrypt from 'bcryptjs';
+import { EmailOtpService } from '../../modules/notifications/email-otp.service';
 
 @Injectable()
 export class AuthService {
+  private registrationCache = new Map<string, { dto: RegisterDto; expiresAt: number }>();
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private emailOtpService: EmailOtpService,
   ) {}
 
-  async register(dto: RegisterDto) {
+  async registerInit(dto: RegisterDto) {
     const existingUser = await this.prisma.withoutTenantScope(async (client) => {
       return client.user.findFirst({
         where: { email: dto.email },
@@ -21,6 +25,40 @@ export class AuthService {
     if (existingUser) {
       throw new ConflictException('Un utilisateur avec cet email existe déjà.');
     }
+
+    const existingPhone = await this.prisma.withoutTenantScope(async (client) => {
+      return client.user.findFirst({
+        where: { phone: dto.phone },
+      });
+    });
+    if (existingPhone) {
+      throw new ConflictException('Un utilisateur avec ce numéro de téléphone existe déjà.');
+    }
+
+    const ttlMs = 5 * 60 * 1000;
+    this.registrationCache.set(dto.email, {
+      dto,
+      expiresAt: Date.now() + ttlMs,
+    });
+
+    await this.emailOtpService.sendOtp(dto.email);
+
+    return {
+      message: 'Un code de vérification a été envoyé à votre adresse email.',
+    };
+  }
+
+  async registerConfirm(email: string, otp: string) {
+    await this.emailOtpService.verifyOtp(email, otp);
+
+    const cachedData = this.registrationCache.get(email);
+    if (!cachedData || Date.now() > cachedData.expiresAt) {
+      this.registrationCache.delete(email);
+      throw new BadRequestException('Session d\'inscription expirée ou introuvable. Veuillez recommencer.');
+    }
+
+    const dto = cachedData.dto;
+    this.registrationCache.delete(email);
 
 
     const prefixMap: Record<SectorType, string> = {
@@ -79,6 +117,7 @@ export class AuthService {
           username,
           fullName: dto.managerName,
           email: dto.email,
+          emailVerified: true,
           phone: dto.phone,
           passwordHash,
           userRoles: {
@@ -110,6 +149,7 @@ export class AuthService {
           id: user.id,
           username: user.username,
           email: user.email,
+          emailVerified: user.emailVerified,
         },
       };
     });
