@@ -1,7 +1,8 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto, RegisterConfirmDto } from './dto/auth.dto';
+import { RegisterDto, LoginDto, RegisterConfirmDto, ChangePasswordDto } from './dto/auth.dto';
 import { Public } from './public.decorator';
+import { TenantContextService } from '../tenant/tenant-context.service';
 
 @Controller('auth')
 export class AuthController {
@@ -24,6 +25,12 @@ export class AuthController {
   @Post('login')
   async login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @Post('change-password')
+  async changePassword(@Body() dto: ChangePasswordDto) {
+    const store = TenantContextService.getStore();
+    return this.authService.changePassword(store?.userId, dto);
   }
 }
 

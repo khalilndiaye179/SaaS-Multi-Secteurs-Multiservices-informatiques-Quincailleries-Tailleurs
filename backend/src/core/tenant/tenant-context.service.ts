@@ -6,9 +6,11 @@ export interface TenantContext {
   sectorType?: string;
   userId?: string;
   roles?: string[];
+  permissions?: string[];
   billingStatus?: string;
   isSuperAdmin?: boolean;
   isSystemContext?: boolean;
+  mustChangePassword?: boolean;
 }
 
 

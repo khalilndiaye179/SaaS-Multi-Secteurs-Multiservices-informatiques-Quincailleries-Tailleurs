@@ -23,7 +23,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       tenantId: payload.tenantId,
       sectorType: payload.sectorType,
       roles: payload.roles,
+      permissions: payload.permissions,
       tenantCode: payload.tenantCode,
+      mustChangePassword: payload.mustChangePassword,
     };
   }
 

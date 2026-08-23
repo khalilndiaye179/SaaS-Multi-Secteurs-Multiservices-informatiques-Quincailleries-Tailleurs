@@ -31,8 +31,10 @@ export interface JwtPayload {
   tenantId: string;
   sectorType: SectorType;
   roles: RoleType[];
+  permissions?: string[];
   tenantCode: string;
   billingStatus?: BillingStatus;
+  mustChangePassword?: boolean;
   iat?: number;
   exp?: number;
 }
@@ -42,4 +44,5 @@ export interface TenantContext {
   tenantId: string;
   sectorType: SectorType;
   roles: RoleType[];
+  mustChangePassword?: boolean;
 }

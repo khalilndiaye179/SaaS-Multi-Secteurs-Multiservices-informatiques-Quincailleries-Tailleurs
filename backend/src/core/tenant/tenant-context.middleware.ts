@@ -17,7 +17,6 @@ export class TenantContextMiddleware implements NestMiddleware {
         const decoded = this.jwtService.verify(token, {
           secret: process.env.JWT_SECRET as string,
         });
-
         const isSuperAdmin = decoded?.roles?.includes('SUPER_ADMIN') || false;
 
         store = {
@@ -25,7 +24,9 @@ export class TenantContextMiddleware implements NestMiddleware {
           sectorType: decoded.sectorType,
           userId: decoded.sub || decoded.userId,
           roles: decoded.roles || [],
+          permissions: decoded.permissions || [],
           billingStatus: decoded.billingStatus,
+          mustChangePassword: decoded.mustChangePassword,
           isSuperAdmin,
           isSystemContext: false,
         };

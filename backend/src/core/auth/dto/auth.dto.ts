@@ -52,3 +52,13 @@ export class RegisterConfirmDto {
   @IsNotEmpty()
   otp: string;
 }
+
+export class ChangePasswordDto {
+  @IsString()
+  @IsNotEmpty()
+  currentPassword: string;
+
+  @IsString()
+  @MinLength(6)
+  newPassword: string;
+}

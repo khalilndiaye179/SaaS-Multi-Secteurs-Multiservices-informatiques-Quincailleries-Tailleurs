@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
-import { RegisterDto, LoginDto } from './dto/auth.dto';
+import { RegisterDto, LoginDto, ChangePasswordDto } from './dto/auth.dto';
 import { SectorType, RoleType, BillingStatus, JwtPayload } from '../types/tenant.types';
 import * as bcrypt from 'bcryptjs';
 import { EmailOtpService } from '../../modules/notifications/email-otp.service';
@@ -160,8 +160,8 @@ export class AuthService {
   async login(dto: LoginDto) {
     const identifier = dto.identifier ? dto.identifier.trim() : '';
 
-    const user = await this.prisma.withoutTenantScope(async (client) => {
-      return client.user.findFirst({
+    const user = await this.prisma.withoutTenantScope(async (c) =>
+      c.user.findFirst({
         where: {
           OR: [
             { email: { equals: identifier, mode: 'insensitive' } },
@@ -170,28 +170,57 @@ export class AuthService {
         },
         include: {
           tenant: true,
-          userRoles: { include: { role: true } },
+          userRoles: {
+            include: {
+              role: {
+                include: {
+                  rolePermissions: {
+                    include: {
+                      permission: true
+                    }
+                  }
+                }
+              }
+            }
+          },
         },
+      }),
+    );
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Identifiants invalides');
+    }
+
+    if (!user.tenant || (user.tenant.deletedAt && !user.tenant.isPermanentDemo)) {
+      throw new UnauthorizedException('Votre espace est suspendu ou supprimé.');
+    }
+
+    const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Identifiants invalides');
+    }
+
+    // Récupérer le tableau plat de codes de permission (sans doublon)
+    const permissionsSet = new Set<string>();
+    user.userRoles.forEach((ur) => {
+      ur.role.rolePermissions.forEach((rp) => {
+        if (rp.permission?.code) {
+          permissionsSet.add(rp.permission.code);
+        }
       });
     });
-
-    if (!user || !(await bcrypt.compare(dto.password, user.passwordHash))) {
-      throw new UnauthorizedException('Identifiants incorrects.');
-    }
-
-    if (user.tenant.billingStatus === ('ARCHIVED' as any)) {
-      throw new UnauthorizedException('Ce compte d\'entreprise a été archivé. Veuillez contacter l\'administration.');
-    }
-
-    const roles = user.userRoles.map((ur) => ur.role.name as RoleType);
+    const permissions = Array.from(permissionsSet);
 
     const payload: JwtPayload = {
       sub: user.id,
-      tenantId: user.tenantId,
-      sectorType: user.tenant.sectorType as SectorType,
-      roles,
+      tenantId: user.tenant.id,
       tenantCode: user.tenant.code,
+      sectorType: user.tenant.sectorType as SectorType,
+      roles: user.userRoles.map((ur) => ur.role.name as RoleType),
+      permissions: permissions, // Permissions dynamiques injectées !
       billingStatus: user.tenant.billingStatus as BillingStatus,
+      mustChangePassword: user.mustChangePassword,
     };
 
     const accessToken = this.jwtService.sign(payload);
@@ -208,8 +237,35 @@ export class AuthService {
         id: user.id,
         username: user.username,
         email: user.email,
-        roles,
+        roles: user.userRoles.map((ur) => ur.role.name),
       },
     };
+  }
+
+  async changePassword(userId: string | undefined, dto: any) {
+    if (!userId) throw new UnauthorizedException('Utilisateur non connecté.');
+    
+    const user = await this.prisma.withoutTenantScope(async (client) => {
+      return client.user.findUnique({ where: { id: userId } });
+    });
+
+    if (!user || !(await bcrypt.compare(dto.currentPassword, user.passwordHash))) {
+      throw new UnauthorizedException('Identifiants incorrects.');
+    }
+
+    const newPasswordHash = await bcrypt.hash(dto.newPassword, 10);
+
+    await this.prisma.withoutTenantScope(async (client) => {
+      return client.user.update({
+        where: { id: userId },
+        data: {
+          passwordHash: newPasswordHash,
+          mustChangePassword: false,
+        },
+      });
+    });
+
+    // TODO: log password change?
+    return { message: 'Mot de passe modifié avec succès.' };
   }
 }
