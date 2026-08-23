@@ -79,7 +79,7 @@ export class SuperAdminTeamService {
       roleName: invitation.roleName,
       expiresAt: invitation.expiresAt,
       // Le token brut est transmis uniquement à la réponse de création (jamais stocké en BDD)
-      invitationLink: `https://console.doorwaar.sn/accept-invitation?token=${rawToken}`,
+      invitationLink: `https://doorwaar.kpsyinformatique.com/accept-invitation?token=${rawToken}`,
     };
   }
 
@@ -116,7 +116,7 @@ export class SuperAdminTeamService {
 
     return {
       success: true,
-      invitationLink: `https://console.doorwaar.sn/accept-invitation?token=${rawToken}`,
+      invitationLink: `https://doorwaar.kpsyinformatique.com/accept-invitation?token=${rawToken}`,
     };
   }
 
@@ -177,7 +177,14 @@ export class SuperAdminTeamService {
       let systemTenant = await tx.tenant.findFirst({ where: { code: 'SAAS-GLOBAL' } });
       if (!systemTenant) {
         systemTenant = await tx.tenant.create({
-          data: { code: 'SAAS-GLOBAL', name: 'KPSyDesk System Console', sectorType: 'MULTISERVICES_IT' },
+          data: { 
+            code: 'SAAS-GLOBAL', 
+            name: 'KPSyDesk System Console', 
+            sectorType: 'MULTISERVICES_IT',
+            billingStatus: 'ACTIVE',
+            isPermanentDemo: true,
+            isDemo: true
+          },
         });
       }
 
@@ -341,5 +348,54 @@ export class SuperAdminTeamService {
     }));
 
     return { team, invitations };
+  }
+
+  /**
+   * Réinitialisation forcée du mot de passe par le Super Admin
+   */
+  async forceResetPassword(targetUserId: string) {
+    const store = TenantContextService.getStore();
+    if (!store?.isSuperAdmin) throw new ForbiddenException('Accès réservé au Super Admin.');
+
+    const targetUser = await this.prisma.withoutTenantScope(async (c) =>
+      c.user.findUnique({ where: { id: targetUserId }, include: { tenant: true } })
+    );
+
+    if (!targetUser) throw new NotFoundException('Collaborateur introuvable.');
+
+    // Only allow for system collaborators or maybe any user? The route is super-admin/team, so it's probably just for team.
+    // We will allow it for team members for now.
+    if (targetUser.tenant.code !== 'SAAS-GLOBAL') {
+      throw new ForbiddenException('Cette action est réservée aux membres de l\'équipe système.');
+    }
+
+    // Generate random password
+    const newPassword = crypto.randomBytes(6).toString('hex');
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    await this.prisma.withoutTenantScope(async (c) =>
+      c.user.update({
+        where: { id: targetUserId },
+        data: {
+          passwordHash,
+          mustChangePassword: true,
+        },
+      })
+    );
+
+    await this.auditLogService.record({
+      action: 'SUPER_ADMIN_PASSWORD_RESET',
+      resourceType: 'USER',
+      resourceId: targetUserId,
+      result: 'SUCCESS',
+      metadata: { targetEmail: targetUser.email }
+    });
+
+    return {
+      success: true,
+      message: 'Mot de passe réinitialisé avec succès.',
+      newPassword, // We return it in clear so the admin can copy it
+    };
   }
 }

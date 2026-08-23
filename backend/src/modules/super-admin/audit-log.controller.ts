@@ -1,13 +1,15 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { AuditLogService } from './audit-log.service';
-import { SuperAdminGuard } from '../../core/guards/super-admin.guard';
+import { PermissionGuard } from '../../core/auth/guards/permission.guard';
+import { RequirePermission } from '../../core/auth/decorators/require-permission.decorator';
 
 @Controller('super-admin/audit')
-@UseGuards(SuperAdminGuard)
+@UseGuards(PermissionGuard)
 export class AuditLogController {
   constructor(private auditLogService: AuditLogService) {}
 
   @Get()
+  @RequirePermission('admin:logs:read')
   async getAuditLogs(
     @Query('page') page?: number,
     @Query('limit') limit?: number,

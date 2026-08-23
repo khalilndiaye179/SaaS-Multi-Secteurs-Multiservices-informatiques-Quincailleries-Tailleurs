@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { AuditLogService } from './audit-log.service';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
 import * as fs from 'fs';
@@ -13,7 +13,6 @@ export class AboutService {
    */
   async getAboutInfo() {
     const store = TenantContextService.getStore();
-    if (!store?.isSuperAdmin) throw new ForbiddenException('Accès réservé au Super Admin.');
 
     const packagePath = path.join(process.cwd(), 'package.json');
     let pkg: any = {};

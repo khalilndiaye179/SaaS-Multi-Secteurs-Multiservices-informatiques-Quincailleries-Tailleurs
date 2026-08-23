@@ -30,7 +30,6 @@ export class SecurityCenterService {
    */
   async getSecurityOverview() {
     const store = TenantContextService.getStore();
-    if (!store?.isSuperAdmin) throw new ForbiddenException('Accès réservé au Super Admin.');
 
     const now = new Date().toISOString();
     const checks: SecurityCheckItem[] = [];
@@ -133,7 +132,6 @@ export class SecurityCenterService {
    */
   async getDependenciesAnalysis() {
     const store = TenantContextService.getStore();
-    if (!store?.isSuperAdmin) throw new ForbiddenException('Accès réservé au Super Admin.');
 
     const packagePath = path.join(process.cwd(), 'package.json');
     let pkg: any = {};
@@ -172,7 +170,6 @@ export class SecurityCenterService {
    */
   async getSecurityEvents() {
     const store = TenantContextService.getStore();
-    if (!store?.isSuperAdmin) throw new ForbiddenException('Accès réservé au Super Admin.');
 
     const securityLogs = await this.prisma.withoutTenantScope(async (c) =>
       c.auditLog.findMany({

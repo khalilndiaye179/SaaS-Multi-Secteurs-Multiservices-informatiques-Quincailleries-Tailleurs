@@ -39,9 +39,6 @@ export class SuperAdminBillingService {
    */
   async getFinancialOverview(query: SuperAdminBillingFilterDto) {
     const store = TenantContextService.getStore();
-    if (!store?.isSuperAdmin) {
-      throw new ForbiddenException('AccÃ¨s refusÃ© : RÃ©servÃ© au Super Admin.');
-    }
 
     const { from, to } = this.parseDateBounds(query.dateFrom, query.dateTo);
 

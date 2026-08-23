@@ -56,4 +56,10 @@ export class SuperAdminTeamController {
   ) {
     return this.teamService.toggleStatus(userId, isActive);
   }
+
+  @Post(':userId/reset-password')
+  @UseGuards(SuperAdminGuard)
+  async resetPassword(@Param('userId') userId: string) {
+    return this.teamService.forceResetPassword(userId);
+  }
 }

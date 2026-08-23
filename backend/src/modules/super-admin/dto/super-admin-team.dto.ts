@@ -4,7 +4,7 @@ export class InviteCollaboratorDto {
   @IsEmail()
   email: string;
 
-  @IsEnum(['SUPER_ADMIN', 'FINANCE', 'SUPPORT', 'AUDITOR'])
+  @IsEnum(['SUPER_ADMIN', 'FINANCE', 'SUPPORT', 'TECHNIQUE'])
   roleName: string;
 }
 
@@ -23,6 +23,6 @@ export class AcceptInvitationDto {
 }
 
 export class UpdateCollaboratorRoleDto {
-  @IsEnum(['SUPER_ADMIN', 'FINANCE', 'SUPPORT', 'AUDITOR'])
+  @IsEnum(['SUPER_ADMIN', 'FINANCE', 'SUPPORT', 'TECHNIQUE'])
   roleName: string;
 }

@@ -3,14 +3,16 @@ import { AiAssistantService } from './ai-assistant.service';
 import { AiInventoryAuditDto, AiChatPromptDto, AiAutoReorderDto } from './dto/ai-assistant.dto';
 import { SectorPermissionGuard } from '../../core/guards/sector-permission.guard';
 
-import { SuperAdminGuard } from '../../core/guards/super-admin.guard';
+import { RequirePermission } from '../../core/auth/decorators/require-permission.decorator';
+import { PermissionGuard } from '../../core/auth/guards/permission.guard';
 
 @Controller('ai-assistant')
 export class AiAssistantController {
   constructor(private readonly aiService: AiAssistantService) {}
 
   @Post('super-admin/inventory-audit')
-  @UseGuards(SuperAdminGuard)
+  @UseGuards(PermissionGuard)
+  @RequirePermission('admin:tenants:read')
   async performSuperAdminAudit() {
     return this.aiService.auditSuperAdminSaaS();
   }

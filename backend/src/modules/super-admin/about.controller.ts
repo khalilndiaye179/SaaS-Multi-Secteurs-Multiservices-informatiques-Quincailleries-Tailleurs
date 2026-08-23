@@ -1,9 +1,10 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { AboutService } from './about.service';
-import { SuperAdminGuard } from '../../core/guards/super-admin.guard';
+import { PermissionGuard } from '../../core/auth/guards/permission.guard';
+import { RequirePermission } from '../../core/auth/decorators/require-permission.decorator';
 
 @Controller('super-admin/about')
-@UseGuards(SuperAdminGuard)
+@UseGuards(PermissionGuard)
 export class AboutController {
   constructor(private aboutService: AboutService) {}
 

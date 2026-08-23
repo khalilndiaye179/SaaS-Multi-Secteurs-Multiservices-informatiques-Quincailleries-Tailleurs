@@ -56,6 +56,17 @@ export const TeamManagerView: React.FC<Props> = ({ themeColor = '#312E81' }) => 
     }
   };
 
+  const handleUpdateRole = async (userId: string, newRole: string) => {
+    if (window.confirm(`Confirmez-vous le changement de rôle vers ${newRole} ?`)) {
+      try {
+        await SuperAdminApiService.updateCollaboratorRole(userId, newRole);
+        fetchTeam();
+      } catch (err: any) {
+        alert(`Échec : ${err.message}`);
+      }
+    }
+  };
+
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Chargement des collaborateurs...</div>;
   if (error?.includes('403')) return <ForbiddenState message="Seul le rôle SUPER_ADMIN est autorisé à gérer l'équipe d'administration." />;
 
@@ -102,7 +113,7 @@ export const TeamManagerView: React.FC<Props> = ({ themeColor = '#312E81' }) => 
             <option value="SUPER_ADMIN">SUPER_ADMIN (Accès Total)</option>
             <option value="FINANCE">FINANCE (Finance & Devis)</option>
             <option value="SUPPORT">SUPPORT (Tenants & Diagnostic)</option>
-            <option value="AUDITOR">AUDITOR (Lecture seule Logs/BI)</option>
+            <option value="TECHNIQUE">TECHNIQUE (Logs, Sécurité & BI)</option>
           </select>
         </div>
         <button
@@ -145,7 +156,17 @@ export const TeamManagerView: React.FC<Props> = ({ themeColor = '#312E81' }) => 
                     {u.isActive ? 'ACTIF' : 'DÉSACTIVÉ'}
                   </span>
                 </td>
-                <td style={{ padding: '14px 20px', textAlign: 'right' }}>
+                <td style={{ padding: '14px 20px', textAlign: 'right', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                  <select
+                    value={u.roles[0] || ''}
+                    onChange={(e) => handleUpdateRole(u.id, e.target.value)}
+                    style={{ padding: '6px', borderRadius: 4, fontSize: 12, border: '1px solid var(--border-color)' }}
+                  >
+                    <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                    <option value="FINANCE">FINANCE</option>
+                    <option value="SUPPORT">SUPPORT</option>
+                    <option value="TECHNIQUE">TECHNIQUE</option>
+                  </select>
                   <button
                     onClick={() => handleToggleStatus(u.id, u.isActive)}
                     style={{ padding: '6px 12px', background: u.isActive ? '#EF4444' : '#10B981', color: 'var(--text-inverse)', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
