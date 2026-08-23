@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EmailService } from './email.service';
 
@@ -96,11 +96,24 @@ export class NotificationsService {
     });
   }
 
-  async markAsRead(id: string) {
-    return (this.prisma as any).notification.update({
-      where: { id },
-      data: { isRead: true },
-    });
+  async markAsRead(id: string, tenantId?: string | null, isSuperAdmin: boolean = false) {
+    if (tenantId) {
+      const result = await (this.prisma as any).notification.updateMany({
+        where: { id, tenantId },
+        data: { isRead: true },
+      });
+      if (result.count === 0) {
+        throw new NotFoundException('Notification introuvable');
+      }
+      return { success: true };
+    } else if (isSuperAdmin) {
+      return (this.prisma as any).notification.update({
+        where: { id },
+        data: { isRead: true },
+      });
+    } else {
+      throw new ForbiddenException('Accès non autorisé à cette notification');
+    }
   }
 
   async markAllAsReadSuperAdmin() {

@@ -1,6 +1,8 @@
 import { Controller, Get, Post, Param } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
+import { UseGuards } from '@nestjs/common';
+import { SuperAdminGuard } from '../../core/guards/super-admin.guard';
 
 @Controller('notifications')
 export class NotificationsController {
@@ -8,12 +10,14 @@ export class NotificationsController {
 
   // Super Admin — liste des notifications globales
   @Get('super-admin')
+  @UseGuards(SuperAdminGuard)
   async getForSuperAdmin() {
     return this.notifService.getForSuperAdmin();
   }
 
   // Super Admin — compteur non-lus
   @Get('super-admin/unread-count')
+  @UseGuards(SuperAdminGuard)
   async getUnreadCountSuperAdmin() {
     const count = await this.notifService.getUnreadCountSuperAdmin();
     return { count };
@@ -39,11 +43,15 @@ export class NotificationsController {
   // Marquer une notif comme lue
   @Post(':id/read')
   async markAsRead(@Param('id') id: string) {
-    return this.notifService.markAsRead(id);
+    const store = TenantContextService.getStore();
+    const tenantId = store?.tenantId;
+    const isSuperAdmin = store?.roles?.includes('SUPER_ADMIN') || false;
+    return this.notifService.markAsRead(id, tenantId, isSuperAdmin);
   }
 
   // Marquer tout lu — Super Admin
   @Post('super-admin/read-all')
+  @UseGuards(SuperAdminGuard)
   async markAllAsReadSuperAdmin() {
     return this.notifService.markAllAsReadSuperAdmin();
   }
