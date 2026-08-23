@@ -12,11 +12,9 @@ export class AiAssistantService {
    */
   async performInventoryAudit(dto?: AiInventoryAuditDto) {
     const store = TenantContextService.getStore();
-    const sector = dto?.sectorType || store?.sectorType || 'QUINCAILLERIE';
+    const sector = store?.sectorType || 'QUINCAILLERIE';
 
-    if (sector === 'SUPER_ADMIN') {
-      return this.auditSuperAdminSaaS();
-    } else if (sector === 'MULTISERVICES_IT') {
+    if (sector === 'MULTISERVICES_IT') {
       return this.auditMultiservicesIT();
     } else if (sector === 'TAILLEUR') {
       return this.auditTailleurAtelier();
@@ -28,7 +26,7 @@ export class AiAssistantService {
   /**
    * Audit supervision SaaS multi-tenants Super-Admin UEMOA
    */
-  private async auditSuperAdminSaaS() {
+  async auditSuperAdminSaaS() {
     const tenants = await this.prisma.withoutTenantScope((client) =>
       client.tenant.findMany({
         include: { users: true },
@@ -397,7 +395,7 @@ export class AiAssistantService {
    */
   async processChatPrompt(dto: AiChatPromptDto) {
     const store = TenantContextService.getStore();
-    const sector = dto.sectorType || store?.sectorType || 'QUINCAILLERIE';
+    const sector = store?.sectorType || 'QUINCAILLERIE';
     const promptLower = dto.prompt.toLowerCase();
 
     // 1. Détection intent "Inventaire / Audit / Diagnostic"
