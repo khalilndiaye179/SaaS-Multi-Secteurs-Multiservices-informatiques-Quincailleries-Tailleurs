@@ -66,6 +66,9 @@ export class SaaSQuoteController {
 
   @Get(':id/pdf')
   async downloadPdf(@Param('id') id: string, @Res() res: Response) {
+    // Vérification d'autorisation (lève 403 ou 404 si refusé)
+    await this.quoteService.findOne(id);
+
     const pdfBuffer = await this.pdfService.generateSaaSQuotePdf(id);
     res.set({
       'Content-Type': 'application/pdf',
