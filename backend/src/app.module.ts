@@ -28,6 +28,7 @@ import { PublicDocumentsModule } from './modules/public-documents/public-documen
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { TenantRbacModule } from './modules/tenant-rbac/tenant-rbac.module';
 import { CrmModule } from './modules/crm/crm.module';
+import { MustChangePasswordGuard } from './core/auth/must-change-password.guard';
 
 @Module({
   imports: [
@@ -53,15 +54,6 @@ import { CrmModule } from './modules/crm/crm.module';
     NotificationsModule,
     TenantRbacModule,
   ],
-
-
-
-
-
-
-
-
-
   providers: [
     SeedService,
     SubscriptionExpirationCron,
@@ -72,6 +64,10 @@ import { CrmModule } from './modules/crm/crm.module';
     {
       provide: APP_GUARD,
       useClass: BillingStatusGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: MustChangePasswordGuard,
     },
   ],
 })

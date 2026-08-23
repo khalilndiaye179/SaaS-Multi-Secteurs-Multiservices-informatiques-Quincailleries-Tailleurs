@@ -14,7 +14,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   constructor() {
     const isTest = process.env.NODE_ENV === 'test';
     const testUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
-    const dbUrl = isTest ? testUrl : process.env.DATABASE_URL;
+    const dbUrl = isTest ? testUrl : (process.env.APP_RUNTIME_DATABASE_URL || process.env.DATABASE_URL);
 
     if (!dbUrl) {
       throw new Error("DATABASE_URL manquante — vérifiez votre fichier .env");
