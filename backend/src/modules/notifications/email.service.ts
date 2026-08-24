@@ -10,6 +10,7 @@ export class EmailService {
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'sandbox.smtp.mailtrap.io',
       port: parseInt(process.env.SMTP_PORT || '2525', 10),
+      secure: process.env.SMTP_SECURE === 'true',
       auth: {
         user: process.env.SMTP_USER || 'testuser',
         pass: process.env.SMTP_PASS || 'testpass',
