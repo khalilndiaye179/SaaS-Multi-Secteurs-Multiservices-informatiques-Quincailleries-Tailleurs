@@ -1,0 +1,46 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fond : cercle terre cuite, evoquant le bogolan -->
+  <circle cx="256" cy="256" r="248" fill="#8B4513"/>
+  <circle cx="256" cy="256" r="248" fill="none" stroke="#D4A574" stroke-width="6"/>
+
+  <!-- Motif geometrique bogolan en bordure (triangles alternes) -->
+  <g fill="#D4A574" opacity="0.9">
+    <polygon points="256,20 276,50 236,50"/>
+    <polygon points="256,492 276,462 236,462"/>
+    <polygon points="20,256 50,236 50,276"/>
+    <polygon points="492,256 462,236 462,276"/>
+  </g>
+
+  <!-- Cercle interieur clair pour les 3 icones -->
+  <circle cx="256" cy="256" r="190" fill="#F5E6D3"/>
+  <circle cx="256" cy="256" r="190" fill="none" stroke="#8B4513" stroke-width="4" stroke-dasharray="8 6"/>
+
+  <!-- Secteur 1 : Quincaillerie (cle a molette), en haut -->
+  <g transform="translate(256, 160)">
+    <path d="M -28 -30 L -8 -10 L -14 -4 L -34 -24 A 20 20 0 1 0 -38 -20 Z"
+          fill="#2C5F2D" stroke="#1a3d1a" stroke-width="2"/>
+    <rect x="-6" y="-10" width="12" height="55" rx="3" fill="#2C5F2D" stroke="#1a3d1a" stroke-width="2" transform="rotate(35 0 -10)"/>
+  </g>
+
+  <!-- Secteur 2 : IT / Multiservices informatiques (puce electronique), bas gauche -->
+  <g transform="translate(180, 320)">
+    <rect x="-24" y="-24" width="48" height="48" rx="4" fill="#1E4D8B" stroke="#0f2a4d" stroke-width="2"/>
+    <rect x="-12" y="-12" width="24" height="24" rx="2" fill="#F5E6D3"/>
+    <line x1="-24" y1="-14" x2="-34" y2="-14" stroke="#1E4D8B" stroke-width="3"/>
+    <line x1="-24" y1="0" x2="-34" y2="0" stroke="#1E4D8B" stroke-width="3"/>
+    <line x1="-24" y1="14" x2="-34" y2="14" stroke="#1E4D8B" stroke-width="3"/>
+    <line x1="24" y1="-14" x2="34" y2="-14" stroke="#1E4D8B" stroke-width="3"/>
+    <line x1="24" y1="0" x2="34" y2="0" stroke="#1E4D8B" stroke-width="3"/>
+    <line x1="24" y1="14" x2="34" y2="14" stroke="#1E4D8B" stroke-width="3"/>
+  </g>
+
+  <!-- Secteur 3 : Tailleur (aiguille et fil), bas droite -->
+  <g transform="translate(332, 320)">
+    <line x1="-30" y1="20" x2="26" y2="-26" stroke="#B8860B" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="26" cy="-26" r="7" fill="none" stroke="#B8860B" stroke-width="4"/>
+    <path d="M -30 20 Q -10 30, 10 15 T 30 25" fill="none" stroke="#C0392B" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <!-- Point central unificateur -->
+  <circle cx="256" cy="256" r="10" fill="#8B4513"/>
+</svg>
