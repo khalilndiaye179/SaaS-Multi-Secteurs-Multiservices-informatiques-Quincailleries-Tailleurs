@@ -296,7 +296,7 @@ const RegisterButton: React.FC<{ isDisabled: boolean; onClick: () => void }> = (
 
 // ─── Composant Principal ───
 export const PremiumAuthWizard: React.FC = () => {
-  const [mode, setMode] = useState<'selection' | 'signup' | 'login'>('selection');
+  const [mode, setMode] = useState<'selection' | 'signup' | 'login' | 'otp-confirm'>('selection');
   const [selectedSector, setSelectedSector] = useState<SectorType | null>(null);
   const [formData, setFormData] = useState({
     companyName: '',
@@ -313,6 +313,9 @@ export const PremiumAuthWizard: React.FC = () => {
   const [loginSuccess, setLoginSuccess] = useState<string | null>(null);
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registerError, setRegisterError] = useState<string | null>(null);
+  const [otp, setOtp] = useState('');
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [otpLoading, setOtpLoading] = useState(false);
 
   // ─── Handler d'enregistrement vers le backend ───
   const handleRegister = async (e: React.FormEvent) => {
@@ -331,25 +334,65 @@ export const PremiumAuthWizard: React.FC = () => {
       };
 
       const { ApiClient } = await import('../services/api-client');
-      await ApiClient.post('/api/auth/register', payload, true);
+      await ApiClient.post('/api/auth/register/init', payload, true);
       
-      // Auto login
-      const loginRes: any = await ApiClient.post('/api/auth/login', { identifier: formData.email, password: formData.password }, true);
-      localStorage.setItem('kpsy_token', loginRes.accessToken || loginRes.access_token);
-      localStorage.setItem('kpsy_user', JSON.stringify(loginRes.user));
-      if (loginRes.tenant) {
-        localStorage.setItem('kpsy_tenant', JSON.stringify(loginRes.tenant));
-      }
-      
-      alert(`Compte SaaS créé avec succès ! Bienvenue ${formData.companyName}.`);
-      
-      const isSuperAdmin = loginRes.user?.roles?.includes('SUPER_ADMIN');
-      window.dispatchEvent(new CustomEvent('kpsy:login', { detail: { isSuperAdmin } }));
+      setMode('otp-confirm');
     } catch (err: any) {
       setRegisterError(err.message);
       alert(`Erreur d'inscription: ${err.message}`);
     } finally {
       setRegisterLoading(false);
+    }
+  };
+
+  const handleConfirmOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setOtpLoading(true);
+    setOtpError(null);
+    try {
+      const { ApiClient } = await import('../services/api-client');
+      await ApiClient.post('/api/auth/register/confirm', { email: formData.email, otp }, true);
+      
+      // Auto login after confirm
+      const data: any = await ApiClient.post('/api/auth/login', { 
+        identifier: formData.email, 
+        password: formData.password 
+      }, true);
+
+      localStorage.setItem('kpsy_token', data.accessToken);
+      localStorage.setItem('kpsy_user', JSON.stringify(data.user));
+      if (data.tenant) {
+        localStorage.setItem('kpsy_tenant', JSON.stringify(data.tenant));
+      }
+
+      const isSuperAdmin = data.user?.roles?.includes('SUPER_ADMIN');
+      
+      alert(`Compte SaaS créé avec succès ! Bienvenue ${formData.companyName}.`);
+      window.dispatchEvent(new CustomEvent('kpsy:login', { detail: { isSuperAdmin } }));
+    } catch (err: any) {
+      setOtpError(err.message || "Code invalide ou expiré.");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setOtpError(null);
+    try {
+      const payload = {
+        sectorType: selectedSector,
+        companyName: formData.companyName,
+        managerName: formData.managerName,
+        email: formData.email,
+        phone: formData.phone,
+        country: formData.country,
+        password: formData.password,
+      };
+      const { ApiClient } = await import('../services/api-client');
+      await ApiClient.post('/api/auth/register/init', payload, true);
+      alert('Un nouveau code a été envoyé à votre adresse email.');
+    } catch (err: any) {
+      setOtpError(err.message || 'Erreur lors du renvoi du code.');
     }
   };
 
@@ -572,6 +615,95 @@ export const PremiumAuthWizard: React.FC = () => {
                 {registerLoading ? 'Création en cours...' : 'Valider et démarrer l’essai 7 jours →'}
               </button>
             </form>
+          </div>
+        </main>
+      )}
+
+      {/* ─── ÉCRAN CONFIRMATION OTP ─── */}
+      {mode === 'otp-confirm' && (
+        <main style={{
+          width: '100%', maxWidth: 520, flex: 1,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            background: 'white', borderRadius: 20,
+            padding: '36px 32px', width: '100%',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.08)',
+            border: '1px solid rgba(0,0,0,0.06)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <button onClick={() => setMode('signup')} style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: '0.8rem', color: '#1C4A34',
+                fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700,
+              }}>← Retour</button>
+            </div>
+
+            <h2 style={{
+              fontFamily: "'Sora', sans-serif", fontWeight: 800,
+              fontSize: '1.4rem', color: '#1A1A1A', marginBottom: 6, textAlign: 'center',
+            }}>Vérification de l'email</h2>
+            <p style={{ textAlign: 'center', color: '#666', fontSize: '0.8rem', marginBottom: 24 }}>
+              Un code à 6 chiffres a été envoyé à <strong>{formData.email}</strong>
+            </p>
+
+            <form onSubmit={handleConfirmOtp} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <input
+                  type="text"
+                  required
+                  maxLength={6}
+                  placeholder="000000"
+                  value={otp}
+                  onChange={(e) => {
+                    setOtp(e.target.value.replace(/\D/g, ''));
+                    if (otpError) setOtpError(null);
+                  }}
+                  style={{
+                    width: '100%', padding: '14px', borderRadius: 10,
+                    border: '1.5px solid #E0E0E0', fontSize: '1.5rem',
+                    color: '#1A1A1A', outline: 'none', textAlign: 'center',
+                    letterSpacing: '0.5em',
+                    transition: 'border-color 200ms ease',
+                    fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = '#1C4A34')}
+                  onBlur={(e) => (e.target.style.borderColor = '#E0E0E0')}
+                />
+              </div>
+              
+              {otpError && (
+                <div style={{ color: '#E53E3E', fontSize: '0.8rem', textAlign: 'center', background: '#FFF5F5', padding: '8px', borderRadius: '6px' }}>
+                  {otpError}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={otpLoading || otp.length < 6}
+                style={{
+                  background: (otpLoading || otp.length < 6) ? '#A0AEC0' : '#1C4A34',
+                  color: 'white', border: 'none',
+                  padding: '12px', borderRadius: 10,
+                  fontSize: '0.85rem', fontWeight: 800, marginTop: 10,
+                  cursor: (otpLoading || otp.length < 6) ? 'not-allowed' : 'pointer',
+                  boxShadow: (otpLoading || otp.length < 6) ? 'none' : '0 4px 15px rgba(28,74,52,0.25)',
+                  transition: 'all 200ms ease',
+                }}
+              >
+                {otpLoading ? 'Vérification...' : 'Valider le code'}
+              </button>
+            </form>
+            
+            <div style={{ textAlign: 'center', marginTop: '20px' }}>
+              <button
+                type="button"
+                onClick={handleResendOtp}
+                style={{ background: 'none', border: 'none', color: '#1C4A34', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Renvoyer le code
+              </button>
+            </div>
           </div>
         </main>
       )}
