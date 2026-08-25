@@ -79,6 +79,7 @@ model PaymentProof {
   processedAt         DateTime?
 
   @@index([tenantId])
+  @@unique([transactionRef])
   @@map("payment_proofs")
 }
 

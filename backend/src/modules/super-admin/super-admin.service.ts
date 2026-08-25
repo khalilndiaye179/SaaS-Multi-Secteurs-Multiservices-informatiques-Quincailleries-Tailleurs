@@ -4,6 +4,7 @@ import { PricingCalculatorService } from '../billing/pricing-calculator.service'
 import { AuditLogService } from './audit-log.service';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { TenantContextService } from '../../core/tenant/tenant-context.service';
 
 @Injectable()
 export class SuperAdminDashboardService {
@@ -93,6 +94,11 @@ export class SuperAdminDashboardService {
   }
 
   async approvePayment(tenantId: string, durationMonths: number, proofId?: string) {
+    const store = TenantContextService.getStore();
+    if (!proofId && !store?.isSuperAdmin) {
+      throw new ForbiddenException('Approbation sans preuve réservée au Super Admin. Un collaborateur doit fournir un proofId.');
+    }
+
     const now = new Date();
     const subscriptionEndsAt = new Date(now);
     subscriptionEndsAt.setMonth(subscriptionEndsAt.getMonth() + durationMonths);
@@ -101,6 +107,13 @@ export class SuperAdminDashboardService {
 
     const result = await this.prisma.withoutTenantScope(async (client) => {
       if (proofId) {
+        const proof = await client.paymentProof.findUnique({ where: { id: proofId } });
+        if (proof && proof.amount < pricing.finalAmount * 0.99) {
+          throw new BadRequestException(
+            `Montant insuffisant. Attendu: ${pricing.finalAmount} XOF, Reçu: ${proof.amount} XOF.`
+          );
+        }
+
         await client.paymentProof.update({
           where: { id: proofId },
           data: {
@@ -132,6 +145,19 @@ export class SuperAdminDashboardService {
       });
     } catch (e) {
       console.error('Erreur lors de la création de la notification (non-bloquant):', e);
+    }
+
+    if (!proofId) {
+      await this.auditLogService.record({
+        action: 'PAYMENT_APPROVED_WITHOUT_PROOF',
+        resourceType: 'TENANT',
+        resourceId: tenantId,
+        result: 'SUCCESS',
+        metadata: {
+          durationMonths,
+          expectedAmount: pricing.finalAmount,
+        },
+      });
     }
 
     return result;

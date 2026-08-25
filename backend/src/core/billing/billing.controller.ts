@@ -1,4 +1,5 @@
 import { Controller, Post, Get, Body, BadRequestException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BillingExempt } from '../auth/billing-exempt.decorator';
 import { TenantContextService } from '../tenant/tenant-context.service';
@@ -53,18 +54,26 @@ export class BillingController {
       throw new BadRequestException('Veuillez fournir tous les champs requis (provider, transactionRef, amount).');
     }
 
-    const result = await this.prisma.withoutTenantScope(async (client) => {
-      return client.paymentProof.create({
-        data: {
-          tenantId,
-          provider,
-          transactionRef,
-          amount: Number(amount),
-          durationMonths: Number(durationMonths) || 1,
-          status: 'PENDING',
-        },
+    let result;
+    try {
+      result = await this.prisma.withoutTenantScope(async (client) => {
+        return client.paymentProof.create({
+          data: {
+            tenantId,
+            provider,
+            transactionRef,
+            amount: Number(amount),
+            durationMonths: Number(durationMonths) || 1,
+            status: 'PENDING',
+          },
+        });
       });
-    });
+    } catch (e: any) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        throw new BadRequestException('Cette référence de transaction a déjà été utilisée.');
+      }
+      throw e;
+    }
 
     // 🔔 Notification Super Admin : nouvelle preuve de paiement en attente
     try {
