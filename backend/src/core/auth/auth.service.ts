@@ -6,10 +6,11 @@ import { SectorType, RoleType, BillingStatus, JwtPayload } from '../types/tenant
 import * as bcrypt from 'bcryptjs';
 import { EmailOtpService } from '../../modules/notifications/email-otp.service';
 import * as crypto from 'crypto';
-import * as otplib from 'otplib';
+import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
 import { EncryptionService } from '../security/encryption.service';
 import { EnableTotpDto, DisableTotpDto, VerifyTotpDto } from './dto/auth.dto';
+
 @Injectable()
 export class AuthService {
   private registrationCache = new Map<string, { dto: RegisterDto; expiresAt: number }>();
@@ -298,8 +299,9 @@ export class AuthService {
     const user = await this.prisma.withoutTenantScope(c => c.user.findUnique({ where: { id: userId }}));
     if (!user) throw new UnauthorizedException();
 
-    const secret = otplib.authenticator.generateSecret();
-    const otpauthUrl = otplib.authenticator.keyuri(user.email, 'KPSyDesk', secret);
+    const secretObj = speakeasy.generateSecret({ name: 'KPSyDesk (' + user.email + ')' });
+    const secret = secretObj.base32;
+    const otpauthUrl = secretObj.otpauth_url || '';
     const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
 
     await this.prisma.withoutTenantScope(c => c.user.update({
@@ -322,7 +324,7 @@ export class AuthService {
     if (!user || !user.totpSecret) throw new BadRequestException('Configuration 2FA non initiée.');
 
     const secret = this.encryptionService.decrypt(user.totpSecret);
-    const isValid = otplib.authenticator.verify({ token: dto.code, secret });
+    const isValid = speakeasy.totp.verify({ secret, encoding: 'base32', token: dto.code });
 
     if (!isValid) throw new BadRequestException('Code invalide.');
 
@@ -355,7 +357,7 @@ export class AuthService {
       if (!isPasswordValid) throw new UnauthorizedException('Mot de passe invalide.');
     } else if (dto.code && user.totpSecret) {
       const secret = this.encryptionService.decrypt(user.totpSecret);
-      const isValid = otplib.authenticator.verify({ token: dto.code, secret });
+      const isValid = speakeasy.totp.verify({ secret, encoding: 'base32', token: dto.code });
       if (!isValid) throw new UnauthorizedException('Code 2FA invalide.');
     } else {
       throw new BadRequestException('Vous devez fournir un code 2FA ou votre mot de passe pour désactiver.');
@@ -414,7 +416,7 @@ export class AuthService {
     // Check against authenticator
     if (user.totpSecret) {
       const secret = this.encryptionService.decrypt(user.totpSecret);
-      isCodeValid = otplib.authenticator.verify({ token: dto.code, secret });
+      isCodeValid = speakeasy.totp.verify({ secret, encoding: 'base32', token: dto.code });
     }
 
     // If not valid, check against backup codes
