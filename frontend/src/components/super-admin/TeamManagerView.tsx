@@ -11,6 +11,7 @@ export const TeamManagerView: React.FC<Props> = ({ themeColor = '#312E81' }) => 
   const [invitations, setInvitations] = useState<TeamInvitationData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [enforce2FA, setEnforce2FA] = useState(false);
 
   const [inviteEmail, setInviteEmail] = useState('');
   const [invitePhone, setInvitePhone] = useState('');
@@ -27,6 +28,8 @@ export const TeamManagerView: React.FC<Props> = ({ themeColor = '#312E81' }) => 
       const data = await SuperAdminApiService.getTeamOverview();
       setTeam(data.team || []);
       setInvitations(data.invitations || []);
+      const enforceData = await SuperAdminApiService.getEnforce2fa();
+      setEnforce2FA(enforceData.enforce2FA);
     } catch (err: any) {
       setError(err.message || 'Erreur lors du chargement de l\'équipe Super Admin.');
     } finally {
@@ -67,6 +70,28 @@ export const TeamManagerView: React.FC<Props> = ({ themeColor = '#312E81' }) => 
     }
   };
 
+  const handleToggleEnforce2FA = async () => {
+    if (window.confirm(`Voulez-vous vraiment ${enforce2FA ? 'désactiver' : 'ACTIVER'} l'obligation du 2FA pour tous les collaborateurs ?`)) {
+      try {
+        await SuperAdminApiService.setEnforce2fa(!enforce2FA);
+        setEnforce2FA(!enforce2FA);
+      } catch (err: any) {
+        alert(`Échec : ${err.message}`);
+      }
+    }
+  };
+
+  const handleDisable2FA = async (userId: string) => {
+    if (window.confirm("URGENCE: Êtes-vous sûr de vouloir désactiver le 2FA pour ce collaborateur ? Il devra le reconfigurer à sa prochaine connexion.")) {
+      try {
+        await SuperAdminApiService.disableCollaborator2FA(userId);
+        fetchTeam();
+      } catch (err: any) {
+        alert(`Échec : ${err.message}`);
+      }
+    }
+  };
+
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Chargement des collaborateurs...</div>;
   if (error?.includes('403')) return <ForbiddenState message="Seul le rôle SUPER_ADMIN est autorisé à gérer l'équipe d'administration." />;
 
@@ -76,6 +101,18 @@ export const TeamManagerView: React.FC<Props> = ({ themeColor = '#312E81' }) => 
         <div>
           <h2 style={{ fontSize: 24, fontWeight: 800, color: '#0F172A', margin: 0 }}>👥 Collaborateurs & RBAC Granulaire</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 4 }}>Gestion de l'équipe Super Admin et protection du dernier SUPER_ADMIN</p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--bg-card)', padding: '12px 20px', borderRadius: 10, border: '1px solid var(--border-color)' }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>Obligation 2FA (Globale)</div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Force le 2FA pour toute l'équipe</div>
+          </div>
+          <label style={{ position: 'relative', display: 'inline-block', width: 44, height: 24 }}>
+            <input type="checkbox" checked={enforce2FA} onChange={handleToggleEnforce2FA} style={{ opacity: 0, width: 0, height: 0 }} />
+            <span style={{ position: 'absolute', cursor: 'pointer', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: enforce2FA ? themeColor : '#ccc', transition: '.4s', borderRadius: 24 }}>
+              <span style={{ position: 'absolute', content: '""', height: 18, width: 18, left: enforce2FA ? 22 : 3, bottom: 3, backgroundColor: 'white', transition: '.4s', borderRadius: '50%' }} />
+            </span>
+          </label>
         </div>
       </div>
 
@@ -135,6 +172,7 @@ export const TeamManagerView: React.FC<Props> = ({ themeColor = '#312E81' }) => 
               <th style={{ padding: '14px 20px' }}>Nom Complète</th>
               <th style={{ padding: '14px 20px' }}>Email</th>
               <th style={{ padding: '14px 20px' }}>Rôles</th>
+              <th style={{ padding: '14px 20px' }}>2FA</th>
               <th style={{ padding: '14px 20px' }}>Statut</th>
               <th style={{ padding: '14px 20px', textAlign: 'right' }}>Actions</th>
             </tr>
@@ -152,11 +190,18 @@ export const TeamManagerView: React.FC<Props> = ({ themeColor = '#312E81' }) => 
                   ))}
                 </td>
                 <td style={{ padding: '14px 20px' }}>
+                  {u.totpEnabled ? (
+                    <span style={{ color: '#16A34A', fontWeight: 700, fontSize: 12 }}>Activé</span>
+                  ) : (
+                    <span style={{ color: '#DC2626', fontWeight: 700, fontSize: 12 }}>Désactivé</span>
+                  )}
+                </td>
+                <td style={{ padding: '14px 20px' }}>
                   <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: u.isActive ? '#DCFCE7' : '#FEE2E2', color: u.isActive ? '#166534' : '#991B1B' }}>
                     {u.isActive ? 'ACTIF' : 'DÉSACTIVÉ'}
                   </span>
                 </td>
-                <td style={{ padding: '14px 20px', textAlign: 'right', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <td style={{ padding: '14px 20px', textAlign: 'right', display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                   <select
                     value={u.roles[0] || ''}
                     onChange={(e) => handleUpdateRole(u.id, e.target.value)}
@@ -173,6 +218,15 @@ export const TeamManagerView: React.FC<Props> = ({ themeColor = '#312E81' }) => 
                   >
                     {u.isActive ? 'Désactiver' : 'Activer'}
                   </button>
+                  {u.totpEnabled && (
+                    <button
+                      onClick={() => handleDisable2FA(u.id)}
+                      style={{ padding: '6px 12px', background: '#FEF2F2', color: '#B91C1C', border: '1px solid #FCA5A5', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                      title="Désactiver le 2FA de ce compte en urgence"
+                    >
+                      Désactiver 2FA
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

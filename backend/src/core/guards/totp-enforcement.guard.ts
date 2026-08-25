@@ -9,7 +9,7 @@ export class TotpEnforcementGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const user = request.user; // Set by JwtStrategy
 
-    if (!user || !user.tenantId || !user.sub) {
+    if (!user || !user.tenantId || !user.userId) {
       return true; // We don't block unauthenticated routes here, JwtGuard handles that
     }
 
@@ -35,7 +35,7 @@ export class TotpEnforcementGuard implements CanActivate {
 
     // Fetch user 2FA status
     const dbUser = await this.prisma.withoutTenantScope(c =>
-      c.user.findUnique({ where: { id: user.sub } })
+      c.user.findUnique({ where: { id: user.userId } })
     );
 
     if (!dbUser?.totpEnabled) {

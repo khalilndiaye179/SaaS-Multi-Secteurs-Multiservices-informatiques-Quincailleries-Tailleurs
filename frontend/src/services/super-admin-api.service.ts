@@ -80,6 +80,7 @@ export interface TeamCollaboratorData {
   isActive: boolean;
   roles: string[];
   createdAt: string;
+  totpEnabled?: boolean;
 }
 
 export interface TeamInvitationData {
@@ -255,21 +256,36 @@ export class SuperAdminApiService {
     URL.revokeObjectURL(url);
   }
 
-  // Team & RBAC API
+  // ==========================================
+  // ÉQUIPE SUPER ADMIN (RBAC & 2FA)
+  // ==========================================
+
   static async getTeamOverview(): Promise<{ team: TeamCollaboratorData[]; invitations: TeamInvitationData[] }> {
-    return ApiClient.get<{ team: TeamCollaboratorData[]; invitations: TeamInvitationData[] }>('/api/super-admin/team');
+    return ApiClient.get('/api/super-admin/team/overview', true);
   }
 
-  static async inviteCollaborator(dto: { email: string; phone?: string; roleName: string }): Promise<any> {
-    return ApiClient.post<any>('/api/super-admin/team/invitations', dto);
+  static async inviteCollaborator(payload: { email: string; phone?: string; roleName: string }) {
+    return ApiClient.post('/api/super-admin/team/invite', payload, true);
   }
 
-  static async updateCollaboratorRole(userId: string, roleName: string): Promise<any> {
-    return ApiClient.patch<any>(`/api/super-admin/team/${userId}/role`, { roleName });
+  static async toggleCollaboratorStatus(userId: string, isActive: boolean) {
+    return ApiClient.patch(`/api/super-admin/team/${userId}/status`, { isActive }, true);
   }
 
-  static async toggleCollaboratorStatus(userId: string, isActive: boolean): Promise<any> {
-    return ApiClient.patch<any>(`/api/super-admin/team/${userId}/disable`, { isActive });
+  static async updateCollaboratorRole(userId: string, roleName: string) {
+    return ApiClient.patch(`/api/super-admin/team/${userId}/role`, { roleName }, true);
+  }
+
+  static async disableCollaborator2FA(userId: string) {
+    return ApiClient.post(`/api/super-admin/team/${userId}/disable-2fa`, {}, true);
+  }
+
+  static async getEnforce2fa(): Promise<{ enforce2FA: boolean }> {
+    return ApiClient.get('/api/super-admin/settings/enforce-2fa', true);
+  }
+
+  static async setEnforce2fa(enforce2FA: boolean): Promise<{ success: boolean; enforce2FA: boolean }> {
+    return ApiClient.put('/api/super-admin/settings/enforce-2fa', { enforce2FA }, true);
   }
 
   // Audit Logs API

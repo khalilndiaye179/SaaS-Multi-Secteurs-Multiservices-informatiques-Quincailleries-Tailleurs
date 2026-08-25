@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NotificationBell } from '../shared/NotificationBell';
 import { useTheme } from '../../contexts/ThemeContext';
+import { TotpSetupModal } from '../shared/TotpSetupModal';
 
 interface Props {
   tenantName: string;
@@ -22,6 +23,7 @@ export const TopHeader: React.FC<Props> = ({
   isSuperAdmin = false,
 }) => {
   const { theme, toggleTheme } = useTheme();
+  const [isTotpModalOpen, setIsTotpModalOpen] = useState(false);
 
   const getSectorIcon = () => {
     switch (sector) {
@@ -116,6 +118,23 @@ export const TopHeader: React.FC<Props> = ({
           mode={isSuperAdmin ? 'super-admin' : 'tenant'}
           themeColor={themeColor}
         />
+        {isSuperAdmin && (
+          <button
+            onClick={() => setIsTotpModalOpen(true)}
+            style={{
+              padding: '6px 12px',
+              background: '#F3F4F6',
+              color: '#374151',
+              border: '1px solid #D1D5DB',
+              borderRadius: 8,
+              fontWeight: 700,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+            }}
+          >
+            Sécurité 2FA
+          </button>
+        )}
         <button
           onClick={onLogout}
           style={{
@@ -132,6 +151,12 @@ export const TopHeader: React.FC<Props> = ({
           Déconnexion
         </button>
       </div>
+
+      <TotpSetupModal
+        isOpen={isTotpModalOpen}
+        onClose={() => setIsTotpModalOpen(false)}
+        themeColor={themeColor}
+      />
     </header>
   );
 };
