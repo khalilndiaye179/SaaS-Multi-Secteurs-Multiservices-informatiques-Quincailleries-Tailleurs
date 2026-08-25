@@ -1,0 +1,388 @@
+diff --git a/backend/prisma/schema.prisma b/backend/prisma/schema.prisma
+index e49d590..946e0e1 100644
+--- a/backend/prisma/schema.prisma
++++ b/backend/prisma/schema.prisma
+@@ -45,6 +45,7 @@ model Tenant {
+   roles                Role[]
+   stockItems           StockItem[]
+   repairTickets        RepairTicket[]
++  itServicePackages    ITServicePackage[]
+   clientMeasurements   ClientMeasurement[]
+   paymentProofs        PaymentProof[]
+   quotes               Quote[]
+@@ -552,6 +553,23 @@ model RepairTicketPart {
+   @@map("repair_ticket_parts")
+ }
+ 
++model ITServicePackage {
++  id             String   @id @default(uuid())
++  tenantId       String
++  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
++  title          String
++  description    String?
++  estimatedHours String // ex: "2h00" (texte libre, cohérent avec le frontend)
++  priceXOF       Float
++  category       String // MAINTENANCE, SYSTEM, HARDWARE, NETWORK
++  isActive       Boolean  @default(true)
++  createdAt      DateTime @default(now())
++  updatedAt      DateTime @updatedAt
++
++  @@index([tenantId])
++  @@map("it_service_packages")
++}
++
+ // -------------------------------------------------------------
+ // MODULE DEVIS ET FACTURATION GENERIQUE (BILLING)
+ // -------------------------------------------------------------
+diff --git a/backend/src/modules/multiservices-it/dto/service-package.dto.ts b/backend/src/modules/multiservices-it/dto/service-package.dto.ts
+new file mode 100644
+index 0000000..b065d54
+--- /dev/null
++++ b/backend/src/modules/multiservices-it/dto/service-package.dto.ts
+@@ -0,0 +1,58 @@
++import { IsString, IsNotEmpty, IsOptional, IsNumber, Min, IsEnum, IsBoolean } from 'class-validator';
++
++export enum ServicePackageCategoryDto {
++  MAINTENANCE = 'MAINTENANCE',
++  SYSTEM = 'SYSTEM',
++  HARDWARE = 'HARDWARE',
++  NETWORK = 'NETWORK',
++}
++
++export class CreateServicePackageDto {
++  @IsString()
++  @IsNotEmpty()
++  title: string;
++
++  @IsOptional()
++  @IsString()
++  description?: string;
++
++  @IsString()
++  @IsNotEmpty()
++  estimatedHours: string;
++
++  @IsNumber()
++  @Min(0)
++  priceXOF: number;
++
++  @IsEnum(ServicePackageCategoryDto)
++  category: ServicePackageCategoryDto;
++}
++
++export class UpdateServicePackageDto {
++  @IsOptional()
++  @IsString()
++  @IsNotEmpty()
++  title?: string;
++
++  @IsOptional()
++  @IsString()
++  description?: string;
++
++  @IsOptional()
++  @IsString()
++  @IsNotEmpty()
++  estimatedHours?: string;
++
++  @IsOptional()
++  @IsNumber()
++  @Min(0)
++  priceXOF?: number;
++
++  @IsOptional()
++  @IsEnum(ServicePackageCategoryDto)
++  category?: ServicePackageCategoryDto;
++
++  @IsOptional()
++  @IsBoolean()
++  isActive?: boolean;
++}
+diff --git a/backend/src/modules/multiservices-it/it-service-package.controller.ts b/backend/src/modules/multiservices-it/it-service-package.controller.ts
+new file mode 100644
+index 0000000..4920c72
+--- /dev/null
++++ b/backend/src/modules/multiservices-it/it-service-package.controller.ts
+@@ -0,0 +1,38 @@
++import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
++import { ITServicePackageService } from './it-service-package.service';
++import { CreateServicePackageDto, UpdateServicePackageDto } from './dto/service-package.dto';
++import { SectorPermissionGuard } from '../../core/guards/sector-permission.guard';
++import { RequireSector } from '../../core/tenant/sector.decorator';
++import { SectorType } from '../../core/types/tenant.types';
++
++@Controller('multiservices-it/service-packages')
++@UseGuards(SectorPermissionGuard)
++@RequireSector(SectorType.MULTISERVICES_IT)
++export class ITServicePackageController {
++  constructor(private servicePackageService: ITServicePackageService) {}
++
++  @Get()
++  async findAll() {
++    return this.servicePackageService.findAll();
++  }
++
++  @Get(':id')
++  async findOne(@Param('id') id: string) {
++    return this.servicePackageService.findOne(id);
++  }
++
++  @Post()
++  async create(@Body() dto: CreateServicePackageDto) {
++    return this.servicePackageService.create(dto);
++  }
++
++  @Put(':id')
++  async update(@Param('id') id: string, @Body() dto: UpdateServicePackageDto) {
++    return this.servicePackageService.update(id, dto);
++  }
++
++  @Delete(':id')
++  async remove(@Param('id') id: string) {
++    return this.servicePackageService.remove(id);
++  }
++}
+diff --git a/backend/src/modules/multiservices-it/it-service-package.service.ts b/backend/src/modules/multiservices-it/it-service-package.service.ts
+new file mode 100644
+index 0000000..40b8592
+--- /dev/null
++++ b/backend/src/modules/multiservices-it/it-service-package.service.ts
+@@ -0,0 +1,44 @@
++import { Injectable, NotFoundException } from '@nestjs/common';
++import { PrismaService } from '../../prisma/prisma.service';
++import { CreateServicePackageDto, UpdateServicePackageDto } from './dto/service-package.dto';
++
++@Injectable()
++export class ITServicePackageService {
++  constructor(private prisma: PrismaService) {}
++
++  async findAll() {
++    return this.prisma.extended.iTServicePackage.findMany({
++      orderBy: { createdAt: 'desc' },
++    });
++  }
++
++  async findOne(id: string) {
++    const pkg = await this.prisma.extended.iTServicePackage.findFirst({
++      where: { id },
++    });
++    if (!pkg) {
++      throw new NotFoundException('Forfait de prestation introuvable.');
++    }
++    return pkg;
++  }
++
++  async create(dto: CreateServicePackageDto) {
++    return this.prisma.extended.iTServicePackage.create({
++      data: { ...dto },
++    });
++  }
++
++  async update(id: string, dto: UpdateServicePackageDto) {
++    await this.findOne(id);
++    return this.prisma.extended.iTServicePackage.update({
++      where: { id },
++      data: { ...dto },
++    });
++  }
++
++  async remove(id: string) {
++    await this.findOne(id);
++    await this.prisma.extended.iTServicePackage.delete({ where: { id } });
++    return { message: 'Forfait supprimé du catalogue.' };
++  }
++}
+diff --git a/backend/src/modules/multiservices-it/it-ticket.module.ts b/backend/src/modules/multiservices-it/it-ticket.module.ts
+index 031afa7..381fe5f 100644
+--- a/backend/src/modules/multiservices-it/it-ticket.module.ts
++++ b/backend/src/modules/multiservices-it/it-ticket.module.ts
+@@ -1,12 +1,14 @@
+ import { Module } from '@nestjs/common';
+ import { ITMultiservicesTicketController } from './it-ticket.controller';
+ import { ITMultiservicesTicketService } from './it-ticket.service';
++import { ITServicePackageController } from './it-service-package.controller';
++import { ITServicePackageService } from './it-service-package.service';
+ import { SmsProviderModule } from '../sms-provider/sms-provider.module';
+ 
+ @Module({
+   imports: [SmsProviderModule],
+-  controllers: [ITMultiservicesTicketController],
+-  providers: [ITMultiservicesTicketService],
+-  exports: [ITMultiservicesTicketService],
++  controllers: [ITMultiservicesTicketController, ITServicePackageController],
++  providers: [ITMultiservicesTicketService, ITServicePackageService],
++  exports: [ITMultiservicesTicketService, ITServicePackageService],
+ })
+ export class ITMultiservicesTicketModule {}
+diff --git a/frontend/src/components/multiservices-it/ITPrestationsCatalog.tsx b/frontend/src/components/multiservices-it/ITPrestationsCatalog.tsx
+index 8db26a8..090bec5 100644
+--- a/frontend/src/components/multiservices-it/ITPrestationsCatalog.tsx
++++ b/frontend/src/components/multiservices-it/ITPrestationsCatalog.tsx
+@@ -19,13 +19,32 @@ export const ITPrestationsCatalog: React.FC<Props> = ({ themeColor }) => {
+   const isAdmin = !user?.roles || user?.roles?.length === 0 || user?.roles?.includes('TENANT_ADMIN') || user?.roles?.includes('ADMIN_TENANT') || user?.roles?.includes('ADMIN') || user?.roles?.includes('SUPER_ADMIN');
+ 
+ 
+-  const [services, setServices] = useState<ServiceItem[]>([
+-    { id: '1', title: 'Formatage & Inst. Windows 11 Pro + Drivers', description: 'Nettoyage disque, installation OS 64-bit, pack bureautique et sécurité', estimatedHours: '2h00', priceXOF: 15000, category: 'SYSTEM' },
+-    { id: '2', title: 'Déblocage & Flashage Smartphone / Tablette', description: 'Réinitialisation compte Google / FRP, désimlockage réseau', estimatedHours: '1h30', priceXOF: 10000, category: 'SYSTEM' },
+-    { id: '3', title: 'Remplacement Écran / Dalle Laptop LED 15.6"', description: 'Démontage propre, pose dalle neuve garantie 3 mois', estimatedHours: '1h00', priceXOF: 45000, category: 'HARDWARE' },
+-    { id: '4', title: 'Dépoussiérage & Changement Pâte Thermique', description: 'Nettoyage ventilateur PC Gamer/Bureau, application pâte Noctua', estimatedHours: '1h30', priceXOF: 12000, category: 'MAINTENANCE' },
+-    { id: '5', title: 'Récupération Données Disque Dur Endommagé', description: 'Extraction de fichiers sur support RAW / formaté à 80%', estimatedHours: '4h00', priceXOF: 35000, category: 'MAINTENANCE' },
+-  ]);
++  const [services, setServices] = useState<ServiceItem[]>([]);
++  const [loading, setLoading] = useState(true);
++
++  const token = localStorage.getItem('kpsy_token');
++  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
++
++  const fetchServices = async () => {
++    setLoading(true);
++    try {
++      const res = await fetch('/api/multiservices-it/service-packages', { headers });
++      if (res.ok) {
++        const data = await res.json();
++        setServices(Array.isArray(data) ? data : []);
++      } else {
++        setServices([]);
++      }
++    } catch (e) {
++      setServices([]);
++    } finally {
++      setLoading(false);
++    }
++  };
++
++  React.useEffect(() => {
++    fetchServices();
++  }, []);
+ 
+   const [showModal, setShowModal] = useState(false);
+   const [editingId, setEditingId] = useState<string | null>(null);
+@@ -57,32 +76,56 @@ export const ITPrestationsCatalog: React.FC<Props> = ({ themeColor }) => {
+     setShowModal(true);
+   };
+ 
+-  const handleDelete = (id: string) => {
++  const handleDelete = async (id: string) => {
+     if (!isAdmin) {
+       alert('Action réservée à l\'Administrateur de l\'établissement.');
+       return;
+     }
+-    if (window.confirm('Voulez-vous vraiment supprimer ce forfait du catalogue ?')) {
+-      setServices(services.filter((s) => s.id !== id));
++    if (!window.confirm('Voulez-vous vraiment supprimer ce forfait du catalogue ?')) return;
++
++    try {
++      const res = await fetch(`/api/multiservices-it/service-packages/${id}`, {
++        method: 'DELETE',
++        headers,
++      });
++      if (res.ok) {
++        setServices(services.filter((s) => s.id !== id));
++      } else {
++        const err = await res.json().catch(() => ({}));
++        alert(err.message || 'Erreur lors de la suppression.');
++      }
++    } catch (e) {
++      alert('Erreur réseau lors de la suppression.');
+     }
+   };
+ 
+-  const handleSubmit = (e: React.FormEvent) => {
++  const handleSubmit = async (e: React.FormEvent) => {
+     e.preventDefault();
+-    if (editingId) {
+-      setServices(services.map((s) => (s.id === editingId ? { ...s, title, description, estimatedHours, priceXOF, category } : s)));
+-    } else {
+-      const newService: ServiceItem = {
+-        id: Date.now().toString(),
+-        title,
+-        description,
+-        estimatedHours,
+-        priceXOF,
+-        category,
+-      };
+-      setServices([...services, newService]);
++    const payload = { title, description, estimatedHours, priceXOF, category };
++
++    try {
++      const res = editingId
++        ? await fetch(`/api/multiservices-it/service-packages/${editingId}`, {
++            method: 'PUT',
++            headers,
++            body: JSON.stringify(payload),
++          })
++        : await fetch('/api/multiservices-it/service-packages', {
++            method: 'POST',
++            headers,
++            body: JSON.stringify(payload),
++          });
++
++      if (res.ok) {
++        await fetchServices();
++        setShowModal(false);
++      } else {
++        const err = await res.json().catch(() => ({}));
++        alert(err.message || 'Erreur lors de l\'enregistrement.');
++      }
++    } catch (e) {
++      alert('Erreur réseau lors de l\'enregistrement.');
+     }
+-    setShowModal(false);
+   };
+ 
+   return (
+diff --git a/frontend/src/components/shared/TotpSetupModal.tsx b/frontend/src/components/shared/TotpSetupModal.tsx
+index 7123895..7157d58 100644
+--- a/frontend/src/components/shared/TotpSetupModal.tsx
++++ b/frontend/src/components/shared/TotpSetupModal.tsx
+@@ -33,7 +33,7 @@ export const TotpSetupModal: React.FC<Props> = ({ isOpen, onClose, themeColor })
+     setLoading(true);
+     setError(null);
+     try {
+-      const data = await ApiClient.get('/api/auth/2fa/setup', true);
++      const data = await ApiClient.post('/api/auth/2fa/setup', {});
+       setSetupData(data);
+     } catch (err: any) {
+       setError(err.message || 'Erreur lors de l\'initialisation du 2FA.');
+@@ -47,7 +47,7 @@ export const TotpSetupModal: React.FC<Props> = ({ isOpen, onClose, themeColor })
+     setLoading(true);
+     setError(null);
+     try {
+-      const res = await ApiClient.post('/api/auth/2fa/enable', { code }, true);
++      const res = await ApiClient.post('/api/auth/2fa/enable', { code });
+       setBackupCodes(res.backupCodes);
+       setMode('SUCCESS');
+       setIsSetupSuccess(true);
+@@ -68,7 +68,7 @@ export const TotpSetupModal: React.FC<Props> = ({ isOpen, onClose, themeColor })
+     setLoading(true);
+     setError(null);
+     try {
+-      await ApiClient.post('/api/auth/2fa/disable', { code }, true);
++      await ApiClient.post('/api/auth/2fa/disable', { code });
+       // Mettre à jour le localStorage
+       const updatedUser = { ...user, totpEnabled: false };
+       localStorage.setItem('kpsy_user', JSON.stringify(updatedUser));
+diff --git a/frontend/src/services/super-admin-api.service.ts b/frontend/src/services/super-admin-api.service.ts
+index e8b7535..3b41ff0 100644
+--- a/frontend/src/services/super-admin-api.service.ts
++++ b/frontend/src/services/super-admin-api.service.ts
+@@ -277,15 +277,15 @@ export class SuperAdminApiService {
+   }
+ 
+   static async disableCollaborator2FA(userId: string) {
+-    return ApiClient.post(`/api/super-admin/team/${userId}/disable-2fa`, {}, true);
++    return ApiClient.post(`/api/super-admin/team/${userId}/disable-2fa`, {});
+   }
+ 
+   static async getEnforce2fa(): Promise<{ enforce2FA: boolean }> {
+-    return ApiClient.get('/api/super-admin/settings/enforce-2fa', true);
++    return ApiClient.get('/api/super-admin/settings/enforce-2fa');
+   }
+ 
+   static async setEnforce2fa(enforce2FA: boolean): Promise<{ success: boolean; enforce2FA: boolean }> {
+-    return ApiClient.put('/api/super-admin/settings/enforce-2fa', { enforce2FA }, true);
++    return ApiClient.put('/api/super-admin/settings/enforce-2fa', { enforce2FA });
+   }
+ 
+   // Audit Logs API

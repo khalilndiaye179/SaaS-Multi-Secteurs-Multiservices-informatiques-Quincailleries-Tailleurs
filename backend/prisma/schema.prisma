@@ -45,6 +45,7 @@ model Tenant {
   roles                Role[]
   stockItems           StockItem[]
   repairTickets        RepairTicket[]
+  itServicePackages    ITServicePackage[]
   clientMeasurements   ClientMeasurement[]
   paymentProofs        PaymentProof[]
   quotes               Quote[]
@@ -550,6 +551,23 @@ model RepairTicketPart {
   @@index([repairTicketId])
   @@index([stockItemId])
   @@map("repair_ticket_parts")
+}
+
+model ITServicePackage {
+  id             String   @id @default(uuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  estimatedHours String // ex: "2h00" (texte libre, cohérent avec le frontend)
+  priceXOF       Float
+  category       String // MAINTENANCE, SYSTEM, HARDWARE, NETWORK
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([tenantId])
+  @@map("it_service_packages")
 }
 
 // -------------------------------------------------------------

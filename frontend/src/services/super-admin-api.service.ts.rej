@@ -1,0 +1,20 @@
+diff a/frontend/src/services/super-admin-api.service.ts b/frontend/src/services/super-admin-api.service.ts	(rejected hunks)
+@@ -277,15 +277,15 @@ export class SuperAdminApiService {
+   }
+ 
+   static async disableCollaborator2FA(userId: string) {
+-    return ApiClient.post(`/api/super-admin/team/${userId}/disable-2fa`, {}, true);
++    return ApiClient.post(`/api/super-admin/team/${userId}/disable-2fa`, {});
+   }
+ 
+   static async getEnforce2fa(): Promise<{ enforce2FA: boolean }> {
+-    return ApiClient.get('/api/super-admin/settings/enforce-2fa', true);
++    return ApiClient.get('/api/super-admin/settings/enforce-2fa');
+   }
+ 
+   static async setEnforce2fa(enforce2FA: boolean): Promise<{ success: boolean; enforce2FA: boolean }> {
+-    return ApiClient.put('/api/super-admin/settings/enforce-2fa', { enforce2FA }, true);
++    return ApiClient.put('/api/super-admin/settings/enforce-2fa', { enforce2FA });
+   }
+ 
+   // Audit Logs API

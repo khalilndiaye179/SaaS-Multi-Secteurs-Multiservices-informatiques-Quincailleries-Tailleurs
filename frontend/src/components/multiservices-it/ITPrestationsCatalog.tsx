@@ -19,13 +19,32 @@ export const ITPrestationsCatalog: React.FC<Props> = ({ themeColor }) => {
   const isAdmin = !user?.roles || user?.roles?.length === 0 || user?.roles?.includes('TENANT_ADMIN') || user?.roles?.includes('ADMIN_TENANT') || user?.roles?.includes('ADMIN') || user?.roles?.includes('SUPER_ADMIN');
 
 
-  const [services, setServices] = useState<ServiceItem[]>([
-    { id: '1', title: 'Formatage & Inst. Windows 11 Pro + Drivers', description: 'Nettoyage disque, installation OS 64-bit, pack bureautique et sécurité', estimatedHours: '2h00', priceXOF: 15000, category: 'SYSTEM' },
-    { id: '2', title: 'Déblocage & Flashage Smartphone / Tablette', description: 'Réinitialisation compte Google / FRP, désimlockage réseau', estimatedHours: '1h30', priceXOF: 10000, category: 'SYSTEM' },
-    { id: '3', title: 'Remplacement Écran / Dalle Laptop LED 15.6"', description: 'Démontage propre, pose dalle neuve garantie 3 mois', estimatedHours: '1h00', priceXOF: 45000, category: 'HARDWARE' },
-    { id: '4', title: 'Dépoussiérage & Changement Pâte Thermique', description: 'Nettoyage ventilateur PC Gamer/Bureau, application pâte Noctua', estimatedHours: '1h30', priceXOF: 12000, category: 'MAINTENANCE' },
-    { id: '5', title: 'Récupération Données Disque Dur Endommagé', description: 'Extraction de fichiers sur support RAW / formaté à 80%', estimatedHours: '4h00', priceXOF: 35000, category: 'MAINTENANCE' },
-  ]);
+  const [services, setServices] = useState<ServiceItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const token = localStorage.getItem('kpsy_token');
+  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+
+  const fetchServices = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/multiservices-it/service-packages', { headers });
+      if (res.ok) {
+        const data = await res.json();
+        setServices(Array.isArray(data) ? data : []);
+      } else {
+        setServices([]);
+      }
+    } catch (e) {
+      setServices([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchServices();
+  }, []);
 
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -57,32 +76,56 @@ export const ITPrestationsCatalog: React.FC<Props> = ({ themeColor }) => {
     setShowModal(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!isAdmin) {
       alert('Action réservée à l\'Administrateur de l\'établissement.');
       return;
     }
-    if (window.confirm('Voulez-vous vraiment supprimer ce forfait du catalogue ?')) {
-      setServices(services.filter((s) => s.id !== id));
+    if (!window.confirm('Voulez-vous vraiment supprimer ce forfait du catalogue ?')) return;
+
+    try {
+      const res = await fetch(`/api/multiservices-it/service-packages/${id}`, {
+        method: 'DELETE',
+        headers,
+      });
+      if (res.ok) {
+        setServices(services.filter((s) => s.id !== id));
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.message || 'Erreur lors de la suppression.');
+      }
+    } catch (e) {
+      alert('Erreur réseau lors de la suppression.');
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingId) {
-      setServices(services.map((s) => (s.id === editingId ? { ...s, title, description, estimatedHours, priceXOF, category } : s)));
-    } else {
-      const newService: ServiceItem = {
-        id: Date.now().toString(),
-        title,
-        description,
-        estimatedHours,
-        priceXOF,
-        category,
-      };
-      setServices([...services, newService]);
+    const payload = { title, description, estimatedHours, priceXOF, category };
+
+    try {
+      const res = editingId
+        ? await fetch(`/api/multiservices-it/service-packages/${editingId}`, {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify(payload),
+          })
+        : await fetch('/api/multiservices-it/service-packages', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload),
+          });
+
+      if (res.ok) {
+        await fetchServices();
+        setShowModal(false);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.message || 'Erreur lors de l\'enregistrement.');
+      }
+    } catch (e) {
+      alert('Erreur réseau lors de l\'enregistrement.');
     }
-    setShowModal(false);
   };
 
   return (
