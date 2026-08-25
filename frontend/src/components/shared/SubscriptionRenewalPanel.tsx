@@ -179,7 +179,7 @@ export const SubscriptionRenewalPanel: React.FC<Props> = ({ onSubmitted, compact
 
           <div style={{
             background: '#0F172A', padding: 14, borderRadius: 10, border: '1px solid #334155',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16
           }}>
             <div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>Montant à transférer :</div>
@@ -188,9 +188,9 @@ export const SubscriptionRenewalPanel: React.FC<Props> = ({ onSubmitted, compact
               </div>
             </div>
             {provider === 'WAVE' && (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: '100%', maxWidth: 'max-content', margin: '0 auto' }}>
                 {activeProviders.find(p => p.provider === 'WAVE')?.qrCodeUrl ? (
-                  <img src={activeProviders.find(p => p.provider === 'WAVE')?.qrCodeUrl} alt="QR Code Wave" style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'contain', background: '#FFF', padding: 4 }} />
+                  <img src={activeProviders.find(p => p.provider === 'WAVE')?.qrCodeUrl} alt="QR Code Wave" style={{ width: 180, height: 180, borderRadius: 8, objectFit: 'contain', background: '#FFF', padding: 8 }} />
                 ) : (
                   <div style={{ fontSize: '0.70rem', color: '#F59E0B', textAlign: 'center', maxWidth: 100, background: '#1E293B', padding: '6px', borderRadius: 8, border: '1px solid rgba(245, 158, 11, 0.3)' }}>QR non configuré, contactez le support</div>
                 )}
