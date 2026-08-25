@@ -82,6 +82,7 @@ export class PaymentProviderService {
       provider: c.provider,
       displayName: c.displayName,
       currency: c.currency,
+      qrCodeUrl: c.qrCodeUrl,
     }));
   }
 
@@ -156,6 +157,81 @@ export class PaymentProviderService {
     return this.sanitizeForResponse(updated);
   }
 
+  /**
+   * Upload et remplace le QR Code d'un fournisseur
+   */
+  async uploadQrCode(provider: string, buffer: Buffer, mimeType: string) {
+    const upperProvider = provider.toUpperCase();
+    if (!this.registry.has(upperProvider)) {
+      throw new BadRequestException(`Le fournisseur '${upperProvider}' n'est pas supporté.`);
+    }
+
+    const existing = await this.prisma.withoutTenantScope(async (c) =>
+      c.paymentProviderConfig.findUnique({ where: { provider: upperProvider } })
+    );
+    if (!existing) {
+      throw new NotFoundException(`Configuration ${upperProvider} introuvable, créez d'abord le fournisseur avant d'uploader un QR code.`);
+    }
+
+    // Magic bytes check pour s'assurer que c'est une image (PNG/JPEG)
+    const isPng = buffer.length > 4 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47;
+    const isJpeg = buffer.length > 3 && buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF;
+
+    if (!isPng && !isJpeg) {
+      throw new BadRequestException("Le fichier n'est pas une image PNG ou JPEG valide.");
+    }
+
+    const base64Data = buffer.toString('base64');
+    const dataUri = `data:${isPng ? 'image/png' : 'image/jpeg'};base64,${base64Data}`;
+
+    const updated = await this.prisma.withoutTenantScope(async (c) =>
+      c.paymentProviderConfig.update({
+        where: { provider: upperProvider },
+        data: { qrCodeUrl: dataUri }
+      })
+    );
+
+    await this.auditLogService.record({
+      action: 'PAYMENT_PROVIDER_QR_CODE_UPLOAD',
+      resourceType: 'PAYMENT_PROVIDER_CONFIG',
+      resourceId: updated.id,
+      result: 'SUCCESS',
+      metadata: { provider: upperProvider }
+    });
+
+    return this.sanitizeForResponse(updated);
+  }
+
+  /**
+   * Révoque (supprime) le QR Code d'un fournisseur
+   */
+  async revokeQrCode(provider: string) {
+    const upperProvider = provider.toUpperCase();
+    
+    const existing = await this.prisma.withoutTenantScope(async (c) =>
+      c.paymentProviderConfig.findUnique({ where: { provider: upperProvider } })
+    );
+    if (!existing) {
+      throw new NotFoundException(`Configuration ${upperProvider} introuvable, créez d'abord le fournisseur avant d'uploader un QR code.`);
+    }
+
+    const updated = await this.prisma.withoutTenantScope(async (c) =>
+      c.paymentProviderConfig.update({
+        where: { provider: upperProvider },
+        data: { qrCodeUrl: null }
+      })
+    );
+
+    await this.auditLogService.record({
+      action: 'PAYMENT_PROVIDER_QR_CODE_REVOKE',
+      resourceType: 'PAYMENT_PROVIDER_CONFIG',
+      resourceId: updated.id,
+      result: 'SUCCESS',
+      metadata: { provider: upperProvider }
+    });
+
+    return this.sanitizeForResponse(updated);
+  }
   /**
    * Bascule le statut d'activation (Enable / Disable)
    */

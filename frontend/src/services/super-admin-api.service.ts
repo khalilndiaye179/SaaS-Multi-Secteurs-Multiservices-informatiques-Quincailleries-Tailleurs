@@ -34,6 +34,7 @@ export interface ProviderConfigData {
   hasSecret: boolean;
   hasWebhookSecret?: boolean;
   maskedSecret?: string;
+  qrCodeUrl?: string;
 }
 
 export interface SaaSQuoteData {
@@ -170,6 +171,28 @@ export class SuperAdminApiService {
 
   static async testPaymentProvider(provider: string): Promise<any> {
     return ApiClient.post<any>(`/api/super-admin/payment-providers/${provider}/test`, {});
+  }
+
+  static async uploadPaymentProviderQrCode(provider: string, file: File): Promise<any> {
+    const token = localStorage.getItem('kpsy_token');
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const res = await fetch(`/api/super-admin/payment-providers/${provider}/qr-code`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData
+    });
+    
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.message || 'Erreur lors du téléchargement du QR Code');
+    }
+    return res.json();
+  }
+
+  static async revokePaymentProviderQrCode(provider: string): Promise<any> {
+    return ApiClient.delete<any>(`/api/super-admin/payment-providers/${provider}/qr-code`);
   }
 
   // SMS Providers API

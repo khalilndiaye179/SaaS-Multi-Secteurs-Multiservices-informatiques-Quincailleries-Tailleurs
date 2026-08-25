@@ -19,7 +19,7 @@ export const SubscriptionRenewalPanel: React.FC<Props> = ({ onSubmitted, compact
   const [pricingOptions, setPricingOptions] = useState<PricingOption[]>([]);
   const [loadingPricing, setLoadingPricing] = useState(true);
 
-  const [activeProviders, setActiveProviders] = useState<{provider: string, displayName: string}[]>([]);
+  const [activeProviders, setActiveProviders] = useState<{provider: string, displayName: string, qrCodeUrl?: string}[]>([]);
   const [provider, setProvider] = useState('');
   const [transactionRef, setTransactionRef] = useState('');
   const [durationMonths, setDurationMonths] = useState(1);
@@ -51,7 +51,7 @@ export const SubscriptionRenewalPanel: React.FC<Props> = ({ onSubmitted, compact
 
     const fetchActiveProviders = async () => {
       try {
-        const providers = await ApiClient.get<{provider: string, displayName: string}[]>('/api/payment-providers/active');
+        const providers = await ApiClient.get<{provider: string, displayName: string, qrCodeUrl?: string}[]>('/api/payment-providers/active');
         setActiveProviders(providers);
         if (providers.length > 0) {
           setProvider(providers[0].provider);
@@ -67,9 +67,9 @@ export const SubscriptionRenewalPanel: React.FC<Props> = ({ onSubmitted, compact
 
   const handleDurationChange = (months: number) => {
     setDurationMonths(months);
-    const selected = pricingOptions.find((opt) => opt.durationMonths === months);
-    if (selected) {
-      setAmount(selected.finalAmount);
+    const plan = pricingOptions.find((p) => p.durationMonths === months);
+    if (plan) {
+      setAmount(plan.finalAmount);
     } else {
       const fallbackAmount = months === 6 ? 35100 : months === 12 ? 62400 : 6500;
       setAmount(fallbackAmount);
@@ -82,9 +82,8 @@ export const SubscriptionRenewalPanel: React.FC<Props> = ({ onSubmitted, compact
     setErrorMsg(null);
     setSuccessMsg(null);
 
-    const token = localStorage.getItem('kpsy_token');
-
     try {
+      const token = localStorage.getItem('kpsy_token');
       const res = await fetch('/api/billing/pay-proof', {
         method: 'POST',
         headers: {
@@ -188,9 +187,13 @@ export const SubscriptionRenewalPanel: React.FC<Props> = ({ onSubmitted, compact
                 {amount.toLocaleString()} XOF
               </div>
             </div>
-            {activeProviders.some(p => p.provider === 'WAVE') && (
-              <div style={{ fontSize: '0.75rem', background: '#1E293B', padding: '6px 12px', borderRadius: 8, color: '#F59E0B', fontWeight: 700, border: '1px solid rgba(245, 158, 11, 0.3)' }}>
-                Scan QR Code Wave 📲
+            {provider === 'WAVE' && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                {activeProviders.find(p => p.provider === 'WAVE')?.qrCodeUrl ? (
+                  <img src={activeProviders.find(p => p.provider === 'WAVE')?.qrCodeUrl} alt="QR Code Wave" style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'contain', background: '#FFF', padding: 4 }} />
+                ) : (
+                  <div style={{ fontSize: '0.70rem', color: '#F59E0B', textAlign: 'center', maxWidth: 100, background: '#1E293B', padding: '6px', borderRadius: 8, border: '1px solid rgba(245, 158, 11, 0.3)' }}>QR non configuré, contactez le support</div>
+                )}
               </div>
             )}
           </div>

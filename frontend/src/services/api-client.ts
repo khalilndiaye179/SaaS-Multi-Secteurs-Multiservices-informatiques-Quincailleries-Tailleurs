@@ -71,4 +71,11 @@ export class ApiClient {
     });
     return this.handleResponse<T>(response);
   }
+  static async delete<T>(url: string, isPublic = false): Promise<T> {
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: this.getHeaders(isPublic),
+    });
+    return this.handleResponse<T>(response);
+  }
 }

@@ -63,6 +63,32 @@ export const ProviderManagerView: React.FC<Props> = ({ type, themeColor = '#312E
     }
   };
 
+  const handleUploadQrCode = async (providerName: string, file?: File) => {
+    if (!file) return;
+    if (file.size > 500 * 1024) {
+      alert('Erreur: Le fichier dépasse la limite de 500 Ko.');
+      return;
+    }
+    try {
+      await SuperAdminApiService.uploadPaymentProviderQrCode(providerName, file);
+      alert('QR Code téléchargé avec succès !');
+      fetchProviders();
+    } catch (err: any) {
+      alert(`Erreur upload: ${err.message}`);
+    }
+  };
+
+  const handleRevokeQrCode = async (providerName: string) => {
+    if (!window.confirm('Voulez-vous vraiment révoquer (supprimer) ce QR Code ?')) return;
+    try {
+      await SuperAdminApiService.revokePaymentProviderQrCode(providerName);
+      alert('QR Code révoqué avec succès !');
+      fetchProviders();
+    } catch (err: any) {
+      alert(`Erreur révocation: ${err.message}`);
+    }
+  };
+
   const handleOpenConfig = (p: ProviderConfigData) => {
     setEditingProvider(p);
     setConfigForm({
@@ -147,6 +173,25 @@ export const ProviderManagerView: React.FC<Props> = ({ type, themeColor = '#312E
               {type === 'sms' && <div><strong>Sender ID :</strong> {p.senderId || 'KPSyDesk'}</div>}
               <div><strong>Secret Chiffré (AES-256) :</strong> {p.hasSecret ? '🔒 Configuré (••••••••)' : '⚠️ Manquant'}</div>
             </div>
+
+              {type === 'payment' && p.provider === 'WAVE' && (
+                <div style={{ padding: 12, border: '1px solid var(--border-color)', borderRadius: 8, marginBottom: 12 }}>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: 13, color: '#0F172A' }}>QR Code de paiement</h4>
+                  {p.qrCodeUrl ? (
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                      <img src={p.qrCodeUrl} alt="QR Code Wave" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 4, border: '1px solid #E2E8F0' }} />
+                      <button onClick={() => handleRevokeQrCode(p.provider)} style={{ padding: '4px 8px', fontSize: 11, background: '#FEE2E2', color: '#DC2626', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Révoquer</button>
+                    </div>
+                  ) : (
+                    <div>
+                      <input type="file" id={`qr-upload-${p.provider}`} accept="image/png, image/jpeg" style={{ display: 'none' }} onChange={(e) => handleUploadQrCode(p.provider, e.target.files?.[0])} />
+                      <label htmlFor={`qr-upload-${p.provider}`} style={{ padding: '6px 10px', fontSize: 11, background: '#F1F5F9', color: '#475569', border: '1px solid #CBD5E1', borderRadius: 4, cursor: 'pointer', display: 'inline-block' }}>
+                        + Uploader une image (PNG/JPEG)
+                      </label>
+                    </div>
+                  )}
+                </div>
+              )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <button
