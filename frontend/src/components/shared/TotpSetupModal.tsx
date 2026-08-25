@@ -33,7 +33,7 @@ export const TotpSetupModal: React.FC<Props> = ({ isOpen, onClose, themeColor })
     setLoading(true);
     setError(null);
     try {
-      const data = await ApiClient.get('/api/auth/2fa/setup', true);
+      const data = await ApiClient.post('/api/auth/2fa/setup', {});
       setSetupData(data);
     } catch (err: any) {
       setError(err.message || 'Erreur lors de l\'initialisation du 2FA.');
@@ -47,7 +47,7 @@ export const TotpSetupModal: React.FC<Props> = ({ isOpen, onClose, themeColor })
     setLoading(true);
     setError(null);
     try {
-      const res = await ApiClient.post('/api/auth/2fa/enable', { code }, true);
+      const res = await ApiClient.post('/api/auth/2fa/enable', { code });
       setBackupCodes(res.backupCodes);
       setMode('SUCCESS');
       setIsSetupSuccess(true);
@@ -68,7 +68,7 @@ export const TotpSetupModal: React.FC<Props> = ({ isOpen, onClose, themeColor })
     setLoading(true);
     setError(null);
     try {
-      await ApiClient.post('/api/auth/2fa/disable', { code }, true);
+      await ApiClient.post('/api/auth/2fa/disable', { code });
       // Mettre à jour le localStorage
       const updatedUser = { ...user, totpEnabled: false };
       localStorage.setItem('kpsy_user', JSON.stringify(updatedUser));
