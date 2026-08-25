@@ -24,7 +24,7 @@ export class ITServicePackageService {
 
   async create(dto: CreateServicePackageDto) {
     return this.prisma.extended.iTServicePackage.create({
-      data: { ...dto },
+      data: { ...dto } as any,
     });
   }
 
@@ -32,7 +32,7 @@ export class ITServicePackageService {
     await this.findOne(id);
     return this.prisma.extended.iTServicePackage.update({
       where: { id },
-      data: { ...dto },
+      data: { ...dto } as any,
     });
   }
 
@@ -42,3 +42,5 @@ export class ITServicePackageService {
     return { message: 'Forfait supprimé du catalogue.' };
   }
 }
+
+
