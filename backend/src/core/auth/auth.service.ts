@@ -5,7 +5,11 @@ import { RegisterDto, LoginDto, ChangePasswordDto } from './dto/auth.dto';
 import { SectorType, RoleType, BillingStatus, JwtPayload } from '../types/tenant.types';
 import * as bcrypt from 'bcryptjs';
 import { EmailOtpService } from '../../modules/notifications/email-otp.service';
-
+import * as crypto from 'crypto';
+import { authenticator } from 'otplib';
+import * as QRCode from 'qrcode';
+import { EncryptionService } from '../security/encryption.service';
+import { EnableTotpDto, DisableTotpDto, VerifyTotpDto } from './dto/auth.dto';
 @Injectable()
 export class AuthService {
   private registrationCache = new Map<string, { dto: RegisterDto; expiresAt: number }>();
@@ -14,6 +18,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private emailOtpService: EmailOtpService,
+    private encryptionService: EncryptionService,
   ) {}
 
   async registerInit(dto: RegisterDto) {
@@ -201,6 +206,26 @@ export class AuthService {
       throw new UnauthorizedException('Identifiants invalides');
     }
 
+    if (user.totpEnabled) {
+      const totpSessionId = crypto.randomUUID();
+      await this.prisma.withoutTenantScope(async (c) =>
+        c.user.update({
+          where: { id: user.id },
+          data: { totpSessionId, totpFailedAttempts: 0 },
+        })
+      );
+
+      const tempToken = this.jwtService.sign(
+        { sub: user.id, totpSessionId, purpose: 'totp_pending' },
+        { expiresIn: '5m' }
+      );
+
+      return {
+        requiresTotp: true,
+        tempToken,
+      };
+    }
+
     // Récupérer le tableau plat de codes de permission (sans doublon)
     const permissionsSet = new Set<string>();
     user.userRoles.forEach((ur) => {
@@ -265,7 +290,206 @@ export class AuthService {
       });
     });
 
-    // TODO: log password change?
     return { message: 'Mot de passe modifié avec succès.' };
+  }
+
+  async setupTotp(userId: string | undefined) {
+    if (!userId) throw new UnauthorizedException();
+    const user = await this.prisma.withoutTenantScope(c => c.user.findUnique({ where: { id: userId }}));
+    if (!user) throw new UnauthorizedException();
+
+    const secret = authenticator.generateSecret();
+    const otpauthUrl = authenticator.keyuri(user.email, 'KPSyDesk', secret);
+    const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
+
+    await this.prisma.withoutTenantScope(c => c.user.update({
+      where: { id: userId },
+      data: {
+        totpSecret: this.encryptionService.encrypt(secret),
+      }
+    }));
+
+    return {
+      secret,
+      qrCodeDataUrl,
+      message: 'Veuillez scanner ce QR code ou saisir le secret manuellement dans votre application d\'authentification.'
+    };
+  }
+
+  async enableTotp(userId: string | undefined, dto: EnableTotpDto) {
+    if (!userId) throw new UnauthorizedException();
+    const user = await this.prisma.withoutTenantScope(c => c.user.findUnique({ where: { id: userId }}));
+    if (!user || !user.totpSecret) throw new BadRequestException('Configuration 2FA non initiée.');
+
+    const secret = this.encryptionService.decrypt(user.totpSecret);
+    const isValid = authenticator.verify({ token: dto.code, secret });
+
+    if (!isValid) throw new BadRequestException('Code invalide.');
+
+    // Générer 8 codes de backup
+    const backupCodes = Array.from({ length: 8 }, () => crypto.randomBytes(4).toString('hex'));
+    const hashedCodes = await Promise.all(backupCodes.map(code => bcrypt.hash(code, 10)));
+
+    await this.prisma.withoutTenantScope(c => c.user.update({
+      where: { id: userId },
+      data: {
+        totpEnabled: true,
+        totpBackupCodesHashed: hashedCodes,
+      }
+    }));
+
+    return {
+      message: 'Authentification à deux facteurs activée.',
+      backupCodes,
+      warning: 'Conservez ces codes de secours précieusement. Ils ne seront affichés qu\'une seule fois.'
+    };
+  }
+
+  async disableTotp(userId: string | undefined, dto: DisableTotpDto) {
+    if (!userId) throw new UnauthorizedException();
+    const user = await this.prisma.withoutTenantScope(c => c.user.findUnique({ where: { id: userId }}));
+    if (!user || !user.totpEnabled) throw new BadRequestException('2FA non activé.');
+
+    if (dto.password) {
+      const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
+      if (!isPasswordValid) throw new UnauthorizedException('Mot de passe invalide.');
+    } else if (dto.code && user.totpSecret) {
+      const secret = this.encryptionService.decrypt(user.totpSecret);
+      const isValid = authenticator.verify({ token: dto.code, secret });
+      if (!isValid) throw new UnauthorizedException('Code 2FA invalide.');
+    } else {
+      throw new BadRequestException('Vous devez fournir un code 2FA ou votre mot de passe pour désactiver.');
+    }
+
+    await this.prisma.withoutTenantScope(c => c.user.update({
+      where: { id: userId },
+      data: {
+        totpEnabled: false,
+        totpSecret: null,
+        totpBackupCodesHashed: [],
+      }
+    }));
+
+    return { message: 'Authentification à deux facteurs désactivée.' };
+  }
+
+  async verifyTotpLogin(dto: VerifyTotpDto) {
+    let payload: any;
+    try {
+      payload = this.jwtService.verify(dto.tempToken);
+    } catch (e) {
+      throw new UnauthorizedException('Token temporaire invalide ou expiré.');
+    }
+
+    if (payload.purpose !== 'totp_pending' || !payload.sub || !payload.totpSessionId) {
+      throw new UnauthorizedException('Token temporaire invalide.');
+    }
+
+    const userId = payload.sub;
+    const user = await this.prisma.withoutTenantScope(c => c.user.findUnique({
+      where: { id: userId },
+      include: {
+        tenant: true,
+        userRoles: {
+          include: { role: { include: { rolePermissions: { include: { permission: true } } } } }
+        }
+      }
+    }));
+
+    if (!user || !user.isActive || !user.totpEnabled || user.totpSessionId !== payload.totpSessionId) {
+      throw new UnauthorizedException('Session 2FA invalide ou expirée.');
+    }
+
+    if (user.totpFailedAttempts >= 5) {
+      await this.prisma.withoutTenantScope(c => c.user.update({
+        where: { id: userId },
+        data: { totpSessionId: null }
+      }));
+      throw new UnauthorizedException('Trop de tentatives échouées. Veuillez vous reconnecter.');
+    }
+
+    let isCodeValid = false;
+    let usedBackupCodeIndex = -1;
+
+    // Check against authenticator
+    if (user.totpSecret) {
+      const secret = this.encryptionService.decrypt(user.totpSecret);
+      isCodeValid = authenticator.verify({ token: dto.code, secret });
+    }
+
+    // If not valid, check against backup codes
+    if (!isCodeValid && user.totpBackupCodesHashed && user.totpBackupCodesHashed.length > 0) {
+      for (let i = 0; i < user.totpBackupCodesHashed.length; i++) {
+        if (await bcrypt.compare(dto.code, user.totpBackupCodesHashed[i])) {
+          isCodeValid = true;
+          usedBackupCodeIndex = i;
+          break;
+        }
+      }
+    }
+
+    if (!isCodeValid) {
+      await this.prisma.withoutTenantScope(c => c.user.update({
+        where: { id: userId },
+        data: { totpFailedAttempts: { increment: 1 } }
+      }));
+      throw new UnauthorizedException('Code invalide.');
+    }
+
+    // Success: invalidate session, reset attempts, potentially remove used backup code
+    const updateData: any = {
+      totpSessionId: null,
+      totpFailedAttempts: 0,
+    };
+
+    if (usedBackupCodeIndex !== -1) {
+      const newBackupCodes = [...user.totpBackupCodesHashed];
+      newBackupCodes.splice(usedBackupCodeIndex, 1);
+      updateData.totpBackupCodesHashed = newBackupCodes;
+    }
+
+    await this.prisma.withoutTenantScope(c => c.user.update({
+      where: { id: userId },
+      data: updateData
+    }));
+
+    // Generate final JWT
+    const permissionsSet = new Set<string>();
+    user.userRoles.forEach((ur) => {
+      ur.role.rolePermissions.forEach((rp) => {
+        if (rp.permission?.code) {
+          permissionsSet.add(rp.permission.code);
+        }
+      });
+    });
+
+    const finalPayload: JwtPayload = {
+      sub: user.id,
+      tenantId: user.tenant.id,
+      tenantCode: user.tenant.code,
+      sectorType: user.tenant.sectorType as SectorType,
+      roles: user.userRoles.map((ur) => ur.role.name as RoleType),
+      permissions: Array.from(permissionsSet),
+      billingStatus: user.tenant.billingStatus as BillingStatus,
+      mustChangePassword: user.mustChangePassword,
+    };
+
+    const accessToken = this.jwtService.sign(finalPayload);
+
+    return {
+      accessToken,
+      tenant: {
+        id: user.tenant.id,
+        code: user.tenant.code,
+        name: user.tenant.name,
+        sectorType: user.tenant.sectorType,
+      },
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        roles: user.userRoles.map((ur) => ur.role.name),
+      },
+    };
   }
 }

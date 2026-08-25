@@ -29,6 +29,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { TenantRbacModule } from './modules/tenant-rbac/tenant-rbac.module';
 import { CrmModule } from './modules/crm/crm.module';
 import { MustChangePasswordGuard } from './core/auth/must-change-password.guard';
+import { TotpEnforcementGuard } from './core/guards/totp-enforcement.guard';
 
 @Module({
   imports: [
@@ -68,6 +69,10 @@ import { MustChangePasswordGuard } from './core/auth/must-change-password.guard'
     {
       provide: APP_GUARD,
       useClass: MustChangePasswordGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: TotpEnforcementGuard,
     },
   ],
 })

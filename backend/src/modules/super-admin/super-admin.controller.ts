@@ -101,6 +101,18 @@ export class SuperAdminDashboardController {
   async updatePricingConfig(@Body() body: UpdatePricingConfigDto) {
     return this.superAdminService.updatePricingConfig(body);
   }
+
+  @Get('settings/enforce-2fa')
+  @UseGuards(SuperAdminGuard)
+  async getEnforce2fa() {
+    return this.superAdminService.getEnforce2fa();
+  }
+
+  @Put('settings/enforce-2fa')
+  @UseGuards(SuperAdminGuard)
+  async setEnforce2fa(@Body('enforce2FA') enforce: boolean) {
+    return this.superAdminService.setEnforce2fa(enforce);
+  }
 }
 
 

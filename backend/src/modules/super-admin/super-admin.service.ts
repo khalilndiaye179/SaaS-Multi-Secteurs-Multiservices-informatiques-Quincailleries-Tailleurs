@@ -333,6 +333,24 @@ export class SuperAdminDashboardService {
       });
     });
   }
+
+  async getEnforce2fa() {
+    const settings = await this.prisma.withoutTenantScope(c =>
+      c.platformSettings.findUnique({ where: { id: 'singleton' } })
+    );
+    return { enforce2FA: settings?.enforce2FA || false };
+  }
+
+  async setEnforce2fa(enforce: boolean) {
+    const settings = await this.prisma.withoutTenantScope(c =>
+      c.platformSettings.upsert({
+        where: { id: 'singleton' },
+        update: { enforce2FA: enforce },
+        create: { id: 'singleton', enforce2FA: enforce }
+      })
+    );
+    return { message: 'Paramètre mis à jour', enforce2FA: settings.enforce2FA };
+  }
 }
 
 

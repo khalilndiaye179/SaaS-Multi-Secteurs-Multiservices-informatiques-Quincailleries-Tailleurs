@@ -62,3 +62,31 @@ export class ChangePasswordDto {
   @MinLength(6)
   newPassword: string;
 }
+
+export class EnableTotpDto {
+  @IsString()
+  @IsNotEmpty()
+  code: string;
+}
+
+export class DisableTotpDto {
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  code?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  password?: string;
+}
+
+export class VerifyTotpDto {
+  @IsString()
+  @IsNotEmpty()
+  tempToken: string;
+
+  @IsString()
+  @IsNotEmpty()
+  code: string;
+}

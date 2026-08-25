@@ -345,6 +345,7 @@ export class SuperAdminTeamService {
       isActive: u.isActive,
       roles: u.userRoles.map((ur) => ur.role.name),
       createdAt: u.createdAt,
+      totpEnabled: u.totpEnabled,
     }));
 
     return { team, invitations };
@@ -396,6 +397,47 @@ export class SuperAdminTeamService {
       success: true,
       message: 'Mot de passe réinitialisé avec succès.',
       newPassword, // We return it in clear so the admin can copy it
+    };
+  }
+
+  async disable2fa(targetUserId: string) {
+    const store = TenantContextService.getStore();
+    if (!store?.isSuperAdmin) throw new ForbiddenException('Accès réservé au Super Admin.');
+
+    const targetUser = await this.prisma.withoutTenantScope(async (c) =>
+      c.user.findUnique({ where: { id: targetUserId }, include: { tenant: true } })
+    );
+
+    if (!targetUser) throw new NotFoundException('Collaborateur introuvable.');
+
+    if (targetUser.tenant.code !== 'SAAS-GLOBAL') {
+      throw new ForbiddenException('Cette action est réservée aux membres de l\'équipe système.');
+    }
+
+    await this.prisma.withoutTenantScope(async (c) =>
+      c.user.update({
+        where: { id: targetUserId },
+        data: {
+          totpEnabled: false,
+          totpSecret: null,
+          totpBackupCodesHashed: [],
+          totpFailedAttempts: 0,
+          totpSessionId: null,
+        }
+      })
+    );
+
+    await this.auditLogService.record({
+      action: 'ADMIN_2FA_DISABLED',
+      resourceType: 'USER',
+      resourceId: targetUserId,
+      result: 'SUCCESS',
+      metadata: { targetEmail: targetUser.email }
+    });
+
+    return {
+      success: true,
+      message: 'Authentification à deux facteurs désactivée avec succès pour ce collaborateur.',
     };
   }
 }

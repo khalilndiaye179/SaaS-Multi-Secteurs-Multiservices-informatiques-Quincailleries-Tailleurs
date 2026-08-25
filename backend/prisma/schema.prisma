@@ -223,6 +223,15 @@ model PlatformAnalytics {
   @@map("platform_analytics")
 }
 
+// Global SaaS / Sécurité : Configuration plateforme globale
+model PlatformSettings {
+  id          String   @id @default("singleton")
+  enforce2FA  Boolean  @default(false)
+  updatedAt   DateTime @updatedAt
+
+  @@map("platform_settings")
+}
+
 // Global SaaS / Securite : Invitations d'Équipe Super Admin (Collaborateurs)
 model SuperAdminInvitation {
   id          String   @id @default(uuid())
@@ -252,6 +261,14 @@ model User {
   passwordHash String
   mustChangePassword Boolean @default(false)
   isActive     Boolean  @default(true)
+  
+  // TOTP (Super Admin)
+  totpSecret            String?
+  totpEnabled           Boolean  @default(false)
+  totpBackupCodesHashed String[]
+  totpFailedAttempts    Int      @default(0)
+  totpSessionId         String?
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

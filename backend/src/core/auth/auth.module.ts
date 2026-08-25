@@ -7,6 +7,8 @@ import { JwtStrategy } from './jwt.strategy';
 import { BillingController } from '../billing/billing.controller';
 import { NotificationsModule } from '../../modules/notifications/notifications.module';
 
+import { EncryptionService } from '../security/encryption.service';
+
 @Module({
   imports: [
     PassportModule,
@@ -17,7 +19,7 @@ import { NotificationsModule } from '../../modules/notifications/notifications.m
     NotificationsModule,
   ],
   controllers: [AuthController, BillingController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, EncryptionService],
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

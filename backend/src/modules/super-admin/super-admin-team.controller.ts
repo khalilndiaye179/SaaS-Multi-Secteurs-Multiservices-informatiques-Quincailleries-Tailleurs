@@ -62,4 +62,10 @@ export class SuperAdminTeamController {
   async resetPassword(@Param('userId') userId: string) {
     return this.teamService.forceResetPassword(userId);
   }
+
+  @Post(':userId/disable-2fa')
+  @UseGuards(SuperAdminGuard)
+  async disable2fa(@Param('userId') userId: string) {
+    return this.teamService.disable2fa(userId);
+  }
 }

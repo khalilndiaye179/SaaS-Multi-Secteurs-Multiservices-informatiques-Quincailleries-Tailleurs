@@ -13,7 +13,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload) {
+  async validate(payload: JwtPayload & { purpose?: string }) {
+    if (payload.purpose === 'totp_pending') {
+      throw new UnauthorizedException('Token temporaire invalide pour cette route.');
+    }
+
     if (!payload.sub || !payload.tenantId) {
       throw new UnauthorizedException('Token invalide ou incomplet.');
     }
