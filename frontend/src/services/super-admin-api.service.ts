@@ -261,31 +261,31 @@ export class SuperAdminApiService {
   // ==========================================
 
   static async getTeamOverview(): Promise<{ team: TeamCollaboratorData[]; invitations: TeamInvitationData[] }> {
-    return ApiClient.get('/api/super-admin/team/overview', true);
+    return ApiClient.get('/api/super-admin/team/overview');
   }
 
   static async inviteCollaborator(payload: { email: string; phone?: string; roleName: string }) {
-    return ApiClient.post('/api/super-admin/team/invite', payload, true);
+    return ApiClient.post('/api/super-admin/team/invite', payload);
   }
 
   static async toggleCollaboratorStatus(userId: string, isActive: boolean) {
-    return ApiClient.patch(`/api/super-admin/team/${userId}/status`, { isActive }, true);
+    return ApiClient.patch(`/api/super-admin/team/${userId}/status`, { isActive });
   }
 
   static async updateCollaboratorRole(userId: string, roleName: string) {
-    return ApiClient.patch(`/api/super-admin/team/${userId}/role`, { roleName }, true);
+    return ApiClient.patch(`/api/super-admin/team/${userId}/role`, { roleName });
   }
 
   static async disableCollaborator2FA(userId: string) {
-    return ApiClient.post(`/api/super-admin/team/${userId}/disable-2fa`, {}, true);
+    return ApiClient.post(`/api/super-admin/team/${userId}/disable-2fa`, {});
   }
 
   static async getEnforce2fa(): Promise<{ enforce2FA: boolean }> {
-    return ApiClient.get('/api/super-admin/settings/enforce-2fa', true);
+    return ApiClient.get('/api/super-admin/settings/enforce-2fa');
   }
 
   static async setEnforce2fa(enforce2FA: boolean): Promise<{ success: boolean; enforce2FA: boolean }> {
-    return ApiClient.put('/api/super-admin/settings/enforce-2fa', { enforce2FA }, true);
+    return ApiClient.put('/api/super-admin/settings/enforce-2fa', { enforce2FA });
   }
 
   // Audit Logs API
