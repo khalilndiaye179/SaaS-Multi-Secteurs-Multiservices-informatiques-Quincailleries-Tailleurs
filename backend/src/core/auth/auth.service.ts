@@ -276,7 +276,7 @@ export class AuthService {
     });
 
     if (!user || !(await bcrypt.compare(dto.currentPassword, user.passwordHash))) {
-      throw new UnauthorizedException('Identifiants incorrects.');
+      throw new BadRequestException('Mot de passe actuel incorrect.');
     }
 
     const newPasswordHash = await bcrypt.hash(dto.newPassword, 10);
@@ -354,11 +354,11 @@ export class AuthService {
 
     if (dto.password) {
       const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
-      if (!isPasswordValid) throw new UnauthorizedException('Mot de passe invalide.');
+      if (!isPasswordValid) throw new BadRequestException('Mot de passe invalide.');
     } else if (dto.code && user.totpSecret) {
       const secret = this.encryptionService.decrypt(user.totpSecret);
       const isValid = speakeasy.totp.verify({ secret, encoding: 'base32', token: dto.code });
-      if (!isValid) throw new UnauthorizedException('Code 2FA invalide.');
+      if (!isValid) throw new BadRequestException('Code 2FA invalide.');
     } else {
       throw new BadRequestException('Vous devez fournir un code 2FA ou votre mot de passe pour désactiver.');
     }

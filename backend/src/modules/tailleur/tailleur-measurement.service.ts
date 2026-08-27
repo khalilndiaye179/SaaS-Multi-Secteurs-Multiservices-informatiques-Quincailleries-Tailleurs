@@ -134,6 +134,15 @@ export class TailleurMeasurementService {
         }
       : undefined;
 
+    if (dto.measurementsId) {
+      const measurement = await this.prisma.extended.clientMeasurement.findFirst({ where: { id: dto.measurementsId } });
+      if (!measurement) throw new NotFoundException('Fiche de mesures introuvable.');
+    }
+    if (dto.assigneeId) {
+      const assignee = await this.prisma.extended.user.findFirst({ where: { id: dto.assigneeId } });
+      if (!assignee) throw new NotFoundException('Collaborateur introuvable.');
+    }
+
     return this.prisma.extended.$transaction(async (tx) => {
       const invoice = await tx.invoice.create({
         data: {
@@ -330,9 +339,33 @@ export class TailleurMeasurementService {
   async updateOrder(id: string, dto: any) {
     const order = await this.prisma.extended.tailleurOrder.findFirst({ where: { id } });
     if (!order) throw new NotFoundException('Commande introuvable.');
+
+    if (dto.measurementsId) {
+      const measurement = await this.prisma.extended.clientMeasurement.findFirst({ where: { id: dto.measurementsId } });
+      if (!measurement) throw new NotFoundException('Fiche de mesures introuvable.');
+    }
+    if (dto.assigneeId) {
+      const assignee = await this.prisma.extended.user.findFirst({ where: { id: dto.assigneeId } });
+      if (!assignee) throw new NotFoundException('Collaborateur introuvable.');
+    }
+
+    const { clientName, clientPhone, garmentType, fabricDesc, totalPrice, advancePaid, fittingDate, deliveryDate, fabricProvided, fabricMeters, assigneeId, measurementsId } = dto;
     return this.prisma.extended.tailleurOrder.update({
       where: { id },
-      data: dto,
+      data: {
+        ...(clientName !== undefined && { clientName }),
+        ...(clientPhone !== undefined && { clientPhone }),
+        ...(garmentType !== undefined && { garmentType }),
+        ...(fabricDesc !== undefined && { fabricDesc }),
+        ...(totalPrice !== undefined && { totalPrice }),
+        ...(advancePaid !== undefined && { advancePaid }),
+        ...(fittingDate !== undefined && { fittingDate: new Date(fittingDate) }),
+        ...(deliveryDate !== undefined && { deliveryDate: new Date(deliveryDate) }),
+        ...(fabricProvided !== undefined && { fabricProvided }),
+        ...(fabricMeters !== undefined && { fabricMeters }),
+        ...(assigneeId !== undefined && { assigneeId }),
+        ...(measurementsId !== undefined && { measurementsId }),
+      },
     });
   }
 

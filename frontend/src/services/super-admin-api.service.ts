@@ -261,11 +261,11 @@ export class SuperAdminApiService {
   // ==========================================
 
   static async getTeamOverview(): Promise<{ team: TeamCollaboratorData[]; invitations: TeamInvitationData[] }> {
-    return ApiClient.get('/api/super-admin/team/overview');
+    return ApiClient.get('/api/super-admin/team');
   }
 
-  static async inviteCollaborator(payload: { email: string; phone?: string; roleName: string }) {
-    return ApiClient.post('/api/super-admin/team/invite', payload);
+  static async createCollaborator(payload: { email: string; fullName: string; phone: string; password: string; roleName: string }) {
+    return ApiClient.post('/api/super-admin/team/collaborators', payload);
   }
 
   static async toggleCollaboratorStatus(userId: string, isActive: boolean) {

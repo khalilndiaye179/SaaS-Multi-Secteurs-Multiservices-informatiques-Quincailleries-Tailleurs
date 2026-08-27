@@ -83,23 +83,60 @@ export const Sidebar: React.FC<Props> = ({
 
 
 
-      case 'SUPER_ADMIN':
-        return [
-          { id: 'overview', label: 'Statistiques SaaS', icon: '📊' },
-          { id: 'tenants', label: 'Gestion Tenants', icon: '🏢' },
-          { id: 'billing', label: 'Comptabilité & Finance', icon: '💰' },
-          { id: 'pricing', label: 'Tarifs & Plans SaaS', icon: '🏷️' },
-          { id: 'quotes', label: 'Devis Commercial SaaS', icon: '📝' },
-          { id: 'payment-providers', label: 'Moteur de Paiement', icon: '💳' },
-          { id: 'payment-proofs', label: 'Preuves de Paiement', icon: '🧾' },
-          { id: 'sms-providers', label: 'Serveur SMS OTP', icon: '💬' },
-          { id: 'analytics', label: 'BI & Visites', icon: '📈' },
-          { id: 'ai-assistant', label: 'Assistante IA Supervision', icon: '🤖' },
-          { id: 'team', label: 'Collaborateurs & RBAC', icon: '👥' },
-          { id: 'audit', label: 'Journal d\'Audit', icon: '📜' },
-          { id: 'security', label: 'Sécurité & Dépendances', icon: '🛡️' },
-          { id: 'about', label: 'À Propos & Versioning', icon: 'ℹ️' },
-        ];
+      case 'SUPER_ADMIN': {
+        const u = JSON.parse(localStorage.getItem('kpsy_user') || '{}');
+        const roles: string[] = u?.roles || [];
+        const isSuper = roles.includes('SUPER_ADMIN');
+        const isFinance = roles.includes('FINANCE');
+        const isSupport = roles.includes('SUPPORT');
+        const isTech = roles.includes('TECHNIQUE');
+
+        const tabs: NavItem[] = [];
+
+        if (isSuper || isTech) {
+          tabs.push({ id: 'overview', label: 'Statistiques SaaS', icon: '📊' });
+        }
+        
+        if (isSuper || isSupport || isTech || isFinance) {
+          tabs.push({ id: 'tenants', label: 'Gestion Tenants', icon: '🏢' });
+        }
+
+        if (isSuper || isFinance) {
+          tabs.push({ id: 'billing', label: 'Comptabilité & Finance', icon: '💰' });
+          tabs.push({ id: 'pricing', label: 'Tarifs & Plans SaaS', icon: '🏷️' });
+          tabs.push({ id: 'quotes', label: 'Devis Commercial SaaS', icon: '📝' });
+        }
+
+        if (isSuper || isTech) {
+          tabs.push({ id: 'payment-providers', label: 'Moteur de Paiement', icon: '💳' });
+        }
+        
+        if (isSuper || isFinance) {
+          tabs.push({ id: 'payment-proofs', label: 'Preuves de Paiement', icon: '🧾' });
+        }
+
+        if (isSuper || isTech) {
+          tabs.push({ id: 'sms-providers', label: 'Serveur SMS OTP', icon: '💬' });
+          tabs.push({ id: 'analytics', label: 'BI & Visites', icon: '📈' });
+        }
+
+        if (isSuper || isTech || isSupport) {
+          tabs.push({ id: 'ai-assistant', label: 'Assistante IA Supervision', icon: '🤖' });
+        }
+
+        if (isSuper) {
+          tabs.push({ id: 'team', label: 'Collaborateurs & RBAC', icon: '👥' });
+        }
+
+        if (isSuper || isTech) {
+          tabs.push({ id: 'audit', label: 'Journal d\'Audit', icon: '📜' });
+          tabs.push({ id: 'security', label: 'Sécurité & Dépendances', icon: '🛡️' });
+        }
+
+        tabs.push({ id: 'about', label: 'À Propos & Versioning', icon: 'ℹ️' });
+
+        return tabs;
+      }
       default:
         return [{ id: 'overview', label: 'Vue Globale', icon: '📊' }];
     }
@@ -130,22 +167,18 @@ export const Sidebar: React.FC<Props> = ({
           gap: 12,
         }}
       >
-        <div
+        <img
+          src="/logo-kpsy.png"
+          alt="Logo K'PSy"
           style={{
             width: 36,
             height: 36,
             borderRadius: 8,
-            background: themeColor,
-            color: 'var(--text-inverse)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 800,
-            fontSize: '1.1rem',
+            objectFit: 'contain',
+            background: 'white', // au cas où l'image aurait des parties transparentes sombres
+            padding: 2
           }}
-        >
-          K
-        </div>
+        />
         <div>
           <div
             style={{

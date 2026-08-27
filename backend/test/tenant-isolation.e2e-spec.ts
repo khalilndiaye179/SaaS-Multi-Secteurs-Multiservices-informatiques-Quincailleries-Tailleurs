@@ -301,6 +301,99 @@ describe('PHASE 5 — RED TEAM MULTI-TENANT ISOLATION E2E TEST SUITE', () => {
 
         const inventorySessions = await client.inventorySession.findMany();
         expect(Array.isArray(inventorySessions)).toBe(true);
+  // 7. CROSS-REFERENCE ISOLATION IN TAILLEUR MODULE
+  describe('7. CROSS-REFERENCE ISOLATION IN TAILLEUR MODULE', () => {
+    let tailleurService: any;
+    let tenantBMeasurementId: string;
+    let tenantBUserId: string;
+    let tenantAOrderId: string;
+
+    beforeAll(async () => {
+      // Lazy load service to avoid import issues if not already imported
+      tailleurService = app.get('TailleurMeasurementService');
+
+      await prisma.withoutTenantScope(async (client) => {
+        const measurement = await client.clientMeasurement.create({
+          data: {
+            tenantId: TENANT_B.id,
+            clientName: 'Client Tenant B',
+            garmentType: 'Costume',
+          } as any,
+        });
+        tenantBMeasurementId = measurement.id;
+
+        const user = await client.user.create({
+          data: {
+            id: 'user-b-tailleur',
+            tenantId: TENANT_B.id,
+            username: 'user_b',
+            passwordHash: 'hash',
+            fullName: 'User B',
+            isActive: true,
+            roles: ['TAILLEUR'],
+          } as any,
+        });
+        tenantBUserId = user.id;
+
+        // Ensure there's an invoice for the order to avoid FK errors if required, or just the order
+        const invoice = await client.invoice.create({
+          data: {
+            tenantId: TENANT_A.id,
+            number: 'FAC-TEST-001',
+            clientName: 'Client A',
+            totalAmount: 10000,
+            status: 'DRAFT',
+          } as any,
+        });
+
+        const order = await client.tailleurOrder.create({
+          data: {
+            tenantId: TENANT_A.id,
+            orderNumber: 'CMD-A-0001',
+            clientName: 'Client A',
+            totalPrice: 10000,
+            status: 'ORDERED',
+            invoiceId: invoice.id,
+          } as any,
+        });
+        tenantAOrderId = order.id;
+      });
+    });
+
+    afterAll(async () => {
+      await prisma.withoutTenantScope(async (client) => {
+        await client.tailleurOrder.deleteMany({ where: { id: tenantAOrderId } });
+        await client.invoice.deleteMany({ where: { tenantId: TENANT_A.id, number: 'FAC-TEST-001' } });
+        await client.user.deleteMany({ where: { id: tenantBUserId } });
+        await client.clientMeasurement.deleteMany({ where: { id: tenantBMeasurementId } });
+      });
+    });
+
+    it('Tenant A créant une commande avec measurementsId de Tenant B doit lever une NotFoundException', async () => {
+      await TenantContextService.runWithTenantContext(TENANT_A.id, 'TAILLEUR', async () => {
+        await expect(tailleurService.createOrder({
+          clientName: 'Test A',
+          totalPrice: 5000,
+          measurementsId: tenantBMeasurementId,
+        })).rejects.toThrow('Fiche de mesures introuvable.');
+      });
+    });
+
+    it('Tenant A créant une commande avec assigneeId de Tenant B doit lever une NotFoundException', async () => {
+      await TenantContextService.runWithTenantContext(TENANT_A.id, 'TAILLEUR', async () => {
+        await expect(tailleurService.createOrder({
+          clientName: 'Test A',
+          totalPrice: 5000,
+          assigneeId: tenantBUserId,
+        })).rejects.toThrow('Collaborateur introuvable.');
+      });
+    });
+
+    it('Tenant A modifiant une commande avec measurementsId de Tenant B doit lever une NotFoundException', async () => {
+      await TenantContextService.runWithTenantContext(TENANT_A.id, 'TAILLEUR', async () => {
+        await expect(tailleurService.updateOrder(tenantAOrderId, {
+          measurementsId: tenantBMeasurementId,
+        })).rejects.toThrow('Fiche de mesures introuvable.');
       });
     });
   });

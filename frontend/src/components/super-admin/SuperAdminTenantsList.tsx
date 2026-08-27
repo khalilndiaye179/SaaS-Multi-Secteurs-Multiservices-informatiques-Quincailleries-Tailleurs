@@ -204,6 +204,9 @@ export const SuperAdminTenantsList: React.FC<Props> = ({ themeColor }) => {
     }
   };
 
+  const user = JSON.parse(localStorage.getItem('kpsy_user') || '{}');
+  const isSuper = user?.roles?.includes('SUPER_ADMIN');
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -216,22 +219,24 @@ export const SuperAdminTenantsList: React.FC<Props> = ({ themeColor }) => {
           </p>
         </div>
 
-        <button
-          onClick={handlePurgeTests}
-          style={{
-            padding: '10px 18px',
-            borderRadius: 8,
-            border: 'none',
-            background: '#DC2626',
-            color: 'var(--text-inverse)',
-            fontWeight: 800,
-            fontSize: '0.82rem',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(220, 38, 38, 0.25)',
-          }}
-        >
-          🧹 Purger Tous les Tenants Tests
-        </button>
+        {isSuper && (
+          <button
+            onClick={handlePurgeTests}
+            style={{
+              padding: '10px 18px',
+              borderRadius: 8,
+              border: 'none',
+              background: '#DC2626',
+              color: 'var(--text-inverse)',
+              fontWeight: 800,
+              fontSize: '0.82rem',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(220, 38, 38, 0.25)',
+            }}
+          >
+            🧹 Purger Tous les Tenants Tests
+          </button>
+        )}
       </div>
 
       <div style={{ background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border-color)', overflow: 'hidden' }}>
@@ -278,56 +283,60 @@ export const SuperAdminTenantsList: React.FC<Props> = ({ themeColor }) => {
                         📞 Contact
                       </button>
 
-                      <button
-                        onClick={() => handleHardPurge(t.id, t.name)}
-                        title="Purger définitivement ce tenant"
-                        style={{
-                          padding: '6px 10px', borderRadius: 6, background: '#FEE2E2',
-                          color: '#DC2626', border: '1px solid #FCA5A5', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
-                        }}
-                      >
-                        🗑️ Purger
-                      </button>
+                      {isSuper && (
+                        <>
+                          <button
+                            onClick={() => handleHardPurge(t.id, t.name)}
+                            title="Purger définitivement ce tenant"
+                            style={{
+                              padding: '6px 10px', borderRadius: 6, background: '#FEE2E2',
+                              color: '#DC2626', border: '1px solid #FCA5A5', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+                            }}
+                          >
+                            🗑️ Purger
+                          </button>
 
-                      <button
-                        onClick={() => handleOpenEdit(t)}
-                        title="Modifier l'entreprise"
-                        style={{
-                          padding: '6px 10px', borderRadius: 6, background: '#E0F2FE',
-                          color: '#0369A1', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
-                        }}
-                      >
-                        ✏️ Edit
-                      </button>
+                          <button
+                            onClick={() => handleOpenEdit(t)}
+                            title="Modifier l'entreprise"
+                            style={{
+                              padding: '6px 10px', borderRadius: 6, background: '#E0F2FE',
+                              color: '#0369A1', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+                            }}
+                          >
+                            ✏️ Edit
+                          </button>
 
-                      <button
-                        disabled={processingId === t.id || t.billingStatus === 'ARCHIVED'}
-                        onClick={() => handleToggleStatus(t.id, t.billingStatus)}
-                        style={{
-                          padding: '6px 10px',
-                          borderRadius: 6,
-                          background: t.billingStatus === 'ACTIVE' ? '#FEF3C7' : '#D1FAE5',
-                          color: t.billingStatus === 'ACTIVE' ? '#92400E' : '#065F46',
-                          border: 'none',
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          cursor: t.billingStatus === 'ARCHIVED' ? 'not-allowed' : 'pointer',
-                        }}
-                      >
-                        {processingId === t.id ? '...' : t.billingStatus === 'ACTIVE' ? 'Suspendre' : 'Activer'}
-                      </button>
+                          <button
+                            disabled={processingId === t.id || t.billingStatus === 'ARCHIVED'}
+                            onClick={() => handleToggleStatus(t.id, t.billingStatus)}
+                            style={{
+                              padding: '6px 10px',
+                              borderRadius: 6,
+                              background: t.billingStatus === 'ACTIVE' ? '#FEF3C7' : '#D1FAE5',
+                              color: t.billingStatus === 'ACTIVE' ? '#92400E' : '#065F46',
+                              border: 'none',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              cursor: t.billingStatus === 'ARCHIVED' ? 'not-allowed' : 'pointer',
+                            }}
+                          >
+                            {processingId === t.id ? '...' : t.billingStatus === 'ACTIVE' ? 'Suspendre' : 'Activer'}
+                          </button>
 
-                      {t.billingStatus !== 'ARCHIVED' && (
-                        <button
-                          onClick={() => setSoftDeletingTenant(t)}
-                          title="Archiver l'entreprise (Soft Delete)"
-                          style={{
-                            padding: '6px 10px', borderRadius: 6, background: '#FEE2E2',
-                            color: '#DC2626', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
-                          }}
-                        >
-                          🗑️ Archiver
-                        </button>
+                          {t.billingStatus !== 'ARCHIVED' && (
+                            <button
+                              onClick={() => setSoftDeletingTenant(t)}
+                              title="Archiver l'entreprise (Soft Delete)"
+                              style={{
+                                padding: '6px 10px', borderRadius: 6, background: '#FEE2E2',
+                                color: '#DC2626', border: 'none', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+                              }}
+                            >
+                              🗑️ Archiver
+                            </button>
+                          )}
+                        </>
                       )}
                     </td>
                   </tr>

@@ -1,8 +1,17 @@
 import { IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
 
-export class InviteCollaboratorDto {
+export class CreateCollaboratorDto {
   @IsEmail()
   email: string;
+
+  @IsString()
+  fullName: string;
+
+  @IsString()
+  phone: string;
+
+  @IsString()
+  password: string;
 
   @IsEnum(['SUPER_ADMIN', 'FINANCE', 'SUPPORT', 'TECHNIQUE'])
   roleName: string;

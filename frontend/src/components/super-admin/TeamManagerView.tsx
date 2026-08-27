@@ -13,8 +13,10 @@ export const TeamManagerView: React.FC<Props> = ({ themeColor = '#312E81' }) => 
   const [error, setError] = useState<string | null>(null);
   const [enforce2FA, setEnforce2FA] = useState(false);
 
+  const [inviteFullName, setInviteFullName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [invitePhone, setInvitePhone] = useState('');
+  const [invitePassword, setInvitePassword] = useState('');
   const [inviteRole, setInviteRole] = useState('FINANCE');
 
   useEffect(() => {
@@ -37,16 +39,28 @@ export const TeamManagerView: React.FC<Props> = ({ themeColor = '#312E81' }) => 
     }
   };
 
-  const handleInvite = async (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (invitePassword.length < 8) {
+      alert('Le mot de passe doit contenir au moins 8 caractères.');
+      return;
+    }
     try {
-      const res = await SuperAdminApiService.inviteCollaborator({ email: inviteEmail, phone: invitePhone, roleName: inviteRole });
-      alert(`Invitation créée avec succès !\nLien transmis : ${res.invitationLink}`);
+      await SuperAdminApiService.createCollaborator({ 
+        fullName: inviteFullName,
+        email: inviteEmail, 
+        phone: invitePhone, 
+        password: invitePassword,
+        roleName: inviteRole 
+      });
+      alert(`Collaborateur créé avec succès !\nUn email lui a été envoyé.`);
+      setInviteFullName('');
       setInviteEmail('');
       setInvitePhone('');
+      setInvitePassword('');
       fetchTeam();
     } catch (err: any) {
-      alert(`Échec de l'invitation : ${err.message}`);
+      alert(`Échec de la création : ${err.message}`);
     }
   };
 
@@ -116,10 +130,21 @@ export const TeamManagerView: React.FC<Props> = ({ themeColor = '#312E81' }) => 
         </div>
       </div>
 
-      {/* Formulaire d'invitation */}
-      <form onSubmit={handleInvite} style={{ background: 'var(--bg-card)', padding: 24, borderRadius: 12, border: '1px solid var(--border-color)', display: 'flex', gap: 16, alignItems: 'flex-end' }}>
-        <div style={{ flex: 2 }}>
-          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>Email Collaborateur</label>
+      {/* Formulaire de création */}
+      <form onSubmit={handleCreate} style={{ background: 'var(--bg-card)', padding: 24, borderRadius: 12, border: '1px solid var(--border-color)', display: 'flex', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 200px' }}>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>Prénom & Nom</label>
+          <input
+            type="text"
+            required
+            value={inviteFullName}
+            onChange={(e) => setInviteFullName(e.target.value)}
+            placeholder="John Doe"
+            style={{ width: '100%', padding: '10px 14px', borderRadius: 6, border: '1px solid var(--border-color)', fontSize: 14 }}
+          />
+        </div>
+        <div style={{ flex: '1 1 200px' }}>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>Email</label>
           <input
             type="email"
             required
@@ -129,7 +154,7 @@ export const TeamManagerView: React.FC<Props> = ({ themeColor = '#312E81' }) => 
             style={{ width: '100%', padding: '10px 14px', borderRadius: 6, border: '1px solid var(--border-color)', fontSize: 14 }}
           />
         </div>
-        <div style={{ flex: 2 }}>
+        <div style={{ flex: '1 1 150px' }}>
           <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>Téléphone</label>
           <input
             type="tel"
@@ -140,7 +165,18 @@ export const TeamManagerView: React.FC<Props> = ({ themeColor = '#312E81' }) => 
             style={{ width: '100%', padding: '10px 14px', borderRadius: 6, border: '1px solid var(--border-color)', fontSize: 14 }}
           />
         </div>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: '1 1 150px' }}>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>Mot de passe (Défaut)</label>
+          <input
+            type="text"
+            required
+            value={invitePassword}
+            onChange={(e) => setInvitePassword(e.target.value)}
+            placeholder="Mot de passe"
+            style={{ width: '100%', padding: '10px 14px', borderRadius: 6, border: '1px solid var(--border-color)', fontSize: 14 }}
+          />
+        </div>
+        <div style={{ flex: '1 1 200px' }}>
           <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>Rôle Attribué</label>
           <select
             value={inviteRole}
@@ -155,9 +191,9 @@ export const TeamManagerView: React.FC<Props> = ({ themeColor = '#312E81' }) => 
         </div>
         <button
           type="submit"
-          style={{ background: themeColor, color: 'var(--text-inverse)', border: 'none', padding: '11px 20px', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+          style={{ flex: '1 1 200px', background: themeColor, color: 'var(--text-inverse)', border: 'none', padding: '11px 20px', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
         >
-          Inviter Collaborateur
+          Créer Collaborateur
         </button>
       </form>
 

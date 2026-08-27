@@ -9,27 +9,22 @@ import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditLogService } from './audit-log.service';
+import { EmailService } from '../notifications/email.service';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
-import { InviteCollaboratorDto, AcceptInvitationDto, UpdateCollaboratorRoleDto } from './dto/super-admin-team.dto';
+import { CreateCollaboratorDto, UpdateCollaboratorRoleDto } from './dto/super-admin-team.dto';
 
 @Injectable()
 export class SuperAdminTeamService {
   constructor(
     private prisma: PrismaService,
     private auditLogService: AuditLogService,
+    private emailService: EmailService,
   ) {}
 
   /**
-   * Calcul cryptographique du Hash SHA-256 (Pas de stockage de token brut en BDD)
+   * Création directe d'un collaborateur Super Admin
    */
-  private hashToken(token: string): string {
-    return crypto.createHash('sha256').update(token).digest('hex');
-  }
-
-  /**
-   * Création d'une invitation sécurisée à usage unique
-   */
-  async inviteCollaborator(dto: InviteCollaboratorDto) {
+  async createCollaborator(dto: CreateCollaboratorDto) {
     const store = TenantContextService.getStore();
     if (!store?.isSuperAdmin) throw new ForbiddenException('Accès réservé au Super Admin.');
 
@@ -43,188 +38,71 @@ export class SuperAdminTeamService {
       throw new ConflictException('Un compte utilisateur avec cet email existe déjà sur la plateforme.');
     }
 
-    // 🔒 SÉCURITÉ 1 : Génération cryptographique d'un token aléatoire de 32 octets
-    const rawToken = crypto.randomBytes(32).toString('hex');
-    const tokenHash = this.hashToken(rawToken);
-
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 24); // Expiration stricte 24H
-
-    const invitation = await this.prisma.withoutTenantScope(async (c) =>
-      c.superAdminInvitation.create({
-        data: {
-          email: normalizedEmail,
-          roleName: dto.roleName,
-          tokenHash,
-          invitedById: store.userId || 'SUPER_ADMIN',
-          status: 'INVITED',
-          expiresAt,
-        },
-      }),
-    );
-
-    await this.auditLogService.record({
-      action: 'SUPER_ADMIN_INVITATION_CREATED',
-      resourceType: 'SUPER_ADMIN_INVITATION',
-      resourceId: invitation.id,
-      result: 'SUCCESS',
-      metadata: { email: normalizedEmail, roleName: dto.roleName },
-    });
-
-    return {
-      success: true,
-      message: 'Invitation créée avec succès !',
-      invitationId: invitation.id,
-      email: invitation.email,
-      roleName: invitation.roleName,
-      expiresAt: invitation.expiresAt,
-      // Le token brut est transmis uniquement à la réponse de création (jamais stocké en BDD)
-      invitationLink: `https://doorwaar.kpsyinformatique.com/accept-invitation?token=${rawToken}`,
-    };
-  }
-
-  /**
-   * Renvoi d'invitation avec invalidation de l'ancienne
-   */
-  async resendInvitation(invitationId: string) {
-    const existing = await this.prisma.withoutTenantScope(async (c) =>
-      c.superAdminInvitation.findUnique({ where: { id: invitationId } }),
-    );
-
-    if (!existing || existing.status !== 'INVITED') {
-      throw new NotFoundException('Invitation active introuvable.');
-    }
-
-    const rawToken = crypto.randomBytes(32).toString('hex');
-    const tokenHash = this.hashToken(rawToken);
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-    const updated = await this.prisma.withoutTenantScope(async (c) =>
-      c.superAdminInvitation.update({
-        where: { id: invitationId },
-        data: { tokenHash, expiresAt },
-      }),
-    );
-
-    await this.auditLogService.record({
-      action: 'SUPER_ADMIN_INVITATION_RESENT',
-      resourceType: 'SUPER_ADMIN_INVITATION',
-      resourceId: updated.id,
-      result: 'SUCCESS',
-      metadata: { email: updated.email },
-    });
-
-    return {
-      success: true,
-      invitationLink: `https://doorwaar.kpsyinformatique.com/accept-invitation?token=${rawToken}`,
-    };
-  }
-
-  /**
-   * Annulation d'une invitation
-   */
-  async cancelInvitation(invitationId: string) {
-    const updated = await this.prisma.withoutTenantScope(async (c) =>
-      c.superAdminInvitation.update({
-        where: { id: invitationId },
-        data: { status: 'CANCELLED' },
-      }),
-    );
-
-    await this.auditLogService.record({
-      action: 'SUPER_ADMIN_INVITATION_CANCELLED',
-      resourceType: 'SUPER_ADMIN_INVITATION',
-      resourceId: updated.id,
-      result: 'SUCCESS',
-    });
-
-    return { success: true, message: 'Invitation annulée.' };
-  }
-
-  /**
-   * Acceptation transactionnelle et sécurisée d'une invitation
-   */
-  async acceptInvitation(dto: AcceptInvitationDto) {
-    const inputHash = this.hashToken(dto.token);
-
-    const invitation = await this.prisma.withoutTenantScope(async (c) =>
-      c.superAdminInvitation.findUnique({ where: { tokenHash: inputHash } }),
-    );
-
-    if (!invitation || invitation.status !== 'INVITED') {
-      throw new BadRequestException('Invitation invalide, annulée ou déjà utilisée.');
-    }
-
-    if (new Date() > new Date(invitation.expiresAt)) {
-      await this.prisma.withoutTenantScope(async (c) =>
-        c.superAdminInvitation.update({ where: { id: invitation.id }, data: { status: 'EXPIRED' } }),
-      );
-      throw new BadRequestException('L\'invitation a expiré.');
-    }
-
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
-    return this.prisma.$transaction(async (tx) => {
-      // Résolution du rôle système correspondant dans la BDD
-      let role = await tx.role.findFirst({ where: { name: invitation.roleName, tenantId: null } });
-      if (!role) {
-        role = await tx.role.create({
-          data: { name: invitation.roleName, description: `Rôle système Super Admin ${invitation.roleName}` },
-        });
-      }
+    return this.prisma.withoutTenantScope(async (tx) => {
+        let role = await tx.role.findFirst({ where: { name: dto.roleName, tenantId: null } });
+        if (!role) {
+          role = await tx.role.create({
+            data: { name: dto.roleName, description: `Rôle système Super Admin ${dto.roleName}` },
+          });
+        }
 
-      // Résolution du Tenant système Global "SYSTEM_TENANT"
-      let systemTenant = await tx.tenant.findFirst({ where: { code: 'SAAS-GLOBAL' } });
-      if (!systemTenant) {
-        systemTenant = await tx.tenant.create({
-          data: { 
-            code: 'SAAS-GLOBAL', 
-            name: 'KPSyDesk System Console', 
-            sectorType: 'MULTISERVICES_IT',
-            billingStatus: 'ACTIVE',
-            isPermanentDemo: true,
-            isDemo: true
+        let systemTenant = await tx.tenant.findFirst({ where: { code: 'SAAS-GLOBAL' } });
+        if (!systemTenant) {
+          systemTenant = await tx.tenant.create({
+            data: {
+              code: 'SAAS-GLOBAL',
+              name: 'KPSyDesk System Console',
+              sectorType: 'MULTISERVICES_IT',
+              billingStatus: 'ACTIVE',
+              isPermanentDemo: true,
+              isDemo: true
+            },
+          });
+        }
+
+        const username = `SAAS-${Date.now().toString().substring(7)}`;
+
+        const newUser = await tx.user.create({
+          data: {
+            tenantId: systemTenant.id,
+            username,
+            fullName: dto.fullName,
+            email: normalizedEmail,
+            phone: dto.phone,
+            passwordHash,
+            isActive: true,
+            mustChangePassword: true, // Force password change on first login
+            userRoles: {
+              create: { roleId: role.id },
+            },
           },
         });
-      }
 
-      const username = `SAAS-${Date.now().toString().substring(7)}`;
+        await this.auditLogService.record({
+          action: 'SUPER_ADMIN_COLLABORATOR_CREATED',
+          resourceType: 'USER',
+          resourceId: newUser.id,
+          result: 'SUCCESS',
+          metadata: { email: newUser.email, roleName: dto.roleName },
+        });
 
-      const newUser = await tx.user.create({
-        data: {
-          tenantId: systemTenant.id,
-          username,
-          fullName: dto.fullName,
-          email: invitation.email,
-          phone: dto.phone,
-          passwordHash,
-          isActive: true,
-          userRoles: {
-            create: { roleId: role.id },
-          },
-        },
-      });
+        // Envoi de l'email
+        const loginLink = `https://doorwaar.kpsyinformatique.com`;
+        await this.emailService.sendEmail(
+          normalizedEmail,
+          'Bienvenue dans l\'équipe Super Admin - KPSyDesk',
+          `Bonjour ${dto.fullName},\n\nVous avez été ajouté à l'équipe Super Admin avec le rôle ${dto.roleName}.\n\nVos accès :\nEmail : ${normalizedEmail}\nMot de passe par défaut : ${dto.password}\n\nLien de connexion : ${loginLink}\n\nLors de votre première connexion, il vous sera demandé de modifier votre mot de passe et de configurer le 2FA.`,
+          `<p>Bonjour ${dto.fullName},</p><p>Vous avez été ajouté à l'équipe Super Admin de Door Waar avec le rôle <b>${dto.roleName}</b>.</p><p>Vos accès de connexion :</p><ul><li>Email : <b>${normalizedEmail}</b></li><li>Mot de passe par défaut : <b>${dto.password}</b></li></ul><p><a href="${loginLink}" style="padding: 10px 20px; background-color: #312E81; color: white; text-decoration: none; border-radius: 5px;">Se connecter à la console</a></p><p>Lors de votre première connexion, pour des raisons de sécurité, vous devrez impérativement définir un nouveau mot de passe et configurer l'authentification à double facteur (TOTP).</p>`
+        );
 
-      // Invalidation immédiate de l'invitation à ACCEPTED
-      await tx.superAdminInvitation.update({
-        where: { id: invitation.id },
-        data: { status: 'ACCEPTED' },
-      });
-
-      await this.auditLogService.record({
-        action: 'SUPER_ADMIN_INVITATION_ACCEPTED',
-        resourceType: 'USER',
-        resourceId: newUser.id,
-        result: 'SUCCESS',
-        metadata: { email: newUser.email, roleName: invitation.roleName },
-      });
-
-      return {
-        success: true,
-        message: 'Compte collaborateur activé avec succès !',
-        userId: newUser.id,
-        email: newUser.email,
-      };
+        return {
+          success: true,
+          message: 'Collaborateur créé avec succès !',
+          userId: newUser.id,
+          email: newUser.email,
+        };
     });
   }
 

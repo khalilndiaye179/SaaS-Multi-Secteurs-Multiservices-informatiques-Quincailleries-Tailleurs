@@ -8,6 +8,7 @@ async function main() {
   const permissionsData = [
     // COMMUN
     { code: 'admin:about:read', description: 'Accéder aux informations système' },
+    { code: 'admin:notifications:read', description: 'Lire les notifications globales' },
     // SUPPORT
     { code: 'admin:tenants:read', description: 'Lire la liste des tenants' },
     { code: 'admin:notifications:send', description: 'Envoyer des notifications globales' },
@@ -41,12 +42,15 @@ async function main() {
   const rolesMapping = {
     'SUPPORT': [
       'admin:about:read',
+      'admin:notifications:read',
       'admin:tenants:read',
       'admin:notifications:send',
       'admin:tickets:read'
     ],
     'FINANCE': [
       'admin:about:read',
+      'admin:notifications:read',
+      'admin:tenants:read',
       'admin:payments:read',
       'admin:payments:approve',
       'admin:invoices:read',
@@ -55,6 +59,7 @@ async function main() {
     ],
     'TECHNIQUE': [
       'admin:about:read',
+      'admin:notifications:read',
       'admin:metrics:read',
       'admin:logs:read',
       'admin:integrations:manage',
