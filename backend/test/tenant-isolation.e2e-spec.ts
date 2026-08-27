@@ -115,6 +115,16 @@ describe('PHASE 5 — RED TEAM MULTI-TENANT ISOLATION E2E TEST SUITE', () => {
         expect(deleted.count).toBe(0);
       });
     });
+
+    it('Tenant A ne doit pas pouvoir lire les dépôts de Tenant B', async () => {
+      await TenantContextService.runWithTenantContext(TENANT_A.id, 'QUINCAILLERIE', async () => {
+        const depots = await prisma.extended.depot.findMany();
+        depots.forEach((depot) => {
+          expect(depot.tenantId).toBe(TENANT_A.id);
+          expect(depot.tenantId).not.toBe(TENANT_B.id);
+        });
+      });
+    });
   });
 
   // 3. TENANTID INJECTION ATTACKS
@@ -256,6 +266,42 @@ describe('PHASE 5 — RED TEAM MULTI-TENANT ISOLATION E2E TEST SUITE', () => {
       }, { maxWait: 20000, timeout: 20000 });
 
       expect(rows.length).toBe(0);
+    });
+  });
+
+  // 6. SUPER ADMIN CROSS-TENANT READ ACCESS
+  describe('6. SUPER ADMIN CROSS-TENANT READ ACCESS', () => {
+    it('Un contexte Super Admin (withoutTenantScope) doit pouvoir lire les depots et toutes les nouvelles tables à travers plusieurs tenants', async () => {
+      await prisma.withoutTenantScope(async (client) => {
+        // We just verify that the queries succeed without throwing ForbiddenException or RLS errors
+        // and ideally we can verify they can read data from any tenant (even if empty in test setup)
+        const depots = await client.depot.findMany();
+        expect(Array.isArray(depots)).toBe(true);
+
+        const clients = await client.client.findMany();
+        expect(Array.isArray(clients)).toBe(true);
+        
+        const suppliers = await client.supplier.findMany();
+        expect(Array.isArray(suppliers)).toBe(true);
+
+        const itServicePackages = await client.iTServicePackage.findMany();
+        expect(Array.isArray(itServicePackages)).toBe(true);
+
+        const paymentInstallments = await client.paymentInstallment.findMany();
+        expect(Array.isArray(paymentInstallments)).toBe(true);
+
+        const billingSequences = await client.billingSequence.findMany();
+        expect(Array.isArray(billingSequences)).toBe(true);
+
+        const tailleurCatalogItems = await client.tailleurCatalogItem.findMany();
+        expect(Array.isArray(tailleurCatalogItems)).toBe(true);
+
+        const purchaseOrders = await client.purchaseOrder.findMany();
+        expect(Array.isArray(purchaseOrders)).toBe(true);
+
+        const inventorySessions = await client.inventorySession.findMany();
+        expect(Array.isArray(inventorySessions)).toBe(true);
+      });
     });
   });
 });

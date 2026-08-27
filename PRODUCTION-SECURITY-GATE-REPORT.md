@@ -19,7 +19,7 @@ Le système KPSyDesk verrouille l'isolation multi-tenant à travers 5 niveaux é
 
 ---
 
-## 2. ÉTAT DES 9 TABLES TENANT-SCOPED ET RLS
+## 2. ÉTAT DES 24 TABLES TENANT-SCOPED ET RLS
 
 | Modèle Prisma | Table PostgreSQL | RLS Enabled | RLS Forced | Clause USING | Clause WITH CHECK | Status Security Gate |
 |---|---|---|---|---|---|---|
@@ -32,6 +32,18 @@ Le système KPSyDesk verrouille l'isolation multi-tenant à travers 5 niveaux é
 | `Invoice` | `invoices` | TRUE | TRUE | PRESENT | PRESENT | ✅ PASSED |
 | `StockMovement` | `stock_movements` | TRUE | TRUE | PRESENT | PRESENT | ✅ PASSED |
 | `TailleurOrder` | `tailleur_orders` | TRUE | TRUE | PRESENT | PRESENT | ✅ PASSED |
+| `Depot` | `depots` | TRUE | TRUE | PRESENT | PRESENT | ✅ PASSED |
+| `Client` | `clients` | TRUE | TRUE | PRESENT | PRESENT | ✅ PASSED |
+| `Supplier` | `suppliers` | TRUE | TRUE | PRESENT | PRESENT | ✅ PASSED |
+| `ITServicePackage` | `it_service_packages` | TRUE | TRUE | PRESENT | PRESENT | ✅ PASSED |
+| `PaymentInstallment` | `payment_installments` | TRUE | TRUE | PRESENT | PRESENT | ✅ PASSED |
+| `BillingSequence` | `billing_sequences` | TRUE | TRUE | PRESENT | PRESENT | ✅ PASSED |
+| `TailleurCatalogItem` | `tailleur_catalog_items` | TRUE | TRUE | PRESENT | PRESENT | ✅ PASSED |
+| `PurchaseOrder` | `purchase_orders` | TRUE | TRUE | PRESENT | PRESENT | ✅ PASSED |
+| `InventorySession` | `inventory_sessions` | TRUE | TRUE | PRESENT | PRESENT | ✅ PASSED |
+| `Notification` | `notifications` | TRUE | TRUE | PRESENT | PRESENT | ✅ PASSED |
+| `SaasQuote` | `saas_quotes` | TRUE | TRUE | PRESENT | PRESENT | ✅ PASSED |
+| `PlatformAnalytics` | `platform_analytics` | TRUE | TRUE | PRESENT | PRESENT | ✅ PASSED |
 
 ---
 

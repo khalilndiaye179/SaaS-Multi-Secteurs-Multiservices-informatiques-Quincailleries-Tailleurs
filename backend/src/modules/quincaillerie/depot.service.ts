@@ -6,29 +6,37 @@ import { CreateDepotDto, UpdateDepotDto } from './dto/depot.dto';
 export class DepotService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll() {
+  async findAll(tenantId: string) {
     return this.prisma.extended.depot.findMany({
+      where: { tenantId },
       orderBy: { createdAt: 'asc' },
     });
   }
 
-  async create(dto: CreateDepotDto) {
+  async create(tenantId: string, dto: CreateDepotDto) {
     if (dto.isMain) {
       await this.prisma.extended.depot.updateMany({
-        where: { isMain: true },
+        where: { isMain: true, tenantId },
         data: { isMain: false } as any
       });
     }
 
     return this.prisma.extended.depot.create({
-      data: dto as any,
+      data: { ...dto, tenantId } as any,
     });
   }
 
-  async update(id: string, dto: UpdateDepotDto) {
+  async update(tenantId: string, id: string, dto: UpdateDepotDto) {
+    const existing = await this.prisma.extended.depot.findFirst({
+      where: { id, tenantId }
+    });
+    if (!existing) {
+      throw new NotFoundException('Dépôt introuvable');
+    }
+
     if (dto.isMain) {
       await this.prisma.extended.depot.updateMany({
-        where: { isMain: true },
+        where: { isMain: true, tenantId },
         data: { isMain: false } as any
       });
     }
@@ -39,7 +47,14 @@ export class DepotService {
     });
   }
 
-  async remove(id: string) {
+  async remove(tenantId: string, id: string) {
+    const existing = await this.prisma.extended.depot.findFirst({
+      where: { id, tenantId }
+    });
+    if (!existing) {
+      throw new NotFoundException('Dépôt introuvable');
+    }
+
     return this.prisma.extended.depot.delete({
       where: { id },
     });

@@ -18,7 +18,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "test:security": "jest --config ./test/jest-e2e.json --testPathPattern=tenant-isolation.e2e-spec.ts"
+    "test:tenant-scoping": "node ./node_modules/ts-node/dist/bin.js scripts/check-tenant-scoping.ts",
+    "test:security": "npm run test:tenant-scoping && jest --config ./test/jest-e2e.json --testPathPattern=tenant-isolation.e2e-spec.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

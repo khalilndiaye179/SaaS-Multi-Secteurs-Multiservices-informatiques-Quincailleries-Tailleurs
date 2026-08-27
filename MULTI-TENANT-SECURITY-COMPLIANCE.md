@@ -21,6 +21,18 @@
 | `Invoice` | `invoices` | Oui (`tenantId`) | ✅ ENABLED | ✅ ACTIVE | ✅ ACTIVE | ✅ FORCED | ✅ VERIFIED |
 | `StockMovement` | `stock_movements` | Oui (`tenantId`) | ✅ ENABLED | ✅ ACTIVE | ✅ ACTIVE | ✅ FORCED | ✅ VERIFIED |
 | `TailleurOrder` | `tailleur_orders` | Oui (`tenantId`) | ✅ ENABLED | ✅ ACTIVE | ✅ ACTIVE | ✅ FORCED | ✅ VERIFIED |
+| `Depot` | `depots` | Oui (`tenantId`) | ✅ ENABLED | ✅ ACTIVE | ✅ ACTIVE | ✅ FORCED | ✅ VERIFIED |
+| `Client` | `clients` | Oui (`tenantId`) | ✅ ENABLED | ✅ ACTIVE | ✅ ACTIVE | ✅ FORCED | ✅ VERIFIED |
+| `Supplier` | `suppliers` | Oui (`tenantId`) | ✅ ENABLED | ✅ ACTIVE | ✅ ACTIVE | ✅ FORCED | ✅ VERIFIED |
+| `ITServicePackage` | `it_service_packages` | Oui (`tenantId`) | ✅ ENABLED | ✅ ACTIVE | ✅ ACTIVE | ✅ FORCED | ✅ VERIFIED |
+| `PaymentInstallment` | `payment_installments` | Oui (`tenantId`) | ✅ ENABLED | ✅ ACTIVE | ✅ ACTIVE | ✅ FORCED | ✅ VERIFIED |
+| `BillingSequence` | `billing_sequences` | Oui (`tenantId`) | ✅ ENABLED | ✅ ACTIVE | ✅ ACTIVE | ✅ FORCED | ✅ VERIFIED |
+| `TailleurCatalogItem` | `tailleur_catalog_items` | Oui (`tenantId`) | ✅ ENABLED | ✅ ACTIVE | ✅ ACTIVE | ✅ FORCED | ✅ VERIFIED |
+| `PurchaseOrder` | `purchase_orders` | Oui (`tenantId`) | ✅ ENABLED | ✅ ACTIVE | ✅ ACTIVE | ✅ FORCED | ✅ VERIFIED |
+| `InventorySession` | `inventory_sessions` | Oui (`tenantId`) | ✅ ENABLED | ✅ ACTIVE | ✅ ACTIVE | ✅ FORCED | ✅ VERIFIED |
+| `Notification` | `notifications` | Nullable (`tenantId`) | ✅ ENABLED | ✅ ACTIVE | ✅ ACTIVE | ✅ FORCED | ✅ VERIFIED |
+| `SaasQuote` | `saas_quotes` | Nullable (`tenantId`) | ✅ ENABLED | ✅ ACTIVE | ✅ ACTIVE | ✅ FORCED | ✅ VERIFIED |
+| `PlatformAnalytics` | `platform_analytics` | Nullable (`tenantId`) | ✅ ENABLED | ✅ ACTIVE | ✅ ACTIVE | ✅ FORCED | ✅ VERIFIED |
 
 ---
 

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards, Request } from '@nestjs/common';
 import { DepotService } from './depot.service';
 import { CreateDepotDto, UpdateDepotDto } from './dto/depot.dto';
 import { SectorPermissionGuard } from '../../core/guards/sector-permission.guard';
@@ -11,25 +11,25 @@ export class DepotController {
   constructor(private readonly depotService: DepotService) {}
 
   @Get()
-  findAll() {
-    return this.depotService.findAll();
+  findAll(@Request() req) {
+    return this.depotService.findAll(req.user.tenantId);
   }
 
   @Post()
   @RequirePermissions('stock:write')
-  create(@Body() dto: CreateDepotDto) {
-    return this.depotService.create(dto);
+  create(@Request() req, @Body() dto: CreateDepotDto) {
+    return this.depotService.create(req.user.tenantId, dto);
   }
 
   @Put(':id')
   @RequirePermissions('stock:write')
-  update(@Param('id') id: string, @Body() dto: UpdateDepotDto) {
-    return this.depotService.update(id, dto);
+  update(@Request() req, @Param('id') id: string, @Body() dto: UpdateDepotDto) {
+    return this.depotService.update(req.user.tenantId, id, dto);
   }
 
   @Delete(':id')
   @RequirePermissions('stock:write')
-  remove(@Param('id') id: string) {
-    return this.depotService.remove(id);
+  remove(@Request() req, @Param('id') id: string) {
+    return this.depotService.remove(req.user.tenantId, id);
   }
 }

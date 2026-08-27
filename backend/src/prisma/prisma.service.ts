@@ -2,7 +2,7 @@ import { Injectable, OnModuleInit, OnModuleDestroy, ForbiddenException } from '@
 import { PrismaClient } from '@prisma/client';
 import { TenantContextService } from '../core/tenant/tenant-context.service';
 
-const TENANT_SCOPED_MODELS = ['StockItem', 'RepairTicket', 'ClientMeasurement', 'User', 'Quote', 'Invoice', 'StockMovement', 'TailleurOrder', 'PurchaseOrder', 'InventorySession'];
+const TENANT_SCOPED_MODELS = ['StockItem', 'RepairTicket', 'ClientMeasurement', 'User', 'Quote', 'Invoice', 'StockMovement', 'TailleurOrder', 'PurchaseOrder', 'InventorySession', 'Depot', 'Client', 'Supplier', 'ITServicePackage', 'PaymentInstallment', 'BillingSequence', 'TailleurCatalogItem'];
 
 
 
