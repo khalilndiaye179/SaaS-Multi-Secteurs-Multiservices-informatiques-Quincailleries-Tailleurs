@@ -34,6 +34,15 @@ export class BusinessBillingService {
       };
     });
 
+    let validUntil: Date | null = null;
+    if (dto.validityDuration) {
+      const days = parseInt(dto.validityDuration as any, 10);
+      if (!isNaN(days) && days > 0) {
+        validUntil = new Date();
+        validUntil.setDate(validUntil.getDate() + days);
+      }
+    }
+
     return this.prisma.extended.quote.create({
       data: {
         number,
@@ -43,6 +52,7 @@ export class BusinessBillingService {
         notes: dto.notes,
         totalAmount,
         status: 'DRAFT',
+        validUntil,
         lines: {
           create: linesData,
         },

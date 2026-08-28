@@ -42,6 +42,10 @@ export class CreateQuoteDto {
   @IsBoolean()
   applyVat?: boolean;
 
+  @IsOptional()
+  @IsNumber()
+  validityDuration?: number;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => QuoteLineDto)

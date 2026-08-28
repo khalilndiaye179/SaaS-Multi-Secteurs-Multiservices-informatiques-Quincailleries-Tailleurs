@@ -12,6 +12,14 @@ export interface CompanyHeaderDetails {
   nineaRccm?: string;
   enableTva: boolean;
   tvaRate: number; // ex 18
+  bankName?: string;
+  bankAccountName?: string;
+  bankCode?: string;
+  bankGuichet?: string;
+  bankAccountNumber?: string;
+  bankRibKey?: string;
+  bankIban?: string;
+  bankSwift?: string;
 }
 
 interface DocumentPrintModalProps {
@@ -22,6 +30,7 @@ interface DocumentPrintModalProps {
   documentNumber: string;
   documentId?: string;
   dateStr: string;
+  validUntil?: string;
   clientName: string;
   clientPhone?: string;
   items: Array<{ description: string; quantity: number; unitPrice: number }>;
@@ -36,6 +45,7 @@ export const DocumentPrintModal: React.FC<DocumentPrintModalProps> = ({
   documentNumber,
   documentId,
   dateStr,
+  validUntil,
   clientName,
   clientPhone,
   items,
@@ -63,6 +73,14 @@ export const DocumentPrintModal: React.FC<DocumentPrintModalProps> = ({
     enableTva: savedSettings.enableTva ?? false,
     tvaRate: savedSettings.tvaRate || 18,
     logoSvg: savedSettings.logoSvg,
+    bankName: savedSettings.bankName,
+    bankAccountName: savedSettings.bankAccountName,
+    bankCode: savedSettings.bankCode,
+    bankGuichet: savedSettings.bankGuichet,
+    bankAccountNumber: savedSettings.bankAccountNumber,
+    bankRibKey: savedSettings.bankRibKey,
+    bankIban: savedSettings.bankIban,
+    bankSwift: savedSettings.bankSwift,
   };
 
   const totalHt = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
@@ -82,7 +100,8 @@ export const DocumentPrintModal: React.FC<DocumentPrintModalProps> = ({
           <style>
             body { font-family: 'Plus Jakarta Sans', Arial, sans-serif; margin: 30px; color: #111827; }
             .header { display: flex; justify-content: space-between; border-bottom: 2px solid ${themeColor}; padding-bottom: 20px; margin-bottom: 20px; }
-            .logo { max-width: 160px; max-height: 80px; }
+            .logo-wrap { width: 70px; height: 70px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+            .logo-wrap svg { width: 70px !important; height: 70px !important; max-width: 70px !important; max-height: 70px !important; }
             .company-title { font-size: 1.4rem; font-weight: 800; color: ${themeColor}; margin: 0 0 4px 0; }
             .company-info { font-size: 0.8rem; color: #4B5563; line-height: 1.4; }
             .doc-title { text-align: right; }
@@ -169,14 +188,34 @@ export const DocumentPrintModal: React.FC<DocumentPrintModalProps> = ({
           <div style={{ background: 'var(--bg-card)', padding: 24, borderRadius: 12, border: '1px solid var(--border-color)' }}>
             {/* Header Officiel */}
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `2px solid ${themeColor}`, paddingBottom: 16, marginBottom: 20 }}>
-              <div>
-                <h2 style={{ margin: '0 0 4px 0', fontSize: '1.25rem', fontWeight: 800, color: themeColor }}>
-                  {company.tenantName}
-                </h2>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                  <div>{company.address}</div>
-                  <div>Tél: {company.phone} • Email: {company.email}</div>
-                  {company.nineaRccm && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{company.nineaRccm}</div>}
+              <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                {company.logoSvg && (
+                  <div 
+                    className="logo-wrap"
+                    style={{ 
+                      width: 70, 
+                      height: 70, 
+                      flexShrink: 0,
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      overflow: 'hidden'
+                    }} 
+                    dangerouslySetInnerHTML={{ 
+                      __html: company.logoSvg
+                        .replace(/<svg/, '<svg width="70" height="70" style="width:70px; height:70px; max-width:70px; max-height:70px;"') 
+                    }} 
+                  />
+                )}
+                <div>
+                  <h2 style={{ margin: '0 0 4px 0', fontSize: '1.25rem', fontWeight: 800, color: themeColor }}>
+                    {company.tenantName}
+                  </h2>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                    <div>{company.address}</div>
+                    <div>Tél: {company.phone} • Email: {company.email}</div>
+                    {company.nineaRccm && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{company.nineaRccm}</div>}
+                  </div>
                 </div>
               </div>
 
@@ -190,6 +229,11 @@ export const DocumentPrintModal: React.FC<DocumentPrintModalProps> = ({
                 <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>
                   Date : {dateStr}
                 </div>
+                {documentType === 'DEVIS' && validUntil && (
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                    Valable jusqu'au : {new Date(validUntil).toLocaleDateString('fr-FR')}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -248,7 +292,29 @@ export const DocumentPrintModal: React.FC<DocumentPrintModalProps> = ({
               </div>
             </div>
 
-            <div style={{ marginTop: 24, textAlign: 'center', fontSize: '0.72rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border-color)', paddingTop: 10 }}>
+            {/* Infos RIB si renseignées */}
+            {company.bankName && company.bankAccountNumber && (
+              <div style={{ marginTop: 24, borderTop: '1px dashed var(--border-color)', paddingTop: 12, textAlign: 'center', fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                <div style={{ fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Règlement par virement bancaire :</div>
+                <div>
+                  Banque : <strong>{company.bankName}</strong> {company.bankAccountName && <>| Titulaire : <strong>{company.bankAccountName}</strong></>}
+                </div>
+                <div style={{ fontFamily: 'monospace', marginTop: 2 }}>
+                  {company.bankCode && <>Code Banque : <strong>{company.bankCode}</strong> </>}
+                  {company.bankGuichet && <>• Code Guichet : <strong>{company.bankGuichet}</strong> </>}
+                  {company.bankAccountNumber && <>• N° Compte : <strong>{company.bankAccountNumber}</strong> </>}
+                  {company.bankRibKey && <>• Clé RIB : <strong>{company.bankRibKey}</strong></>}
+                </div>
+                {(company.bankIban || company.bankSwift) && (
+                  <div style={{ fontFamily: 'monospace', marginTop: 2 }}>
+                    {company.bankIban && <>IBAN : <strong>{company.bankIban}</strong> </>}
+                    {company.bankSwift && <>• SWIFT/BIC : <strong>{company.bankSwift}</strong></>}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div style={{ marginTop: 16, textAlign: 'center', fontSize: '0.72rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border-color)', paddingTop: 10 }}>
               Document généré officiellement par KPSyDesk Suite - Door Waar — Merci de votre confiance.
             </div>
           </div>

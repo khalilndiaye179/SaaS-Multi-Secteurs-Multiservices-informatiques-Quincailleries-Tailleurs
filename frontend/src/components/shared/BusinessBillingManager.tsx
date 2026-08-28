@@ -26,6 +26,7 @@ interface Quote {
   totalAmount: number;
   status: 'DRAFT' | 'SENT' | 'ACCEPTED' | 'REJECTED';
   createdAt: string;
+  validUntil?: string;
   lines: QuoteLine[];
 }
 
@@ -56,6 +57,7 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
     type: 'DEVIS' | 'FACTURE';
     number: string;
     date: string;
+    validUntil?: string;
     clientName: string;
     clientPhone?: string;
     items: Array<{ description: string; quantity: number; unitPrice: number }>;
@@ -81,11 +83,13 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
     clientName: string,
     clientPhone?: string,
     lines?: QuoteLine[],
+    validUntil?: string,
   ) => {
     setPrintDoc({
       type,
       number,
       date: new Date(createdAt).toLocaleDateString('fr-FR'),
+      validUntil,
       clientName,
       clientPhone,
       items: lines
@@ -174,6 +178,7 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
   ]);
   const [submitting, setSubmitting] = useState(false);
   const [applyVat, setApplyVat] = useState(false);
+  const [validityDuration, setValidityDuration] = useState('30');
 
   const token = localStorage.getItem('kpsy_token');
   const headers = {
@@ -251,6 +256,7 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
           clientPhone,
           applyVat,
           lines,
+          ...(subTab === 'quotes' && { validityDuration: parseInt(validityDuration, 10) || undefined }),
         }),
       });
 
@@ -259,6 +265,7 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
         setClientName('');
         setClientPhone('');
         setApplyVat(false);
+        setValidityDuration('30');
         setLines([{ description: '', quantity: 1, unitPrice: 0 }]);
         fetchData();
       }
@@ -413,7 +420,7 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
                     <td style={{ padding: '14px 18px' }}>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button
-                          onClick={() => handleOpenPrintModal('DEVIS', q.number, q.createdAt, q.clientName, q.clientPhone, q.lines)}
+                          onClick={() => handleOpenPrintModal('DEVIS', q.number, q.createdAt, q.clientName, q.clientPhone, q.lines, q.validUntil)}
                           style={{
                             padding: '5px 10px',
                             borderRadius: 6,
@@ -638,6 +645,23 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
             />
           </div>
 
+          {subTab === 'quotes' && (
+            <div>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>
+                Durée de validité (en jours)
+              </label>
+              <input
+                type="number"
+                min="1"
+                required
+                placeholder="ex: 30"
+                value={validityDuration}
+                onChange={(e) => setValidityDuration(e.target.value)}
+                style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid var(--border-color)', fontSize: '0.85rem' }}
+              />
+            </div>
+          )}
+
           <div style={{ marginTop: 10 }}>
             <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>
               Lignes de Prestations / Articles
@@ -760,6 +784,7 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
         documentType={printDoc.type}
         documentNumber={printDoc.number}
         dateStr={printDoc.date}
+        validUntil={printDoc.validUntil}
         clientName={printDoc.clientName}
         clientPhone={printDoc.clientPhone}
         items={printDoc.items}
