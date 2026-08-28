@@ -4,6 +4,7 @@ import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { TenantContextService } from '../src/core/tenant/tenant-context.service';
 import { JwtService } from '@nestjs/jwt';
+import { TailleurMeasurementService } from '../src/modules/tailleur/tailleur-measurement.service';
 
 describe('PHASE 5 — RED TEAM MULTI-TENANT ISOLATION E2E TEST SUITE', () => {
   let app: INestApplication;
@@ -20,6 +21,7 @@ describe('PHASE 5 — RED TEAM MULTI-TENANT ISOLATION E2E TEST SUITE', () => {
   let tokenC: string;
 
   beforeAll(async () => {
+    jest.setTimeout(60000);
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -301,6 +303,10 @@ describe('PHASE 5 — RED TEAM MULTI-TENANT ISOLATION E2E TEST SUITE', () => {
 
         const inventorySessions = await client.inventorySession.findMany();
         expect(Array.isArray(inventorySessions)).toBe(true);
+      });
+    });
+  });
+
   // 7. CROSS-REFERENCE ISOLATION IN TAILLEUR MODULE
   describe('7. CROSS-REFERENCE ISOLATION IN TAILLEUR MODULE', () => {
     let tailleurService: any;
@@ -310,7 +316,7 @@ describe('PHASE 5 — RED TEAM MULTI-TENANT ISOLATION E2E TEST SUITE', () => {
 
     beforeAll(async () => {
       // Lazy load service to avoid import issues if not already imported
-      tailleurService = app.get('TailleurMeasurementService');
+      tailleurService = app.get(TailleurMeasurementService);
 
       await prisma.withoutTenantScope(async (client) => {
         const measurement = await client.clientMeasurement.create({
@@ -318,6 +324,8 @@ describe('PHASE 5 — RED TEAM MULTI-TENANT ISOLATION E2E TEST SUITE', () => {
             tenantId: TENANT_B.id,
             clientName: 'Client Tenant B',
             garmentType: 'Costume',
+            clientPhone: '771234567',
+            measurements: {},
           } as any,
         });
         tenantBMeasurementId = measurement.id;
@@ -327,10 +335,11 @@ describe('PHASE 5 — RED TEAM MULTI-TENANT ISOLATION E2E TEST SUITE', () => {
             id: 'user-b-tailleur',
             tenantId: TENANT_B.id,
             username: 'user_b',
+            email: 'user_b@mail.com',
+            phone: '770000000',
             passwordHash: 'hash',
             fullName: 'User B',
             isActive: true,
-            roles: ['TAILLEUR'],
           } as any,
         });
         tenantBUserId = user.id;
@@ -351,6 +360,8 @@ describe('PHASE 5 — RED TEAM MULTI-TENANT ISOLATION E2E TEST SUITE', () => {
             tenantId: TENANT_A.id,
             orderNumber: 'CMD-A-0001',
             clientName: 'Client A',
+            clientPhone: '770000000',
+            garmentType: 'Costume',
             totalPrice: 10000,
             status: 'ORDERED',
             invoiceId: invoice.id,
