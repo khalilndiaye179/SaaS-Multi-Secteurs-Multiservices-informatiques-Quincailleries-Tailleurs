@@ -12,17 +12,43 @@ interface TenantRow {
   createdAt: string;
 }
 
-const DEMO_TENANTS: TenantRow[] = [
-  { id: '1', code: 'QNC-0001', name: 'Quincaillerie Al-Baraka', sectorType: 'QUINCAILLERIE', country: 'SN', billingStatus: 'ACTIVE', userCount: 4, createdAt: '2026-08-01' },
-  { id: '2', code: 'ITS-0001', name: 'Multiservices IT Dakar', sectorType: 'MULTISERVICES_IT', country: 'SN', billingStatus: 'TRIAL_7D', userCount: 2, createdAt: '2026-08-07' },
-  { id: '3', code: 'TLR-0001', name: 'Atelier Couture Elegance', sectorType: 'TAILLEUR', country: 'CI', billingStatus: 'ACTIVE', userCount: 3, createdAt: '2026-08-03' },
-  { id: '4', code: 'QNC-0002', name: 'Matériaux & BTP Abidjan', sectorType: 'QUINCAILLERIE', country: 'CI', billingStatus: 'TRIAL_7D', userCount: 5, createdAt: '2026-08-09' },
-  { id: '5', code: 'TLR-0002', name: 'Couture Bamako Style', sectorType: 'TAILLEUR', country: 'ML', billingStatus: 'SUSPENDED', userCount: 1, createdAt: '2026-07-28' },
-];
-
-export const SuperAdminDashboard: React.FC = () => {
+export const SuperAdminDashboard: React.FC<{ onLogout?: () => void }> = ({ onLogout }) => {
   const { theme, toggleTheme } = useTheme();
-  const [tenants, setTenants] = useState<TenantRow[]>(DEMO_TENANTS);
+  const [tenants, setTenants] = useState<TenantRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    const fetchTenants = async () => {
+      try {
+        const token = localStorage.getItem('kpsy_token');
+        const res = await fetch('/api/super-admin/tenants', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          // Map backend data to frontend structure if needed
+          const mapped = data
+            .filter((t: any) => t.code !== 'KPSY-ADMIN' && t.code !== 'SAAS-GLOBAL')
+            .map((t: any) => ({
+            id: t.id,
+            code: t.code,
+            name: t.name,
+            sectorType: t.sectorType,
+            country: t.country,
+            billingStatus: t.billingStatus,
+            userCount: t.users?.length || 0,
+            createdAt: new Date(t.createdAt).toISOString().split('T')[0],
+          }));
+          setTenants(mapped);
+        }
+      } catch (err) {
+        console.error('Failed to fetch tenants', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTenants();
+  }, []);
   const [selectedSectorFilter, setSelectedSectorFilter] = useState<string>('ALL');
 
   const filteredTenants = tenants.filter(

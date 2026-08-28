@@ -190,7 +190,7 @@ export const TailleurOrderManager: React.FC<Props> = ({ themeColor }) => {
 
   // Gestion Multi-articles / Multi-modèles dans la même commande
   const [orderItems, setOrderItems] = useState<Array<{ catalogName: string; customName: string; price: number }>>([
-    { catalogName: 'Grand Boubou 3P Bazin', customName: '', price: 35000 },
+    { catalogName: '', customName: '', price: 0 },
   ]);
 
   const recalculateTotal = (items: Array<{ catalogName: string; customName: string; price: number }>) => {

@@ -13,11 +13,7 @@ interface Props {
 }
 
 export const ITClientsHistory: React.FC<Props> = ({ themeColor }) => {
-  const [clients] = useState<ITClient[]>([
-    { id: '1', name: 'Mamadou DIALLO', phone: '+221 78 111 22 33', totalDevicesDeposited: 3, totalSpentXOF: 45000 },
-    { id: '2', name: 'Cabinet Aissatou & Associés', phone: '+221 33 821 00 99', totalDevicesDeposited: 7, totalSpentXOF: 185000 },
-    { id: '3', name: 'Ousmane SOW', phone: '+221 77 450 12 89', totalDevicesDeposited: 2, totalSpentXOF: 25000 },
-  ]);
+  const [clients] = useState<ITClient[]>([]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

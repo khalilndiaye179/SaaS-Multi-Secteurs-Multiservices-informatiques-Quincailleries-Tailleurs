@@ -21,11 +21,7 @@ export const ITHardwareSalesManager: React.FC<Props> = ({ themeColor }) => {
   const isAdmin = !user?.roles || user?.roles?.length === 0 || user?.roles?.includes('TENANT_ADMIN') || user?.roles?.includes('ADMIN_TENANT') || user?.roles?.includes('ADMIN') || user?.roles?.includes('SUPER_ADMIN');
 
 
-  const [items, setItems] = useState<HardwareItem[]>([
-    { id: '1', name: 'PC Portable Dell Latitude 5490 i5 8th Gen 8GB/256GB SSD', category: 'Laptops', condition: 'REFURBISHED', priceXOF: 185000, stockQty: 3, status: 'AVAILABLE' },
-    { id: '2', name: 'Chargeur Universel Laptop 90W Multi-Embouts', category: 'Accessoires', condition: 'NEW', priceXOF: 15000, stockQty: 12, status: 'AVAILABLE' },
-    { id: '3', name: 'Écran Ecran 24" Dell Full HD HDMI/VGA', category: 'Moniteurs', condition: 'USED', priceXOF: 45000, stockQty: 2, status: 'AVAILABLE' },
-  ]);
+  const [items, setItems] = useState<HardwareItem[]>([]);
 
   const [showModal, setShowModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);

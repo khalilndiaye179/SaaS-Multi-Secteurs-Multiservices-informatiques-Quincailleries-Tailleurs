@@ -174,7 +174,7 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
   const [clientName, setClientName] = useState('');
   const [clientPhone, setClientPhone] = useState('');
   const [lines, setLines] = useState<Array<{ description: string; quantity: number; unitPrice: number }>>([
-    { description: sector === 'TAILLEUR' ? 'Grand Boubou 3 Pièces Bazin' : 'Prestation / Article', quantity: 1, unitPrice: 15000 },
+    { description: '', quantity: 1, unitPrice: 0 },
   ]);
   const [submitting, setSubmitting] = useState(false);
   const [applyVat, setApplyVat] = useState(false);

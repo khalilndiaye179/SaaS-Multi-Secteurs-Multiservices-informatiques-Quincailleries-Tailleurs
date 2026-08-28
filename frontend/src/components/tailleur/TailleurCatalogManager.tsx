@@ -16,12 +16,7 @@ interface Props {
 }
 
 export const TailleurCatalogManager: React.FC<Props> = ({ themeColor }) => {
-  const [services, setServices] = useState<ServiceModel[]>([
-    { id: '1', name: 'Grand Boubou 3 Pièces Bazin', category: 'Traditionnel', estimatedPrice: 35000, delaysDays: 5, description: 'Boubou traditionnel complet 3 pièces avec broderies royales au col et aux manches.', fabricRecommendation: 'Bazin Riche Getzner ou Gagnier' },
-    { id: '2', name: 'Taille Basse Bazin Brodé', category: 'Femme', estimatedPrice: 25000, delaysDays: 4, description: 'Ensemble taille basse élégant avec découpes ajustées et motifs floraux.', fabricRecommendation: 'Bazin Moyen ou Soie Dentelle' },
-    { id: '3', name: 'Costume 2 Pièces Homme', category: 'Moderne', estimatedPrice: 45000, delaysDays: 7, description: 'Veste cintrée européenne et pantalon droit coupe moderne sur-mesure.', fabricRecommendation: 'Laine Super 120s ou Cashmere' },
-    { id: '4', name: 'Robe de Mariée / Cérémonie', category: 'Prestige', estimatedPrice: 85000, delaysDays: 10, description: 'Robe d\'exception haute couture avec traîne et perlage fait main.', fabricRecommendation: 'Satin Duchesse & Organza' },
-  ]);
+  const [services, setServices] = useState<ServiceModel[]>([]);
 
   const [showModal, setShowModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);

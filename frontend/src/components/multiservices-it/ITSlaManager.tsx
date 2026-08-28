@@ -19,12 +19,7 @@ export const ITSlaManager: React.FC<Props> = ({ themeColor }) => {
   const user = JSON.parse(localStorage.getItem('kpsy_user') || '{}');
   const isAdmin = !user?.roles || user?.roles?.length === 0 || user?.roles?.includes('TENANT_ADMIN') || user?.roles?.includes('ADMIN_TENANT') || user?.roles?.includes('ADMIN') || user?.roles?.includes('SUPER_ADMIN');
 
-  const [policies, setPolicies] = useState<SlaPolicy[]>([
-    { id: '1', name: 'SLA Critique — Interventions Serveurs & Réseau', priority: 'CRITICAL', targetHours: 4, description: 'Prise en charge sous 1h, résolution max 4h pour panne totale réseau entreprise', penaltyPerDayXOF: 50000, status: 'ACTIVE' },
-    { id: '2', name: 'SLA Urgence — Matériel de Production / PC Gérant', priority: 'HIGH', targetHours: 24, description: 'Remplacement écran ou carte mère sous 24h avec prêt de machine', penaltyPerDayXOF: 20000, status: 'ACTIVE' },
-    { id: '3', name: 'SLA Standard — Maintenance & Formatage Atelier', priority: 'STANDARD', targetHours: 48, description: 'Réinstallation système, nettoyage et dépoussiérage standard', penaltyPerDayXOF: 5000, status: 'ACTIVE' },
-    { id: '4', name: 'SLA Basse Priorité — Diagnostics Complémentaires', priority: 'LOW', targetHours: 72, description: 'Extraction longue de données sur disques durs usagés', penaltyPerDayXOF: 0, status: 'ACTIVE' },
-  ]);
+  const [policies, setPolicies] = useState<SlaPolicy[]>([]);
 
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
