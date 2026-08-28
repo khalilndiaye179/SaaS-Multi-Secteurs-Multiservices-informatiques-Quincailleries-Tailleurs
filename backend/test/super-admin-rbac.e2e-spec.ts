@@ -165,7 +165,7 @@ describe('Super Admin RBAC Granulaire (e2e)', () => {
 
     it('Ne peut PAS gérer l\'équipe système', async () => {
       await request(app.getHttpServer())
-        .post('/super-admin/team/invitations')
+        .post('/super-admin/team/collaborators')
         .set('Authorization', `Bearer ${techniqueToken}`)
         .send({ email: 'fake@fake.com', roleName: 'SUPPORT' })
         .expect(403);

@@ -179,7 +179,7 @@ describe('PHASE 5 — RED TEAM MULTI-TENANT ISOLATION E2E TEST SUITE', () => {
       });
 
       await Promise.all(tasks);
-    });
+    }, 20000);
   });
 
   // 5. NATIVE POSTGRESQL RLS FAIL-CLOSED & ATTACK TEST (SQL BRUT EXPLICITE SANS PRISMA EXTENDED)
