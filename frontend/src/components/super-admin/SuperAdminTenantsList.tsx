@@ -175,34 +175,39 @@ export const SuperAdminTenantsList: React.FC<Props> = ({ themeColor }) => {
     }
   };
 
-  const handleHardPurge = async (tenantId: string, tenantName: string) => {
+  const handleHardPurge = async (tenantId: string, tenantName: string, tenantCode: string) => {
     const confirmation = window.prompt(
-      `⚠️ ATTENTION : Vous allez supprimer DÉFINITIVEMENT le tenant "${tenantName}" ainsi que TOUTES ses données (utilisateurs, factures, stock).\n\nTapez "PURGER" pour confirmer :`
+      `⚠️ ATTENTION : Vous allez supprimer DÉFINITIVEMENT le tenant "${tenantName}" ainsi que TOUTES ses données (utilisateurs, factures, stock, etc.).\n\nCette action est IRRÉVERSIBLE.\n\nTapez le code du tenant "${tenantCode}" pour confirmer :`
     );
 
-    if (confirmation === 'PURGER') {
-      try {
-        const res = await fetch(`/api/super-admin/tenants/${tenantId}/hard-delete`, {
-          method: 'DELETE',
-          headers,
-        });
+    if (confirmation === null) return; // Annulé
 
-        if (res.ok) {
-          const data = await res.json();
-          alert(`✅ ${data.message || 'Tenant supprimé.'}`);
-          fetchTenants();
-        } else {
-          const errData = await res.json();
-          alert(`❌ Erreur: ${errData.message || 'Impossible de purger ce tenant.'}`);
-        }
-      } catch (e) {
-        console.error(e);
-        alert('Erreur lors de la purge définitive.');
+    if (confirmation !== tenantCode) {
+      alert(`❌ Erreur: Le code de confirmation "${confirmation}" ne correspond pas au code du tenant "${tenantCode}".`);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/super-admin/tenants/${tenantId}/hard-delete`, {
+        method: 'DELETE',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmationCode: confirmation }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        alert(`✅ ${data.message || 'Tenant supprimé définitivement.'}`);
+        fetchTenants();
+      } else {
+        const errData = await res.json();
+        alert(`❌ Erreur: ${errData.message || 'Impossible de purger ce tenant.'}`);
       }
-    } else if (confirmation !== null) {
-      alert('Action annulée : Le mot de passe de confirmation était incorrect.');
+    } catch (e) {
+      console.error(e);
+      alert('Erreur lors de la purge définitive.');
     }
   };
+
 
   const user = JSON.parse(localStorage.getItem('kpsy_user') || '{}');
   const isSuper = user?.roles?.includes('SUPER_ADMIN');
@@ -286,7 +291,7 @@ export const SuperAdminTenantsList: React.FC<Props> = ({ themeColor }) => {
                       {isSuper && (
                         <>
                           <button
-                            onClick={() => handleHardPurge(t.id, t.name)}
+                            onClick={() => handleHardPurge(t.id, t.name, t.code)}
                             title="Purger définitivement ce tenant"
                             style={{
                               padding: '6px 10px', borderRadius: 6, background: '#FEE2E2',

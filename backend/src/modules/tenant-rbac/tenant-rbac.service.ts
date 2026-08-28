@@ -2,7 +2,6 @@ import { Injectable, NotFoundException, ForbiddenException, BadRequestException 
 import { PrismaService } from '../../prisma/prisma.service';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
 import { CreateRoleDto, UpdateRoleDto } from './dto/tenant-rbac.dto';
-import { SectorType } from '../../core/types/tenant.types';
 
 @Injectable()
 export class TenantRbacService {
@@ -15,47 +14,53 @@ export class TenantRbacService {
   }
 
   async getAvailablePermissions() {
-    const tenant = await this.prisma.tenant.findUnique({
-      where: { id: this.tenantId }
-    });
-    
+    // `permissions` table has no RLS — direct query is fine.
+    // We use withoutTenantScope to set the RLS context for the `tenants` lookup.
+    const tenantId = this.tenantId;
+    const tenant = await this.prisma.withoutTenantScope(c =>
+      c.tenant.findUnique({ where: { id: tenantId } })
+    );
     if (!tenant) throw new NotFoundException('Tenant not found');
 
-    // Return permissions applicable to this sector or global permissions (sectorType = null)
-    return this.prisma.permission.findMany({
-      where: {
-        OR: [
-          { sectorType: tenant.sectorType },
-          { sectorType: null }
-        ]
-      }
-    });
+    return this.prisma.withoutTenantScope(c =>
+      c.permission.findMany({
+        where: {
+          OR: [
+            { sectorType: tenant.sectorType as any },
+            { sectorType: null }
+          ]
+        }
+      })
+    );
   }
 
   async getRoles() {
-    return this.prisma.role.findMany({
-      where: { tenantId: this.tenantId },
-      include: {
-        rolePermissions: {
-          include: { permission: true }
+    // `roles` table has RLS enabled but `Role` is NOT in TENANT_SCOPED_MODELS,
+    // so PrismaService never sets app.current_tenant_id for it.
+    // We use withoutTenantScope (sets __SYSTEM_GLOBAL_SUPERADMIN__) and
+    // filter by tenantId explicitly to preserve tenant isolation.
+    const tenantId = this.tenantId;
+    return this.prisma.withoutTenantScope(c =>
+      c.role.findMany({
+        where: { tenantId },
+        include: {
+          rolePermissions: { include: { permission: true } },
+          _count: { select: { userRoles: true } }
         },
-        _count: {
-          select: { userRoles: true }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+        orderBy: { createdAt: 'desc' }
+      })
+    );
   }
 
-  private async validatePermissionsAssignment(prisma: any, requestedCodes: string[]) {
+  private async validatePermissionsAssignment(prismaClient: any, requestedCodes: string[]) {
     const store = TenantContextService.getStore();
     const isSuperAdmin = store?.isSuperAdmin;
-    
+
     // 1. Fetch DB permissions
-    const permissions = await prisma.permission.findMany({
+    const permissions = await prismaClient.permission.findMany({
       where: { code: { in: requestedCodes } }
     });
-    
+
     // 2. Check for non-existent permissions
     const foundCodes = permissions.map((p: any) => p.code);
     const invalidCodes = requestedCodes.filter(code => !foundCodes.includes(code));
@@ -70,7 +75,7 @@ export class TenantRbacService {
     const userId = store?.userId;
     if (!userId) throw new ForbiddenException('User context is missing');
 
-    const userRoles = await prisma.userRole.findMany({
+    const userRoles = await prismaClient.userRole.findMany({
       where: { userId },
       include: { role: { include: { rolePermissions: { include: { permission: true } } } } }
     });
@@ -91,32 +96,24 @@ export class TenantRbacService {
   }
 
   async createRole(dto: CreateRoleDto) {
-    return this.prisma.$transaction(async (prisma) => {
+    const tenantId = this.tenantId;
+    return this.prisma.withoutTenantScope(async (c) => {
       // 1. Create the role
-      const role = await prisma.role.create({
-        data: {
-          name: dto.name,
-          description: dto.description,
-          tenantId: this.tenantId
-        }
+      const role = await c.role.create({
+        data: { name: dto.name, description: dto.description, tenantId }
       });
 
-      // 2. Resolve permission codes to IDs
+      // 2. Resolve permission codes to IDs and create links
       if (dto.permissions && dto.permissions.length > 0) {
-        const permissions = await this.validatePermissionsAssignment(prisma, dto.permissions);
-
-        // 3. Create role-permission links
+        const permissions = await this.validatePermissionsAssignment(c, dto.permissions);
         if (permissions.length > 0) {
-          await prisma.rolePermission.createMany({
-            data: permissions.map(p => ({
-              roleId: role.id,
-              permissionId: p.id
-            }))
+          await c.rolePermission.createMany({
+            data: permissions.map((p: any) => ({ roleId: role.id, permissionId: p.id }))
           });
         }
       }
 
-      return this.prisma.role.findUnique({
+      return c.role.findUnique({
         where: { id: role.id },
         include: { rolePermissions: { include: { permission: true } } }
       });
@@ -124,19 +121,21 @@ export class TenantRbacService {
   }
 
   async updateRole(roleId: string, dto: UpdateRoleDto) {
-    const existingRole = await this.prisma.role.findFirst({
-      where: { id: roleId, tenantId: this.tenantId }
-    });
+    const tenantId = this.tenantId;
+
+    const existingRole = await this.prisma.withoutTenantScope(c =>
+      c.role.findFirst({ where: { id: roleId, tenantId } })
+    );
 
     if (!existingRole) throw new NotFoundException('Rôle non trouvé dans ce tenant');
     if (existingRole.name === 'ADMIN_TENANT' || existingRole.name === 'EMPLOYEE') {
       throw new ForbiddenException('Les rôles systèmes ne peuvent pas être modifiés.');
     }
 
-    return this.prisma.$transaction(async (prisma) => {
+    return this.prisma.withoutTenantScope(async (c) => {
       // 1. Update basic fields
       if (dto.name || dto.description) {
-        await prisma.role.update({
+        await c.role.update({
           where: { id: roleId },
           data: {
             name: dto.name ?? existingRole.name,
@@ -147,26 +146,19 @@ export class TenantRbacService {
 
       // 2. Update permissions if provided
       if (dto.permissions) {
-        // Delete all old permissions for this role
-        await prisma.rolePermission.deleteMany({
-          where: { roleId }
-        });
+        await c.rolePermission.deleteMany({ where: { roleId } });
 
         if (dto.permissions.length > 0) {
-          const permissions = await this.validatePermissionsAssignment(prisma, dto.permissions);
-          
+          const permissions = await this.validatePermissionsAssignment(c, dto.permissions);
           if (permissions.length > 0) {
-            await prisma.rolePermission.createMany({
-              data: permissions.map(p => ({
-                roleId,
-                permissionId: p.id
-              }))
+            await c.rolePermission.createMany({
+              data: permissions.map((p: any) => ({ roleId, permissionId: p.id }))
             });
           }
         }
       }
 
-      return this.prisma.role.findUnique({
+      return c.role.findUnique({
         where: { id: roleId },
         include: { rolePermissions: { include: { permission: true } } }
       });
@@ -174,23 +166,24 @@ export class TenantRbacService {
   }
 
   async deleteRole(roleId: string) {
-    const existingRole = await this.prisma.role.findFirst({
-      where: { id: roleId, tenantId: this.tenantId },
-      include: { _count: { select: { userRoles: true } } }
-    });
+    const tenantId = this.tenantId;
+
+    const existingRole = await this.prisma.withoutTenantScope(c =>
+      c.role.findFirst({
+        where: { id: roleId, tenantId },
+        include: { _count: { select: { userRoles: true } } }
+      })
+    );
 
     if (!existingRole) throw new NotFoundException('Rôle non trouvé dans ce tenant');
     if (existingRole.name === 'ADMIN_TENANT' || existingRole.name === 'EMPLOYEE') {
       throw new ForbiddenException('Les rôles systèmes ne peuvent pas être supprimés.');
     }
-    
     if (existingRole._count.userRoles > 0) {
       throw new ForbiddenException('Ce rôle est assigné à des employés actifs. Veuillez les réassigner avant la suppression.');
     }
 
-    await this.prisma.role.delete({
-      where: { id: roleId }
-    });
+    await this.prisma.withoutTenantScope(c => c.role.delete({ where: { id: roleId } }));
 
     return { success: true };
   }

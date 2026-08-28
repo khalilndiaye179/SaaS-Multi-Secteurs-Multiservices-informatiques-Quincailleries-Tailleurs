@@ -220,6 +220,7 @@ export class SuperAdminTeamService {
       id: u.id,
       fullName: u.fullName,
       email: u.email,
+      phone: u.phone,
       isActive: u.isActive,
       roles: u.userRoles.map((ur) => ur.role.name),
       createdAt: u.createdAt,
@@ -317,5 +318,100 @@ export class SuperAdminTeamService {
       success: true,
       message: 'Authentification à deux facteurs désactivée avec succès pour ce collaborateur.',
     };
+  }
+
+  /**
+   * Suppression d'un collaborateur système avec protection critique
+   */
+  async deleteCollaborator(targetUserId: string) {
+    const store = TenantContextService.getStore();
+    if (!store?.isSuperAdmin) throw new ForbiddenException('Accès réservé au Super Admin.');
+
+    if (store.userId === targetUserId) {
+      throw new ForbiddenException('Vous ne pouvez pas supprimer votre propre compte d\'administration.');
+    }
+
+    const targetUser = await this.prisma.withoutTenantScope(async (c) =>
+      c.user.findUnique({ where: { id: targetUserId }, include: { tenant: true, userRoles: { include: { role: true } } } })
+    );
+
+    if (!targetUser) throw new NotFoundException('Collaborateur introuvable.');
+
+    if (targetUser.tenant.code !== 'SAAS-GLOBAL') {
+      throw new ForbiddenException('Cette action est réservée aux membres de l\'équipe système.');
+    }
+
+    const isSuperAdmin = targetUser.userRoles.some((ur) => ur.role.name === 'SUPER_ADMIN');
+    if (isSuperAdmin) {
+      const activeSuperAdminCount = await this.prisma.withoutTenantScope(async (c) =>
+        c.user.count({ where: { isActive: true, userRoles: { some: { role: { name: 'SUPER_ADMIN' } } } } }),
+      );
+
+      if (activeSuperAdminCount <= 1) {
+        throw new ConflictException('Impossible de supprimer le dernier SUPER_ADMIN actif de la plateforme.');
+      }
+    }
+
+    await this.prisma.withoutTenantScope(async (c) => {
+      await c.userRole.deleteMany({ where: { userId: targetUserId } });
+      await c.user.delete({ where: { id: targetUserId } });
+    });
+
+    await this.auditLogService.record({
+      action: 'SUPER_ADMIN_COLLABORATOR_DELETED',
+      resourceType: 'USER',
+      resourceId: targetUserId,
+      result: 'SUCCESS',
+      metadata: { targetEmail: targetUser.email }
+    });
+
+    return { success: true, message: 'Collaborateur supprimé avec succès.' };
+  }
+
+  /**
+   * Modification des données d'un collaborateur
+   */
+  async updateCollaborator(targetUserId: string, dto: { fullName?: string; email?: string; phone?: string }) {
+    const store = TenantContextService.getStore();
+    if (!store?.isSuperAdmin) throw new ForbiddenException('Accès réservé au Super Admin.');
+
+    const targetUser = await this.prisma.withoutTenantScope(async (c) =>
+      c.user.findUnique({ where: { id: targetUserId }, include: { tenant: true } })
+    );
+
+    if (!targetUser) throw new NotFoundException('Collaborateur introuvable.');
+
+    if (targetUser.tenant.code !== 'SAAS-GLOBAL') {
+      throw new ForbiddenException('Cette action est réservée aux membres de l\'équipe système.');
+    }
+
+    const data: any = {};
+    if (dto.fullName) data.fullName = dto.fullName;
+    if (dto.phone) data.phone = dto.phone;
+
+    if (dto.email) {
+      const normalizedEmail = dto.email.toLowerCase().trim();
+      if (normalizedEmail !== targetUser.email) {
+        const existing = await this.prisma.withoutTenantScope(async (c) =>
+          c.user.findFirst({ where: { email: normalizedEmail } })
+        );
+        if (existing) throw new ConflictException('Cet email est déjà utilisé.');
+        data.email = normalizedEmail;
+      }
+    }
+
+    await this.prisma.withoutTenantScope(async (c) =>
+      c.user.update({ where: { id: targetUserId }, data })
+    );
+
+    await this.auditLogService.record({
+      action: 'SUPER_ADMIN_COLLABORATOR_UPDATED',
+      resourceType: 'USER',
+      resourceId: targetUserId,
+      result: 'SUCCESS',
+      metadata: { targetEmail: targetUser.email, updatedFields: Object.keys(data) }
+    });
+
+    return { success: true, message: 'Collaborateur mis à jour avec succès.' };
   }
 }

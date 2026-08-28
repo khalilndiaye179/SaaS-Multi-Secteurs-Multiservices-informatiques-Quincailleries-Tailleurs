@@ -117,6 +117,63 @@ export class AuthService {
         });
       }
 
+      // --- Assigner toutes les permissions ADMIN_TENANT ---
+      // On récupère toutes les permissions globales + celles du secteur
+      const adminPerms = await tx.permission.findMany({
+        where: {
+          OR: [
+            { sectorType: dto.sectorType as any },
+            { sectorType: null },
+          ],
+        },
+      });
+      if (adminPerms.length > 0) {
+        // upsert-safe : on ignore les doublons
+        await tx.rolePermission.createMany({
+          data: adminPerms.map(p => ({ roleId: adminRole!.id, permissionId: p.id })),
+          skipDuplicates: true,
+        });
+      }
+
+      // --- Créer les rôles collaborateurs par défaut selon le secteur ---
+      const defaultRolesBySector: Record<string, Array<{ name: string; description: string; perms: string[] }>> = {
+        [SectorType.QUINCAILLERIE]: [
+          { name: 'CAISSIER',     description: 'Gestion des ventes et de la caisse',      perms: ['sales:read', 'sales:write', 'stock:read'] },
+          { name: 'MAGASINIER',   description: 'Gestion des stocks et inventaires',        perms: ['stock:read', 'stock:write'] },
+        ],
+        [SectorType.MULTISERVICES_IT]: [
+          { name: 'TECHNICIEN',      description: 'Réparation et gestion des tickets',    perms: ['tickets:read', 'tickets:write'] },
+          { name: 'RECEPTIONNISTE',  description: 'Accueil client et création de tickets', perms: ['tickets:read'] },
+        ],
+        [SectorType.TAILLEUR]: [
+          { name: 'COUTURIER',   description: 'Confection et suivi des commandes',         perms: ['measurements:read', 'orders:read', 'orders:write'] },
+          { name: 'COMMERCIAL',  description: 'Prise de mesures et relation client',       perms: ['measurements:read', 'measurements:write', 'orders:read', 'orders:write'] },
+        ],
+      };
+
+      const sectorRoles = defaultRolesBySector[dto.sectorType] || [];
+      for (const roleDef of sectorRoles) {
+        const existingCollab = await tx.role.findFirst({
+          where: { tenantId: tenant.id, name: roleDef.name },
+        });
+        if (!existingCollab) {
+          const newRole = await tx.role.create({
+            data: { tenantId: tenant.id, name: roleDef.name, description: roleDef.description },
+          });
+          // Attacher les permissions disponibles
+          const collabPerms = await tx.permission.findMany({
+            where: { code: { in: roleDef.perms } },
+          });
+          if (collabPerms.length > 0) {
+            await tx.rolePermission.createMany({
+              data: collabPerms.map(p => ({ roleId: newRole.id, permissionId: p.id })),
+              skipDuplicates: true,
+            });
+          }
+        }
+      }
+
+
       const user = await tx.user.create({
         data: {
           tenantId: tenant.id,

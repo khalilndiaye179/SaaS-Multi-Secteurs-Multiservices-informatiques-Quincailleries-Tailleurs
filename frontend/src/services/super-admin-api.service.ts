@@ -77,6 +77,7 @@ export interface TeamCollaboratorData {
   id: string;
   fullName: string;
   email: string;
+  phone?: string;
   isActive: boolean;
   roles: string[];
   createdAt: string;
@@ -279,6 +280,19 @@ export class SuperAdminApiService {
   static async disableCollaborator2FA(userId: string) {
     return ApiClient.post(`/api/super-admin/team/${userId}/disable-2fa`, {});
   }
+
+  static async deleteCollaborator(userId: string): Promise<any> {
+    return ApiClient.delete(`/api/super-admin/team/${userId}`);
+  }
+
+  static async resetCollaboratorPassword(userId: string): Promise<{ success: boolean; newPassword?: string; message: string }> {
+    return ApiClient.post(`/api/super-admin/team/${userId}/reset-password`, {});
+  }
+
+  static async updateCollaborator(userId: string, payload: { fullName?: string; email?: string; phone?: string }): Promise<any> {
+    return ApiClient.patch(`/api/super-admin/team/${userId}`, payload);
+  }
+
 
   static async getEnforce2fa(): Promise<{ enforce2FA: boolean }> {
     return ApiClient.get('/api/super-admin/settings/enforce-2fa');

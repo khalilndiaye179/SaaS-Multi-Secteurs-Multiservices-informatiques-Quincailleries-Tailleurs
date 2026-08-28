@@ -16,6 +16,14 @@ export const TenantSettings: React.FC<Props> = ({ tenantName, tenantCode, sector
   const [enableTva, setEnableTva] = useState(true);
   const [tvaRate, setTvaRate] = useState(18);
   const [logoSvg, setLogoSvg] = useState('');
+  const [bankName, setBankName] = useState('');
+  const [bankAccountName, setBankAccountName] = useState('');
+  const [bankCode, setBankCode] = useState('');
+  const [bankGuichet, setBankGuichet] = useState('');
+  const [bankAccountNumber, setBankAccountNumber] = useState('');
+  const [bankRibKey, setBankRibKey] = useState('');
+  const [bankIban, setBankIban] = useState('');
+  const [bankSwift, setBankSwift] = useState('');
   const [savedMsg, setSavedMsg] = useState('');
 
   // Clé d'isolation par tenant (ex: kpsy_company_settings_QNC-0001-01)
@@ -34,6 +42,14 @@ export const TenantSettings: React.FC<Props> = ({ tenantName, tenantCode, sector
         setEnableTva(saved.enableTva ?? true);
         setTvaRate(saved.tvaRate || 18);
         setLogoSvg(saved.logoSvg || '');
+        setBankName(saved.bankName || '');
+        setBankAccountName(saved.bankAccountName || '');
+        setBankCode(saved.bankCode || '');
+        setBankGuichet(saved.bankGuichet || '');
+        setBankAccountNumber(saved.bankAccountNumber || '');
+        setBankRibKey(saved.bankRibKey || '');
+        setBankIban(saved.bankIban || '');
+        setBankSwift(saved.bankSwift || '');
       } catch (e) {
         console.error(e);
       }
@@ -46,6 +62,14 @@ export const TenantSettings: React.FC<Props> = ({ tenantName, tenantCode, sector
       setEnableTva(true);
       setTvaRate(18);
       setLogoSvg('');
+      setBankName('');
+      setBankAccountName('');
+      setBankCode('');
+      setBankGuichet('');
+      setBankAccountNumber('');
+      setBankRibKey('');
+      setBankIban('');
+      setBankSwift('');
     }
   }, [tenantCode]);
 
@@ -61,6 +85,14 @@ export const TenantSettings: React.FC<Props> = ({ tenantName, tenantCode, sector
       enableTva,
       tvaRate,
       logoSvg,
+      bankName,
+      bankAccountName,
+      bankCode,
+      bankGuichet,
+      bankAccountNumber,
+      bankRibKey,
+      bankIban,
+      bankSwift,
     };
 
     localStorage.setItem(settingsStorageKey, JSON.stringify(settings));
@@ -171,6 +203,91 @@ export const TenantSettings: React.FC<Props> = ({ tenantName, tenantCode, sector
               placeholder="ex: NINEA: 001234567 2V3 / RCCM: SN-DKR-2026-B-1234"
               style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid var(--border-color)', fontWeight: 600 }}
             />
+          </div>
+
+          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 14, marginTop: 10 }}>
+            <h4 style={{ margin: '0 0 10px 0', fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-main)' }}>🏦 Coordonnées Bancaires (RIB)</h4>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+              <div>
+                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>Nom de la Banque</label>
+                <input
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  placeholder="ex: CORIS BANK INTERNATIONAL"
+                  style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid var(--border-color)', fontSize: '0.8rem' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>Titulaire du Compte</label>
+                <input
+                  value={bankAccountName}
+                  onChange={(e) => setBankAccountName(e.target.value)}
+                  placeholder="ex: AL AMINE BRAIN TECH"
+                  style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid var(--border-color)', fontSize: '0.8rem' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 10 }}>
+              <div>
+                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>Code Banque</label>
+                <input
+                  value={bankCode}
+                  onChange={(e) => setBankCode(e.target.value)}
+                  placeholder="SN213"
+                  style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid var(--border-color)', fontSize: '0.8rem', textAlign: 'center' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>Code Guichet</label>
+                <input
+                  value={bankGuichet}
+                  onChange={(e) => setBankGuichet(e.target.value)}
+                  placeholder="01012"
+                  style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid var(--border-color)', fontSize: '0.8rem', textAlign: 'center' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>N° de Compte</label>
+                <input
+                  value={bankAccountNumber}
+                  onChange={(e) => setBankAccountNumber(e.target.value)}
+                  placeholder="007870024101"
+                  style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid var(--border-color)', fontSize: '0.8rem' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>Clé RIB</label>
+                <input
+                  value={bankRibKey}
+                  onChange={(e) => setBankRibKey(e.target.value)}
+                  placeholder="03"
+                  style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid var(--border-color)', fontSize: '0.8rem', textAlign: 'center' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div>
+                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>Code IBAN</label>
+                <input
+                  value={bankIban}
+                  onChange={(e) => setBankIban(e.target.value)}
+                  placeholder="ex: SN21 3010 1200 7870 0241 0103"
+                  style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid var(--border-color)', fontSize: '0.8rem' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>Code SWIFT / BIC</label>
+                <input
+                  value={bankSwift}
+                  onChange={(e) => setBankSwift(e.target.value)}
+                  placeholder="ex: CORISNDA"
+                  style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid var(--border-color)', fontSize: '0.8rem' }}
+                />
+              </div>
+            </div>
           </div>
         </div>
 

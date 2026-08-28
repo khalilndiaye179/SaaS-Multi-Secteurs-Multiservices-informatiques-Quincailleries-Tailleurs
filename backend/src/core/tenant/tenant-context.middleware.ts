@@ -30,6 +30,7 @@ export class TenantContextMiddleware implements NestMiddleware {
           isSuperAdmin,
           isSystemContext: false,
         };
+        (req as any).user = store;
       } catch (err) {
         // Token invalide ou expiré, le store reste vide
       }

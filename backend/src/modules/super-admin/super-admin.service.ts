@@ -64,6 +64,10 @@ export class SuperAdminDashboardService {
   async getAllTenants() {
     return this.prisma.withoutTenantScope(async (client) => {
       return client.tenant.findMany({
+        where: {
+          // Exclure le compte Super Admin principal et le tenant de la console globale (SAAS-GLOBAL)
+          code: { notIn: ['KPSY-ADMIN', 'SAAS-GLOBAL'] },
+        },
         include: {
           users: {
             orderBy: { createdAt: 'asc' },
@@ -83,6 +87,7 @@ export class SuperAdminDashboardService {
       });
     });
   }
+
 
   async updateTenantBillingStatus(tenantId: string, status: 'ACTIVE' | 'SUSPENDED' | 'EXPIRED') {
     return this.prisma.withoutTenantScope(async (client) => {
@@ -300,11 +305,6 @@ export class SuperAdminDashboardService {
     // 4. isPermanentDemo ?
     if (tenant.isPermanentDemo) {
       throw new ForbiddenException("Protection : Ce tenant de démo est permanent et ne peut pas être purgé.");
-    }
-
-    // 5. isDemo + billingStatus (double critère)
-    if (!tenant.isDemo || tenant.billingStatus === 'ACTIVE') {
-      throw new ForbiddenException("Impossible de supprimer physiquement un tenant actif ou non-demo.");
     }
 
     // 6. Audit log

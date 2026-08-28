@@ -35,23 +35,28 @@ export class PermissionsGuard implements CanActivate {
     }
 
     // Récupérer les rôles et permissions de l'utilisateur
-    const user = await this.prisma.user.findUnique({
-      where: { id: store.userId },
-      include: {
-        userRoles: {
-          include: {
-            role: {
-              include: {
-                rolePermissions: {
-                  include: {
-                    permission: true,
+    // On utilise withoutTenantScope pour bypasser le RLS sur la table `roles`
+    // (qui est activé mais n'a pas app.current_tenant_id dispo dans la sous-transaction).
+    // La vérification des droits reste applicative (jamais de bypass d'autorisation).
+    const user = await this.prisma.withoutTenantScope(async (prisma) => {
+      return prisma.user.findUnique({
+        where: { id: store.userId },
+        include: {
+          userRoles: {
+            include: {
+              role: {
+                include: {
+                  rolePermissions: {
+                    include: {
+                      permission: true,
+                    },
                   },
                 },
               },
             },
           },
         },
-      },
+      });
     });
 
     if (!user) {

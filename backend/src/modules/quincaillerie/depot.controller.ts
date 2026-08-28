@@ -5,7 +5,7 @@ import { SectorPermissionGuard } from '../../core/guards/sector-permission.guard
 import { PermissionsGuard } from '../../core/guards/permissions.guard';
 import { RequirePermissions } from '../../core/guards/require-permissions.decorator';
 
-@Controller('api/quincaillerie/depots')
+@Controller('quincaillerie/depots')
 @UseGuards(SectorPermissionGuard, PermissionsGuard)
 export class DepotController {
   constructor(private readonly depotService: DepotService) {}

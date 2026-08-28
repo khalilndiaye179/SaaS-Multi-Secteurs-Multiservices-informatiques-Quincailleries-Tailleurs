@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { SuperAdminTeamService } from './super-admin-team.service';
 import { CreateCollaboratorDto, UpdateCollaboratorRoleDto } from './dto/super-admin-team.dto';
 import { SuperAdminGuard } from '../../core/guards/super-admin.guard';
@@ -47,5 +47,20 @@ export class SuperAdminTeamController {
   @UseGuards(SuperAdminGuard)
   async disable2fa(@Param('userId') userId: string) {
     return this.teamService.disable2fa(userId);
+  }
+
+  @Delete(':userId')
+  @UseGuards(SuperAdminGuard)
+  async deleteCollaborator(@Param('userId') userId: string) {
+    return this.teamService.deleteCollaborator(userId);
+  }
+
+  @Patch(':userId')
+  @UseGuards(SuperAdminGuard)
+  async updateCollaborator(
+    @Param('userId') userId: string,
+    @Body() dto: { fullName?: string; email?: string; phone?: string },
+  ) {
+    return this.teamService.updateCollaborator(userId, dto);
   }
 }

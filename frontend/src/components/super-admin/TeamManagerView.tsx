@@ -19,6 +19,12 @@ export const TeamManagerView: React.FC<Props> = ({ themeColor = '#312E81' }) => 
   const [invitePassword, setInvitePassword] = useState('');
   const [inviteRole, setInviteRole] = useState('FINANCE');
 
+  // États pour l'édition d'un collaborateur
+  const [editingCollab, setEditingCollab] = useState<TeamCollaboratorData | null>(null);
+  const [editFullName, setEditFullName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+
   useEffect(() => {
     fetchTeam();
   }, []);
@@ -106,8 +112,58 @@ export const TeamManagerView: React.FC<Props> = ({ themeColor = '#312E81' }) => 
     }
   };
 
+  const handleDelete = async (userId: string, fullName: string) => {
+    if (window.confirm(`⚠️ DANGER : Voulez-vous vraiment SUPPRIMER définitivement le collaborateur "${fullName}" ?\n\nCette action supprimera également toutes ses relations et est irréversible.`)) {
+      try {
+        await SuperAdminApiService.deleteCollaborator(userId);
+        alert('Collaborateur supprimé avec succès.');
+        fetchTeam();
+      } catch (err: any) {
+        alert(`Échec de la suppression : ${err.message}`);
+      }
+    }
+  };
+
+  const handleResetPassword = async (userId: string, fullName: string) => {
+    if (window.confirm(`🔑 Réinitialiser les accès : Voulez-vous générer un nouveau mot de passe temporaire pour "${fullName}" ?`)) {
+      try {
+        const res = await SuperAdminApiService.resetCollaboratorPassword(userId);
+        alert(`✅ Succès !\n\nNouveau mot de passe temporaire : ${res.newPassword}\n\nVeuillez le copier et le transmettre de manière sécurisée au collaborateur. Il devra le modifier à sa prochaine connexion.`);
+        fetchTeam();
+      } catch (err: any) {
+        alert(`Échec de la réinitialisation : ${err.message}`);
+      }
+    }
+  };
+
+  const handleOpenEdit = (collab: TeamCollaboratorData) => {
+    setEditingCollab(collab);
+    setEditFullName(collab.fullName);
+    setEditEmail(collab.email);
+    setEditPhone(collab.phone || '');
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCollab) return;
+    try {
+      await SuperAdminApiService.updateCollaborator(editingCollab.id, {
+        fullName: editFullName,
+        email: editEmail,
+        phone: editPhone,
+      });
+      alert('Collaborateur mis à jour avec succès.');
+      setEditingCollab(null);
+      fetchTeam();
+    } catch (err: any) {
+      alert(`Échec de la mise à jour : ${err.message}`);
+    }
+  };
+
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>Chargement des collaborateurs...</div>;
-  if (error?.includes('403')) return <ForbiddenState message="Seul le rôle SUPER_ADMIN est autorisé à gérer l'équipe d'administration." />;
+  if (error?.includes('403')) return <ForbiddenState message="Seul le rôle SUPER_ADMIN is autorisé à gérer l'équipe d'administration." />;
+
+  const currentUser = JSON.parse(localStorage.getItem('kpsy_user') || '{}');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -207,6 +263,7 @@ export const TeamManagerView: React.FC<Props> = ({ themeColor = '#312E81' }) => 
             <tr style={{ background: 'var(--bg-main)', borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
               <th style={{ padding: '14px 20px' }}>Nom Complète</th>
               <th style={{ padding: '14px 20px' }}>Email</th>
+              <th style={{ padding: '14px 20px' }}>Téléphone</th>
               <th style={{ padding: '14px 20px' }}>Rôles</th>
               <th style={{ padding: '14px 20px' }}>2FA</th>
               <th style={{ padding: '14px 20px' }}>Statut</th>
@@ -214,61 +271,187 @@ export const TeamManagerView: React.FC<Props> = ({ themeColor = '#312E81' }) => 
             </tr>
           </thead>
           <tbody>
-            {team.map((u) => (
-              <tr key={u.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                <td style={{ padding: '14px 20px', fontWeight: 600 }}>{u.fullName}</td>
-                <td style={{ padding: '14px 20px' }}>{u.email}</td>
-                <td style={{ padding: '14px 20px' }}>
-                  {u.roles.map((r) => (
-                    <span key={r} style={{ padding: '2px 8px', background: '#EEF2FF', color: '#3730A3', borderRadius: 4, fontSize: 12, fontWeight: 600, marginRight: 6 }}>
-                      {r}
+            {team.map((u) => {
+              const isSelf = currentUser?.id === u.id;
+              return (
+                <tr key={u.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                  <td style={{ padding: '14px 20px', fontWeight: 600 }}>{u.fullName}</td>
+                  <td style={{ padding: '14px 20px' }}>{u.email}</td>
+                  <td style={{ padding: '14px 20px' }}>{u.phone || 'Non renseigné'}</td>
+                  <td style={{ padding: '14px 20px' }}>
+                    {u.roles.map((r) => (
+                      <span key={r} style={{ padding: '2px 8px', background: '#EEF2FF', color: '#3730A3', borderRadius: 4, fontSize: 12, fontWeight: 600, marginRight: 6 }}>
+                        {r}
+                      </span>
+                    ))}
+                  </td>
+                  <td style={{ padding: '14px 20px' }}>
+                    {u.totpEnabled ? (
+                      <span style={{ color: '#16A34A', fontWeight: 700, fontSize: 12 }}>Activé</span>
+                    ) : (
+                      <span style={{ color: '#DC2626', fontWeight: 700, fontSize: 12 }}>Désactivé</span>
+                    )}
+                  </td>
+                  <td style={{ padding: '14px 20px' }}>
+                    <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: u.isActive ? '#DCFCE7' : '#FEE2E2', color: u.isActive ? '#166534' : '#991B1B' }}>
+                      {u.isActive ? 'ACTIF' : 'DÉSACTIVÉ'}
                     </span>
-                  ))}
-                </td>
-                <td style={{ padding: '14px 20px' }}>
-                  {u.totpEnabled ? (
-                    <span style={{ color: '#16A34A', fontWeight: 700, fontSize: 12 }}>Activé</span>
-                  ) : (
-                    <span style={{ color: '#DC2626', fontWeight: 700, fontSize: 12 }}>Désactivé</span>
-                  )}
-                </td>
-                <td style={{ padding: '14px 20px' }}>
-                  <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: u.isActive ? '#DCFCE7' : '#FEE2E2', color: u.isActive ? '#166534' : '#991B1B' }}>
-                    {u.isActive ? 'ACTIF' : 'DÉSACTIVÉ'}
-                  </span>
-                </td>
-                <td style={{ padding: '14px 20px', textAlign: 'right', display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                  <select
-                    value={u.roles[0] || ''}
-                    onChange={(e) => handleUpdateRole(u.id, e.target.value)}
-                    style={{ padding: '6px', borderRadius: 4, fontSize: 12, border: '1px solid var(--border-color)' }}
-                  >
-                    <option value="SUPER_ADMIN">SUPER_ADMIN</option>
-                    <option value="FINANCE">FINANCE</option>
-                    <option value="SUPPORT">SUPPORT</option>
-                    <option value="TECHNIQUE">TECHNIQUE</option>
-                  </select>
-                  <button
-                    onClick={() => handleToggleStatus(u.id, u.isActive)}
-                    style={{ padding: '6px 12px', background: u.isActive ? '#EF4444' : '#10B981', color: 'var(--text-inverse)', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-                  >
-                    {u.isActive ? 'Désactiver' : 'Activer'}
-                  </button>
-                  {u.totpEnabled && (
+                  </td>
+                  <td style={{ padding: '14px 20px', textAlign: 'right', display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap', alignItems: 'center' }}>
+                    {/* Modification Rôle */}
+                    <select
+                      value={u.roles[0] || ''}
+                      onChange={(e) => handleUpdateRole(u.id, e.target.value)}
+                      style={{ padding: '6px', borderRadius: 4, fontSize: 12, border: '1px solid var(--border-color)', height: 32 }}
+                    >
+                      <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                      <option value="FINANCE">FINANCE</option>
+                      <option value="SUPPORT">SUPPORT</option>
+                      <option value="TECHNIQUE">TECHNIQUE</option>
+                    </select>
+
+                    {/* Activation / Désactivation Statut */}
+                    <button
+                      onClick={() => handleToggleStatus(u.id, u.isActive)}
+                      disabled={isSelf}
+                      style={{
+                        padding: '6px 12px',
+                        background: u.isActive ? '#EF4444' : '#10B981',
+                        color: 'var(--text-inverse)',
+                        border: 'none',
+                        borderRadius: 6,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: isSelf ? 'not-allowed' : 'pointer',
+                        opacity: isSelf ? 0.6 : 1,
+                        height: 32
+                      }}
+                      title={isSelf ? "Vous ne pouvez pas vous désactiver vous-même" : ""}
+                    >
+                      {u.isActive ? 'Suspendre' : 'Activer'}
+                    </button>
+
+                    {/* Modifier les Coordonnées */}
+                    <button
+                      onClick={() => handleOpenEdit(u)}
+                      style={{ padding: '6px 12px', background: '#3B82F6', color: 'white', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', height: 32 }}
+                    >
+                      ✏️ Edit
+                    </button>
+
+                    {/* Réinitialiser les accès */}
+                    <button
+                      onClick={() => handleResetPassword(u.id, u.fullName)}
+                      style={{ padding: '6px 12px', background: '#F59E0B', color: 'white', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', height: 32 }}
+                      title="Générer un mot de passe temporaire"
+                    >
+                      🔑 Accès
+                    </button>
+
+                    {/* Urgence Désactiver 2FA */}
                     <button
                       onClick={() => handleDisable2FA(u.id)}
-                      style={{ padding: '6px 12px', background: '#FEF2F2', color: '#B91C1C', border: '1px solid #FCA5A5', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-                      title="Désactiver le 2FA de ce compte en urgence"
+                      disabled={!u.totpEnabled}
+                      style={{
+                        padding: '6px 12px',
+                        background: '#FEF2F2',
+                        color: u.totpEnabled ? '#B91C1C' : '#9CA3AF',
+                        border: '1px solid ' + (u.totpEnabled ? '#FCA5A5' : '#E5E7EB'),
+                        borderRadius: 6,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: u.totpEnabled ? 'pointer' : 'not-allowed',
+                        opacity: u.totpEnabled ? 1 : 0.6,
+                        height: 32
+                      }}
+                      title={u.totpEnabled ? "Désactiver le 2FA de ce compte en urgence" : "Le 2FA n'est pas activé"}
                     >
-                      Désactiver 2FA
+                      🔓 2FA
                     </button>
-                  )}
-                </td>
-              </tr>
-            ))}
+
+                    {/* Suppression définitive */}
+                    <button
+                      onClick={() => handleDelete(u.id, u.fullName)}
+                      disabled={isSelf}
+                      style={{
+                        padding: '6px 12px',
+                        background: '#991B1B',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 6,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: isSelf ? 'not-allowed' : 'pointer',
+                        opacity: isSelf ? 0.6 : 1,
+                        height: 32
+                      }}
+                      title={isSelf ? "Vous ne pouvez pas vous supprimer vous-même" : "Supprimer définitivement de la console"}
+                    >
+                      🗑️ Supprimer
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
+
+      {/* ─── MODAL MODIFIER COLLABORATEUR ─── */}
+      {editingCollab && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+        }}>
+          <form onSubmit={handleSaveEdit} style={{ background: 'var(--bg-card)', padding: 28, borderRadius: 16, width: '100%', maxWidth: 480, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+            <h3 style={{ margin: '0 0 16px 0', fontFamily: "'Sora', sans-serif", fontWeight: 800 }}>✏️ Modifier les Coordonnées du Collaborateur</h3>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Nom complet</label>
+                <input
+                  type="text"
+                  required
+                  value={editFullName}
+                  onChange={(e) => setEditFullName(e.target.value)}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid var(--border-color)' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Téléphone</label>
+                <input
+                  type="text"
+                  required
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid var(--border-color)' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Email</label>
+                <input
+                  type="email"
+                  required
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid var(--border-color)' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 24 }}>
+              <button type="button" onClick={() => setEditingCollab(null)} style={{ padding: '9px 16px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-card)', fontWeight: 700, cursor: 'pointer' }}>
+                Annuler
+              </button>
+              <button type="submit" style={{ padding: '9px 16px', borderRadius: 8, border: 'none', background: themeColor, color: 'var(--text-inverse)', fontWeight: 800, cursor: 'pointer' }}>
+                Enregistrer
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

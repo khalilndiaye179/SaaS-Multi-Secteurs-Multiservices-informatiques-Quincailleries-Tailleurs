@@ -38,6 +38,7 @@ export const QuincaillerieStockManager: React.FC<Props> = ({ themeColor, onStock
   const [quantity, setQuantity] = useState(50);
   const [alertThreshold, setAlertThreshold] = useState(10);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [articleDepotId, setArticleDepotId] = useState('');
 
   // Transfer states
   const [transferItemId, setTransferItemId] = useState('');
@@ -101,25 +102,38 @@ export const QuincaillerieStockManager: React.FC<Props> = ({ themeColor, onStock
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await fetch('/api/quincaillerie/stock', {
-        method: 'POST',
+      const url = editingItemId ? `/api/quincaillerie/stock/${editingItemId}` : '/api/quincaillerie/stock';
+      const method = editingItemId ? 'PUT' : 'POST';
+      
+      const payload: any = {
+        name,
+        sku,
+        unit,
+        purchasePrice,
+        sellingPrice,
+        alertThreshold,
+      };
+
+      if (!editingItemId) {
+        payload.quantity = quantity;
+        payload.depotId = articleDepotId;
+      }
+
+      const res = await fetch(url, {
+        method,
         headers,
-        body: JSON.stringify({
-          name,
-          sku,
-          unit,
-          purchasePrice,
-          sellingPrice,
-          quantity,
-          alertThreshold,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
         setShowModal(false);
         setName('');
         setSku('');
+        setArticleDepotId('');
         fetchStock();
+      } else {
+        const err = await res.json();
+        alert(err.message || "Erreur lors de l'enregistrement de l'article.");
       }
     } catch (e) {
       console.error(e);
@@ -142,7 +156,7 @@ export const QuincaillerieStockManager: React.FC<Props> = ({ themeColor, onStock
         body: JSON.stringify({
           stockItemId: transferItemId,
           sourceDepotId,
-          targetDepotId,
+          destinationDepotId: targetDepotId,
           quantity: transferQuantity
         })
       });
@@ -310,7 +324,7 @@ export const QuincaillerieStockManager: React.FC<Props> = ({ themeColor, onStock
         )}
       </div>
 
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Ajouter un Article au Stock">
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editingItemId ? "Modifier l'Article" : "Ajouter un Article au Stock"}>
         <form onSubmit={handleCreateArticle} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>
@@ -379,19 +393,21 @@ export const QuincaillerieStockManager: React.FC<Props> = ({ themeColor, onStock
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>
-                Quantité Initiale
-              </label>
-              <input
-                type="number"
-                required
-                value={quantity}
-                onChange={(e) => setQuantity(Number(e.target.value))}
-                style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid var(--border-color)' }}
-              />
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: editingItemId ? '1fr' : '1fr 1fr', gap: 10 }}>
+            {!editingItemId && (
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>
+                  Quantité Initiale
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={quantity}
+                  onChange={(e) => setQuantity(Number(e.target.value))}
+                  style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid var(--border-color)' }}
+                />
+              </div>
+            )}
             <div>
               <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>
                 Seuil Alerte
@@ -405,6 +421,25 @@ export const QuincaillerieStockManager: React.FC<Props> = ({ themeColor, onStock
               />
             </div>
           </div>
+
+          {!editingItemId && (
+            <div>
+              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>
+                Dépôt d'Affectation Initial *
+              </label>
+              <select
+                required
+                value={articleDepotId}
+                onChange={(e) => setArticleDepotId(e.target.value)}
+                style={{ width: '100%', padding: '10px', borderRadius: 8, border: '1px solid var(--border-color)' }}
+              >
+                <option value="">Sélectionner un dépôt</option>
+                {depots.map(d => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <button
             type="submit"
