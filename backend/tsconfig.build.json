@@ -17,5 +17,5 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false
   },
-  "exclude": ["node_modules", "test", "dist", "**/*spec.ts", "prisma", "scripts"]
+  "exclude": ["node_modules", "test", "dist", "**/*spec.ts", "prisma", "scripts", "prisma/seed-rbac.ts", "scripts/check-tenant-scoping.ts"]
 }
