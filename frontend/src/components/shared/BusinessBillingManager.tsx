@@ -1,3 +1,4 @@
+import { StorageService } from '../../services/storage';
 import React, { useState, useEffect } from 'react';
 import { Modal } from './Modal';
 import { DocumentPrintModal } from './DocumentPrintModal';
@@ -180,7 +181,9 @@ export const BusinessBillingManager: React.FC<Props> = ({ sector, themeColor }) 
   const [applyVat, setApplyVat] = useState(false);
   const [validityDuration, setValidityDuration] = useState('30');
 
-  const token = localStorage.getItem('kpsy_token');
+  let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
   const headers = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${token}`,

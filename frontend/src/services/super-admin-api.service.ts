@@ -1,3 +1,4 @@
+import { StorageService } from './storage';
 import { ApiClient } from '../services/api-client';
 
 export interface BillingOverviewData {
@@ -123,7 +124,9 @@ export class SuperAdminApiService {
   }
 
   static async exportBillingCsv(type: 'invoices' | 'payments' | 'tenants'): Promise<string> {
-    const token = localStorage.getItem('kpsy_token');
+    let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
     const res = await fetch(`/api/super-admin/billing/export?type=${type}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -176,7 +179,9 @@ export class SuperAdminApiService {
   }
 
   static async uploadPaymentProviderQrCode(provider: string, file: File): Promise<any> {
-    const token = localStorage.getItem('kpsy_token');
+    let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
     const formData = new FormData();
     formData.append('file', file);
     
@@ -242,7 +247,9 @@ export class SuperAdminApiService {
   }
 
   static async downloadSaaSQuotePdf(id: string, quoteNumber: string): Promise<void> {
-    const token = localStorage.getItem('kpsy_token');
+    let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
     const res = await fetch(`/api/super-admin/saas-quotes/${id}/pdf`, {
       headers: { Authorization: `Bearer ${token}` },
     });

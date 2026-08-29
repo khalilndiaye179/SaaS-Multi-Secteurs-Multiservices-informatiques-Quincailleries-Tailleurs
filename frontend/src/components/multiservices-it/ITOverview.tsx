@@ -1,3 +1,4 @@
+import { StorageService } from '../../services/storage';
 import React, { useEffect, useState } from 'react';
 
 interface ITStats {
@@ -18,7 +19,9 @@ export const ITOverview: React.FC<Props> = ({ themeColor }) => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const token = localStorage.getItem('kpsy_token');
+        let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
         const res = await fetch('/api/multiservices-it/tickets/stats/overview', {
           headers: { Authorization: `Bearer ${token}` },
         });

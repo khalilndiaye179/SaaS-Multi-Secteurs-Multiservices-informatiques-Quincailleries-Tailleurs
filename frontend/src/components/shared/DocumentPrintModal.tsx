@@ -1,3 +1,4 @@
+import { StorageService } from '../../services/storage';
 import React, { useState } from 'react';
 import { Modal } from './Modal';
 import { normalizeSenegalPhone } from '../../utils/phone.util';
@@ -143,7 +144,7 @@ export const DocumentPrintModal: React.FC<DocumentPrintModalProps> = ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('kpsy_token')}`,
+          Authorization: `Bearer ${await StorageService.get('kpsy_token')}`,
         },
         body: JSON.stringify({
           documentType,

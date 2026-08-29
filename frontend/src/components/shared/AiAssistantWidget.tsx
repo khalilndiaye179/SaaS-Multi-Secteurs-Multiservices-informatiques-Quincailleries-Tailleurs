@@ -1,3 +1,4 @@
+import { StorageService } from '../../services/storage';
 import React, { useState, useEffect } from 'react';
 
 interface Props {
@@ -59,7 +60,7 @@ export const AiAssistantWidget: React.FC<Props> = ({ themeColor, sectorType }) =
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('kpsy_token') || localStorage.getItem('accessToken') || localStorage.getItem('token');
+      const token = await StorageService.get('kpsy_token') || localStorage.getItem('accessToken') || localStorage.getItem('token');
       const res = await fetch('/api/ai-assistant/chat', {
         method: 'POST',
         headers: {

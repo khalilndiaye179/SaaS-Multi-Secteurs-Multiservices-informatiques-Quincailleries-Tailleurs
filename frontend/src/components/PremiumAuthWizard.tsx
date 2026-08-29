@@ -1,3 +1,4 @@
+import { StorageService } from '../services/storage';
 import React, { useState } from 'react';
 
 export enum SectorType {
@@ -366,7 +367,7 @@ export const PremiumAuthWizard: React.FC = () => {
         password: formData.password 
       }, true);
 
-      localStorage.setItem('kpsy_token', data.accessToken);
+      await StorageService.set('kpsy_token', data.accessToken);
       localStorage.setItem('kpsy_user', JSON.stringify(data.user));
       if (data.tenant) {
         localStorage.setItem('kpsy_tenant', JSON.stringify(data.tenant));
@@ -434,7 +435,7 @@ export const PremiumAuthWizard: React.FC = () => {
       }
 
       // Stocker le token JWT
-      localStorage.setItem('kpsy_token', data.accessToken);
+      await StorageService.set('kpsy_token', data.accessToken);
       localStorage.setItem('kpsy_user', JSON.stringify(data.user));
       localStorage.setItem('kpsy_tenant', JSON.stringify(data.tenant));
 
@@ -477,7 +478,7 @@ export const PremiumAuthWizard: React.FC = () => {
       }
 
       // Stocker le token JWT
-      localStorage.setItem('kpsy_token', data.accessToken);
+      await StorageService.set('kpsy_token', data.accessToken);
       localStorage.setItem('kpsy_user', JSON.stringify(data.user));
       if (data.tenant) {
         localStorage.setItem('kpsy_tenant', JSON.stringify(data.tenant));

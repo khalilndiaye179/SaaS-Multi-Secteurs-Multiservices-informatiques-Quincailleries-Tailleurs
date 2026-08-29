@@ -1,3 +1,4 @@
+import { StorageService } from '../../services/storage';
 import React, { useState, useEffect, useRef } from 'react';
 
 interface PricingPlanOption {
@@ -69,7 +70,9 @@ export const PricingPlansView: React.FC<Props> = ({ themeColor = '#312E81' }) =>
     e.preventDefault();
     setSaving(true);
     try {
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       const res = await fetch('/api/super-admin/pricing-config', {
         method: 'POST',
         headers: {

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { StorageService } from '../services/storage';
 
 export enum SectorType {
   QUINCAILLERIE = 'QUINCAILLERIE',
@@ -104,7 +105,7 @@ export const SignupWizard: React.FC = () => {
       
       // 2. Connexion automatique
       const loginRes: any = await ApiClient.post('/api/auth/login', { identifier: formData.email, password: formData.password }, true);
-      localStorage.setItem('kpsy_token', loginRes.access_token);
+      await StorageService.set('kpsy_token', loginRes.access_token);
       localStorage.setItem('kpsy_user', JSON.stringify(loginRes.user));
       
       alert(`Compte SaaS créé avec succès ! Bienvenue ${formData.companyName}.`);

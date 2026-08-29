@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { StorageService } from './services/storage';
 import { PremiumAuthWizard } from './components/PremiumAuthWizard';
 import { SuperAdminDashboard } from './components/SuperAdminDashboard';
 import { TenantDashboard } from './components/TenantDashboard';
@@ -24,31 +25,35 @@ export function App() {
       return;
     }
 
-    const authToken = localStorage.getItem('kpsy_token');
-    const userRaw = localStorage.getItem('kpsy_user');
-    const tenantRaw = localStorage.getItem('kpsy_tenant');
-    if (authToken && userRaw) {
-      try {
-        const user = JSON.parse(userRaw);
-        const tenant = tenantRaw ? JSON.parse(tenantRaw) : {};
-        const isTeamAdmin = tenant?.code === 'SAAS-GLOBAL' || user?.roles?.includes('SUPER_ADMIN');
-        
-        // Décoder le JWT pour vérifier mustChangePassword si nécessaire ou l'utiliser depuis le payload
-        const decodedJwt = JSON.parse(atob(authToken.split('.')[1]));
-        if (decodedJwt.mustChangePassword) {
-          setShowSecuritySetup(true);
-          setCurrentUserId(user.id || decodedJwt.sub);
+    const init = async () => {
+      const authToken = await StorageService.get('kpsy_token');
+      const userRaw = localStorage.getItem('kpsy_user');
+      const tenantRaw = localStorage.getItem('kpsy_tenant');
+      if (authToken && userRaw) {
+        try {
+          const user = JSON.parse(userRaw);
+          const tenant = tenantRaw ? JSON.parse(tenantRaw) : {};
+          const isTeamAdmin = tenant?.code === 'SAAS-GLOBAL' || user?.roles?.includes('SUPER_ADMIN');
+          
+          // Décoder le JWT pour vérifier mustChangePassword si nécessaire ou l'utiliser depuis le payload
+          const decodedJwt = JSON.parse(atob(authToken.split('.')[1]));
+          if (decodedJwt.mustChangePassword) {
+            setShowSecuritySetup(true);
+            setCurrentUserId(user.id || decodedJwt.sub);
+          }
+          
+          setView(isTeamAdmin ? 'super-admin' : 'dashboard');
+        } catch {
+          localStorage.clear();
         }
-        
-        setView(isTeamAdmin ? 'super-admin' : 'dashboard');
-      } catch {
-        localStorage.clear();
       }
-    }
+    };
+    init();
+
     // Écouter l'événement de login émis par PremiumAuthWizard
-    const handleLogin = (e: CustomEvent) => {
+    const handleLogin = async (e: CustomEvent) => {
       const uRaw = localStorage.getItem('kpsy_user');
-      const tRaw = localStorage.getItem('kpsy_token');
+      const tRaw = await StorageService.get('kpsy_token');
       const tenantRaw = localStorage.getItem('kpsy_tenant');
       if (uRaw && tRaw) {
         const u = JSON.parse(uRaw);
@@ -70,8 +75,8 @@ export function App() {
     return () => window.removeEventListener('kpsy:login', handleLogin as EventListener);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('kpsy_token');
+  const handleLogout = async () => {
+    await StorageService.remove('kpsy_token');
     localStorage.removeItem('kpsy_user');
     localStorage.removeItem('kpsy_tenant');
     setView('auth');

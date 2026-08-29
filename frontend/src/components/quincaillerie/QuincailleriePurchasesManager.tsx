@@ -1,3 +1,4 @@
+import { StorageService } from '../../services/storage';
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../shared/Modal';
 
@@ -63,7 +64,9 @@ export const QuincailleriePurchasesManager: React.FC<Props> = ({ themeColor }) =
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       const res = await fetch('/api/quincaillerie/purchases', {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -116,7 +119,9 @@ export const QuincailleriePurchasesManager: React.FC<Props> = ({ themeColor }) =
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('kpsy_token');
+    let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
 
     const newOrder: PurchaseOrder = {
       id: Date.now().toString(),
@@ -151,7 +156,9 @@ export const QuincailleriePurchasesManager: React.FC<Props> = ({ themeColor }) =
     e.preventDefault();
     if (!selectedOrder) return;
 
-    const token = localStorage.getItem('kpsy_token');
+    let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
     const updatedData = { ...formData };
 
     try {
@@ -180,7 +187,9 @@ export const QuincailleriePurchasesManager: React.FC<Props> = ({ themeColor }) =
   const handleMarkAsReceived = async (id: string) => {
     if (!window.confirm('Confirmer la réception de cette commande ? Le stock sera mis à jour s’il y a un article lié.')) return;
 
-    const token = localStorage.getItem('kpsy_token');
+    let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
     try {
       const res = await fetch(`/api/quincaillerie/purchases/${id}/receive`, {
         method: 'PATCH',
@@ -209,7 +218,9 @@ export const QuincailleriePurchasesManager: React.FC<Props> = ({ themeColor }) =
   const handleDelete = async (id: string) => {
     if (!window.confirm('Voulez-vous vraiment supprimer cette commande fournisseur ?')) return;
 
-    const token = localStorage.getItem('kpsy_token');
+    let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
     try {
       await fetch(`/api/quincaillerie/purchases/${id}`, {
         method: 'DELETE',

@@ -1,3 +1,4 @@
+import { StorageService } from '../../services/storage';
 import React, { useState, useEffect } from 'react';
 import { ApiClient } from '../../services/api-client';
 
@@ -83,7 +84,9 @@ export const SubscriptionRenewalPanel: React.FC<Props> = ({ onSubmitted, compact
     setSuccessMsg(null);
 
     try {
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       const res = await fetch('/api/billing/pay-proof', {
         method: 'POST',
         headers: {

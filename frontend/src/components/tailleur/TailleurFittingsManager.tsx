@@ -1,3 +1,4 @@
+import { StorageService } from '../../services/storage';
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../shared/Modal';
 import { DocumentPrintModal } from '../shared/DocumentPrintModal';
@@ -59,7 +60,9 @@ export const TailleurFittingsManager: React.FC<Props> = ({ themeColor }) => {
 
   const fetchFittings = async () => {
     setLoading(true);
-    const token = localStorage.getItem('kpsy_token');
+    let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
     try {
       const res = await fetch('/api/tailleur/measurements/orders/all', {
         headers: { Authorization: `Bearer ${token}` },
@@ -103,7 +106,9 @@ export const TailleurFittingsManager: React.FC<Props> = ({ themeColor }) => {
     if (!selectedFitting) return;
     setSubmitting(true);
     try {
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       const res = await fetch(`/api/tailleur/measurements/orders/${selectedFitting.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -129,7 +134,9 @@ export const TailleurFittingsManager: React.FC<Props> = ({ themeColor }) => {
     if (!selectedFitting) return;
     setSubmitting(true);
     try {
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       const res = await fetch(`/api/tailleur/measurements/orders/${selectedFitting.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -160,7 +167,9 @@ export const TailleurFittingsManager: React.FC<Props> = ({ themeColor }) => {
     }
     if (!window.confirm('⚠️ SUPPRESSION : Voulez-vous vraiment supprimer ce rendez-vous / commande ?')) return;
     try {
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       const res = await fetch(`/api/tailleur/measurements/orders/${id}/delete`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },

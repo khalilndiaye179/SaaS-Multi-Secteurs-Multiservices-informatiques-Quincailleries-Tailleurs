@@ -1,3 +1,4 @@
+import { StorageService } from '../../services/storage';
 import React, { useState, useEffect } from 'react';
 
 interface Props {
@@ -104,7 +105,7 @@ export const AiInventoryAuditManager: React.FC<Props> = ({ themeColor, sectorTyp
     setLoading(true);
     setAutoOrderMsg(null);
     try {
-      const token = localStorage.getItem('kpsy_token') || localStorage.getItem('accessToken') || localStorage.getItem('token');
+      const token = await StorageService.get('kpsy_token') || localStorage.getItem('accessToken') || localStorage.getItem('token');
       const res = await fetch('/api/ai-assistant/inventory-audit', {
         method: 'POST',
         headers: {
@@ -134,7 +135,7 @@ export const AiInventoryAuditManager: React.FC<Props> = ({ themeColor, sectorTyp
   const handleGenerateAutoOrders = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('kpsy_token') || localStorage.getItem('accessToken') || localStorage.getItem('token');
+      const token = await StorageService.get('kpsy_token') || localStorage.getItem('accessToken') || localStorage.getItem('token');
       const res = await fetch('/api/ai-assistant/auto-reorder', {
         method: 'POST',
         headers: {

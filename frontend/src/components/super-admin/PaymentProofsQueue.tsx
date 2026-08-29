@@ -1,3 +1,4 @@
+import { StorageService } from '../../services/storage';
 import React, { useState, useEffect } from 'react';
 
 interface PaymentProof {
@@ -25,7 +26,9 @@ export const PaymentProofsQueue: React.FC<Props> = ({ themeColor }) => {
   const [loading, setLoading] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  const token = localStorage.getItem('kpsy_token');
+  let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 
   const fetchProofs = async () => {

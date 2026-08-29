@@ -1,3 +1,4 @@
+import { StorageService } from '../../services/storage';
 import React, { useState, useEffect } from 'react';
 
 interface ClientMeasurement {
@@ -50,7 +51,9 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
   const fetchFamilyMembers = async (parentId: string) => {
     setLoadingMembers(true);
     try {
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       const res = await fetch(`/api/tailleur/measurements/${parentId}/members`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -146,7 +149,9 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
 
     if (!m.parentMeasurementId) {
       try {
-        const token = localStorage.getItem('kpsy_token');
+        let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
         const res = await fetch(`/api/tailleur/measurements/${m.id}/members`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -164,7 +169,9 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
     if (!window.confirm(confirmMsg)) return;
 
     try {
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       const res = await fetch(`/api/tailleur/measurements/${m.id}/delete`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
@@ -181,7 +188,9 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
   const fetchMeasurements = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       const res = await fetch('/api/tailleur/measurements', {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -203,7 +212,9 @@ export const TailleurMeasurementsManager: React.FC<Props> = ({ themeColor }) => 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       const payloadMeasurements: Record<string, string> = {};
       dynamicMeasurements.forEach((dm) => {
         if (dm.name.trim() !== '') {

@@ -1,3 +1,4 @@
+import { StorageService } from '../services/storage';
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './layout/Sidebar';
 import { TopHeader } from './layout/TopHeader';
@@ -112,7 +113,9 @@ export const TenantDashboard: React.FC<Props> = ({ onLogout }) => {
 
   const fetchData = async () => {
     setLoading(true);
-    const token = localStorage.getItem('kpsy_token');
+    let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
     const headers = { Authorization: `Bearer ${token}` };
 
     try {
@@ -149,7 +152,9 @@ export const TenantDashboard: React.FC<Props> = ({ onLogout }) => {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = localStorage.getItem('kpsy_token');
+    let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
     const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 
     try {

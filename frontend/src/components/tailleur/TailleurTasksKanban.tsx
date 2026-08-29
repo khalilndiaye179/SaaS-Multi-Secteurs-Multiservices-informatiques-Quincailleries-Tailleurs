@@ -1,3 +1,4 @@
+import { StorageService } from '../../services/storage';
 import React, { useState, useEffect } from 'react';
 
 interface TailleurOrder {
@@ -45,7 +46,9 @@ export const TailleurTasksKanban: React.FC<Props> = ({ themeColor }) => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       const res = await fetch('/api/tailleur/measurements/orders/all', {
         headers: {
           'Content-Type': 'application/json',
@@ -77,7 +80,9 @@ export const TailleurTasksKanban: React.FC<Props> = ({ themeColor }) => {
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       const res = await fetch(`/api/tailleur/measurements/orders/${orderId}/status`, {
         method: 'PUT',
         headers: {

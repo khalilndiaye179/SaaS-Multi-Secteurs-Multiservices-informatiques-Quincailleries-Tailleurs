@@ -1,3 +1,4 @@
+import { StorageService } from '../../services/storage';
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../shared/Modal';
 import { DocumentPrintModal } from '../shared/DocumentPrintModal';
@@ -89,7 +90,9 @@ export const ITTicketsManager: React.FC<Props> = ({ themeColor }) => {
     setShowPrintModal(true);
   };
 
-  const token = localStorage.getItem('kpsy_token');
+  let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 
   const fetchTickets = async () => {

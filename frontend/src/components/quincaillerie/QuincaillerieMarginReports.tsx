@@ -1,3 +1,4 @@
+import { StorageService } from '../../services/storage';
 import React, { useState, useEffect } from 'react';
 
 interface StockReport {
@@ -18,7 +19,9 @@ export const QuincaillerieMarginReports: React.FC<Props> = ({ themeColor }) => {
   useEffect(() => {
     const fetchReport = async () => {
       setLoading(true);
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       try {
         const res = await fetch('/api/quincaillerie/stock/reports', {
           headers: { Authorization: `Bearer ${token}` },

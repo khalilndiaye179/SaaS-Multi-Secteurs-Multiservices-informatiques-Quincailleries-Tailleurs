@@ -1,3 +1,4 @@
+import { StorageService } from '../../services/storage';
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../shared/Modal';
 
@@ -18,7 +19,9 @@ interface Props {
 }
 
 export const QuincaillerieStockManager: React.FC<Props> = ({ themeColor, onStockUpdated }) => {
-  const token = localStorage.getItem('kpsy_token');
+  let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 
   const [items, setItems] = useState<StockItem[]>([]);

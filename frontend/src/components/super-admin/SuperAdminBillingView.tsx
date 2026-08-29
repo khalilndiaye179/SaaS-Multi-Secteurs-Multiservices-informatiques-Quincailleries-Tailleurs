@@ -1,3 +1,4 @@
+import { StorageService } from '../../services/storage';
 import React, { useState, useEffect } from 'react';
 import { SuperAdminApiService, BillingOverviewData } from '../../services/super-admin-api.service';
 import { ApiClient } from '../../services/api-client';
@@ -58,7 +59,9 @@ export const SuperAdminBillingView: React.FC<Props> = ({ themeColor = '#312E81' 
   const handleOpenManualModal = async () => {
     setIsManualModalOpen(true);
     try {
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       const [res, providers, pricingRes] = await Promise.all([
         fetch('/api/super-admin/tenants', { headers: { Authorization: `Bearer ${token}` } }),
         ApiClient.get<{provider: string, displayName: string}[]>('/api/payment-providers/active'),
@@ -102,7 +105,9 @@ export const SuperAdminBillingView: React.FC<Props> = ({ themeColor = '#312E81' 
     }
 
     try {
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       const res = await fetch(`/api/super-admin/tenants/${manualForm.tenantId}/approve-payment`, {
         method: 'PUT',
         headers: {

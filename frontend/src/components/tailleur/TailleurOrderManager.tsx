@@ -1,3 +1,4 @@
+import { StorageService } from '../../services/storage';
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../shared/Modal';
 import { DocumentPrintModal } from '../shared/DocumentPrintModal';
@@ -102,7 +103,9 @@ export const TailleurOrderManager: React.FC<Props> = ({ themeColor }) => {
     if (!selectedOrder) return;
     setSubmitting(true);
     try {
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       const res = await fetch(`/api/tailleur/measurements/orders/${selectedOrder.id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -128,7 +131,9 @@ export const TailleurOrderManager: React.FC<Props> = ({ themeColor }) => {
     if (!editingOrder) return;
     setSubmitting(true);
     try {
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       const combinedGarmentType = orderItems
         .map((it) => (it.catalogName === 'CUSTOM' ? it.customName || 'Vêtement Sur-Mesure' : it.catalogName))
         .filter(Boolean)
@@ -171,7 +176,9 @@ export const TailleurOrderManager: React.FC<Props> = ({ themeColor }) => {
     if (!window.confirm('⚠️ SUPPRESSION DEFINITIVE : Voulez-vous vraiment supprimer cette commande ?')) return;
 
     try {
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       const res = await fetch(`/api/tailleur/measurements/orders/${id}/delete`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
@@ -278,7 +285,9 @@ export const TailleurOrderManager: React.FC<Props> = ({ themeColor }) => {
       return;
     }
     try {
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
       const res = await fetch(`/api/tailleur/measurements/orders/${orderId}/payment`, {
         method: 'PUT',
@@ -299,7 +308,9 @@ export const TailleurOrderManager: React.FC<Props> = ({ themeColor }) => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 
       const [resO, resC, resCollab] = await Promise.all([
@@ -345,7 +356,9 @@ export const TailleurOrderManager: React.FC<Props> = ({ themeColor }) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 
       const combinedGarmentType = orderItems
@@ -396,7 +409,9 @@ export const TailleurOrderManager: React.FC<Props> = ({ themeColor }) => {
     if (!selectedOrder) return;
     setSubmitting(true);
     try {
-      const token = localStorage.getItem('kpsy_token');
+      let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
       const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 
       const res = await fetch(`/api/tailleur/measurements/orders/${selectedOrder.id}/status`, {

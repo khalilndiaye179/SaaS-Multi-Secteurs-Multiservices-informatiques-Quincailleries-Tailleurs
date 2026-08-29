@@ -1,3 +1,4 @@
+import { StorageService } from '../../services/storage';
 import React, { useState, useEffect } from 'react';
 import { AuthApiService } from '../../services/auth-api.service';
 import { ShieldAlert, KeyRound, Smartphone, CheckCircle2 } from 'lucide-react';
@@ -81,9 +82,9 @@ export const ForceSecuritySetupModal: React.FC<Props> = ({ onComplete, userId })
     }
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     // Déconnexion forcée pour re-générer un token propre avec les nouvelles infos (TOTP, mustChangePassword=false)
-    localStorage.removeItem('kpsy_token');
+    await StorageService.remove('kpsy_token');
     localStorage.removeItem('kpsy_user');
     localStorage.removeItem('kpsy_tenant');
     window.location.href = '/';

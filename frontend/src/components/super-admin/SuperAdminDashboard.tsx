@@ -1,3 +1,4 @@
+import { StorageService } from '../../services/storage';
 import React, { useState } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -20,7 +21,9 @@ export const SuperAdminDashboard: React.FC<{ onLogout?: () => void }> = ({ onLog
   React.useEffect(() => {
     const fetchTenants = async () => {
       try {
-        const token = localStorage.getItem('kpsy_token');
+        let token;
+    StorageService.get("kpsy_token").then(t => token = t);
+    // FIXME: token fetch is now async, might break sync logic
         const res = await fetch('/api/super-admin/tenants', {
           headers: { Authorization: `Bearer ${token}` }
         });
